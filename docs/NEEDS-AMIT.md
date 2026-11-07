@@ -173,3 +173,53 @@ The epoch call:
 - **A failed shield, trade or payout** shows up in the fill log as a note. Payouts are released after their deadline.
 - **No NAV for 24 h:** anyone can trigger emergency mode, and holders exit at the last NAV.
 - **Keys to delete afterwards:** the vault account's full-access key is kept for the demo (D-P5-1).
+
+## 4. Demo video (P6): you record it
+
+Follow the script in [demo-script.md](demo-script.md): 3:00, a screen recording with a voiceover. The setup commands are at the top of the script. Every screen it uses works today on testnet. If the mainnet run (§3) is done first, end on docs/mainnet.md.
+
+## 5. X post (P6): you post it
+
+The rules require "built at NEAR HACKATHON", @NEARProtocol and #NEARHackathon, with the video or screenshots attached (docs/screens/). Draft:
+
+> Copy trading where the leader can't dump on you.
+>
+> Silent Partner: private copy-trading vaults on NEAR Confidential Intents. One vault, one fill, one price for the whole pool. The public sees attested NAV and returns, never positions.
+>
+> The vault key is an MPC key (Chain Signatures) that only signs transfers back into the vault or out to your own withdrawal.
+>
+> Built at NEAR HACKATHON @NEARProtocol #NEARHackathon
+> github.com/amityadav0/silent-partner
+
+The draft is about 450 characters. If your account has a 280-character limit, post the first two paragraphs and put the rest in a reply.
+
+## 6. Hackathon application (P6): you submit it
+
+This is `POST https://nearhackathon.com/api/applications` with `Content-Type: application/json`.
+- Send the fields below and no others. Do **not** send `website`: it's a spam trap.
+- Submit once. Fixes go through https://nearhackathon.com/request-changes.
+- The deadline is 2026-11-14 23:59 UTC, and the repo must be public by then (it is).
+
+Fill in the four `<…>` fields, then set `requestId` once with `uuidgen | tr A-Z a-z` and reuse it on any retry.
+
+```json
+{
+  "requestId": "<uuid>",
+  "projectName": "Silent Partner",
+  "leadName": "Amit Yadav",
+  "email": "<your email>",
+  "size": "1",
+  "tracks": ["privacy", "defi"],
+  "nearAddress": "<your mainnet account, e.g. amit.near>",
+  "projectUrl": "https://github.com/amityadav0/silent-partner",
+  "demoUrl": "<URL of your X post>",
+  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account. Each leader signal executes once for the whole pool through a single 1Click confidential quote, so everyone gets the same price and the leader can't dump on followers. The public sees operator-attested NAV and returns (re-verified in the browser), never positions. The vault's intents key is an MPC key derived for the contract (Chain Signatures, EdDSA). The contract signs only transfers bound to a 1Click-signed quote that pays back into the vault or out to a holder's own withdrawal, so the operator can't steal. Shares mint at NAV, burn at the next NAV, the leader keeps at least 10% of shares and earns a high-water-mark fee, and 24h without NAV opens emergency exits.",
+  "consent": true
+}
+```
+
+Tracks: `privacy` + `defi`. The `agents` track is left out because the operator is a deterministic service, not an AI agent. Your rule was to add agents only if an agent is the operator.
+
+Two more rule checks:
+- **Two-project rule.** If you also submit Scope as a separate project, each README must name the other. Tell me and I'll add the line.
+- **`consent: true`** means you agree to the site's contact notice. Read it on the form before you send.

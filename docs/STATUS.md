@@ -42,17 +42,17 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] Playwright smoke tests + docs/screens/ (6 e2e passing on live testnet, including a browser-signed signal executed by the operator and recorded on-chain)
 
 ## P5 Mainnet (Nov 12)
-- [ ] runbook in NEEDS-AMIT.md
+- [x] runbook in NEEDS-AMIT.md §3 (op.ts step CLI, init args in docs/mainnet-init.json; the real defuse verifier was exercised on testnet first)
 - [ ] Amit OK → run it, record the txs in docs/mainnet.md
 
 ## P6 Submission (Nov 13)
-- [ ] README, architecture.md, threat-model.md, demo script, X post, application JSON
+- [x] README, architecture.md, threat-model.md, demo script, X post, application JSON (NEEDS-AMIT §4–6)
 
 ## P7 Buffer (Nov 14)
 - [ ] re-run all tests, final push
 
 ## Next
-P5: write the mainnet runbook into NEEDS-AMIT.md, then wait for Amit's OK.
+Waiting for Amit: §1 round trip and §3 mainnet OK. Meanwhile, finish the reproducible build hash for §3 step 0, then P7 checks.
 
 ## Blockers
-- Waiting on Amit: the $1 round trip (NEEDS-AMIT §1). It doesn't block P2–P4.
+- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
