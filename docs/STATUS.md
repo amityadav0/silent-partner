@@ -26,13 +26,13 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] testnet deploy with faucet accounts: `sp-vault-60270.testnet`, docs/testnet.md (real testnet MPC signatures)
 
 ## P3 Operator (Nov 9–10)
-- [ ] deposit watcher → mint
-- [ ] signed leader signals
-- [ ] confidential quote/order execution (dry)
-- [ ] append-only hash-chained fill log
-- [ ] NAV per epoch → post
-- [ ] withdrawals
-- [ ] fixture tests
+- [x] deposit watcher → shield (the contract mints at deposit: D-P3-1)
+- [x] signed leader signals
+- [x] confidential quote/order execution (dry)
+- [x] append-only hash-chained fill log
+- [x] NAV per epoch → post
+- [x] withdrawals
+- [x] fixture tests (24 operator tests with real recorded 1Click quotes; testnet operator run in docs/testnet.md)
 
 ## P4 Web (Nov 10–11)
 - [ ] leaderboard
@@ -52,7 +52,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [ ] re-run all tests, final push
 
 ## Next
-P3 operator: deposit watcher, signed signals, dry execution, fill log, NAV, withdrawals.
+P4 web: leaderboard, vault page, leader console, share page, Playwright + screens.
 
 ## Blockers
 - Waiting on Amit: the $1 round trip (NEEDS-AMIT §1). It doesn't block P2–P4.

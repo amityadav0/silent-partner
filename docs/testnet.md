@@ -72,3 +72,15 @@ Ran 2026-11-07T14:06:53.937Z with `operator/scripts/testnet-e2e.ts`. Every link 
   "signals": 1
 }
 ```
+
+## Operator run (P3)
+
+Ran 2026-11-07T14:14:02.972Z with `operator/scripts/testnet-operator-run.ts`. This is the operator service code in dry 1Click mode: real 1Click dry quotes for pricing, with testnet assets mapped to the mainnet USDC and wNEAR ids. The NAV and signal transactions are real testnet transactions.
+
+| Step | Result | Tx |
+|---|---|---|
+| Epoch 3: paper-shield the 60 USDC of public deposits, then post NAV | NAV 49.200000 USDC = 60 held − 10.8 owed to claim 0. Log head `0c4a0e75fb86…` | [`Eq36o7CJXB…`](https://testnet.nearblocks.io/txns/Eq36o7CJXBRARczoLLZj96fHLivU2ZTSXDPktqAfLBGp) |
+| Leader signal: 30% of NAV, USDC → wNEAR, market | Executed as one dry confidential quote for the whole vault. Fill `9d56704f6c77…` went into the log, and the signal hash `96a79a507dc6…` was recorded on-chain with the leader's signature | (record_signal in the operator's account history) |
+| Epoch 4: post NAV | NAV 49.130654 USDC. The wNEAR is valued by a 1Click quote back into USDC (gross 59.930653, liabilities 10.800000) | [`DURSMNhcyA…`](https://testnet.nearblocks.io/txns/DURSMNhcyARhhVdVfYn3bd7g5Bm5vjfKkYWoYJXbPCMJ) |
+
+**Claim 0 is still open, on purpose.** The P2 script had MPC sign its payout but never submitted the signature, so the payout is in flight. The operator releases only in-flight payouts it submitted itself and that 1Click reports as failed after their deadline. An unknown one is left for review, because anyone who saw the signature log could have submitted it.
