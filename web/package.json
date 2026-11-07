@@ -1,0 +1,38 @@
+{
+  "name": "@silent-partner/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/modal-css.mjs",
+    "dev": "next dev -p 3000",
+    "prebuild": "node scripts/modal-css.mjs",
+    "build": "next build",
+    "serve": "python3 -m http.server 3000 -d out",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "screens": "playwright test e2e/screens.spec.ts"
+  },
+  "dependencies": {
+    "@near-wallet-selector/core": "10.1.4",
+    "@near-wallet-selector/meteor-wallet": "10.1.4",
+    "@near-wallet-selector/modal-ui": "10.1.4",
+    "@near-wallet-selector/my-near-wallet": "10.1.4",
+    "@noble/hashes": "1.7.1",
+    "next": "15.5.29",
+    "react": "19.1.10",
+    "react-dom": "19.1.10"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/postcss": "4.3.4",
+    "@types/node": "22.20.5",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "postcss": "8.5.32",
+    "tailwindcss": "4.3.4",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}

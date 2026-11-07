@@ -1,0 +1,29 @@
+# rust
+target/
+**/target/
+# node
+node_modules/
+dist/
+web/out/
+web/.next/
+web/test-results/
+web/playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+# secrets & local state
+.env
+.env.*
+!.env.example
+operator/data/
+operator/data-*/
+# AI instruction files: never committed
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+.claude/
+.cursor/
+.cursorrules
+# os / editors
+.DS_Store
+*.swp
+web/app/wallet-modal.css

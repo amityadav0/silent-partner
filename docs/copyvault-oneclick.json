@@ -1,0 +1,598 @@
+{
+  "ranAt": "2026-11-07T13:33:20.711Z",
+  "base": "https://1click.chaindefuser.com",
+  "account": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+  "session": {
+    "name": "authenticate",
+    "creds": "none",
+    "status": 200,
+    "ms": 1430,
+    "ok": true,
+    "body": {
+      "expiresIn": 900,
+      "refreshExpiresIn": 604800
+    }
+  },
+  "probe1": [
+    {
+      "name": "getQuote",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 200,
+      "ms": 658,
+      "ok": true,
+      "correlationId": "d5c3f9f5-63d5-4ee7-a6cb-ef986de6e637",
+      "body": {
+        "quote": {
+          "amountIn": "1000000",
+          "amountInFormatted": "1.0",
+          "amountInUsd": "0.999663000000",
+          "minAmountIn": "1000000",
+          "amountOut": "268189850390144931433180",
+          "amountOutFormatted": "0.26818985039014493143318",
+          "amountOutUsd": "0.989620547940",
+          "minAmountOut": "265507951886243482118848",
+          "timeEstimate": 12,
+          "refundFee": "0",
+          "withdrawFee": "0"
+        },
+        "quoteRequest": {
+          "dry": true,
+          "depositMode": "SIMPLE",
+          "swapType": "EXACT_INPUT",
+          "slippageTolerance": 100,
+          "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+          "depositType": "CONFIDENTIAL_INTENTS",
+          "destinationAsset": "nep141:wrap.near",
+          "amount": "1000000",
+          "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "refundType": "CONFIDENTIAL_INTENTS",
+          "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "recipientType": "CONFIDENTIAL_INTENTS",
+          "deadline": "2026-11-07T13:43:22.142Z",
+          "confidentiality": "advanced",
+          "quoteWaitingTimeMs": 0,
+          "insured": false,
+          "userAccountId": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "appFees": [
+            {
+              "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+              "fee": 20
+            }
+          ]
+        },
+        "signature": "ed25519:4aRrdYhnbrfh6UgY1aqPbird5yuEsjGnuALZTh2er9krPhTcuwrxcp164CLn5t6Eh6MvVxkf2KhifyYSGYdhz1XH",
+        "timestamp": "2026-11-07T13:33:22.250Z",
+        "correlationId": "d5c3f9f5-63d5-4ee7-a6cb-ef986de6e637"
+      },
+      "appFees": [
+        {
+          "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+          "fee": 20
+        }
+      ],
+      "quote": {
+        "amountIn": "1000000",
+        "amountInFormatted": "1.0",
+        "amountInUsd": "0.999663000000",
+        "minAmountIn": "1000000",
+        "amountOut": "268189850390144931433180",
+        "amountOutFormatted": "0.26818985039014493143318",
+        "amountOutUsd": "0.989620547940",
+        "minAmountOut": "265507951886243482118848",
+        "timeEstimate": 12,
+        "refundFee": "0",
+        "withdrawFee": "0"
+      }
+    },
+    {
+      "name": "getQuote",
+      "creds": "X-API-Key=partner only",
+      "status": 200,
+      "ms": 656,
+      "ok": true,
+      "correlationId": "b5708e76-f0f9-4474-8c59-dd81b69ae32c",
+      "body": {
+        "quote": {
+          "amountIn": "1000000",
+          "amountInFormatted": "1.0",
+          "amountInUsd": "0.999663000000",
+          "minAmountIn": "1000000",
+          "amountOut": "268189850390144931433180",
+          "amountOutFormatted": "0.26818985039014493143318",
+          "amountOutUsd": "0.989620547940",
+          "minAmountOut": "265507951886243482118848",
+          "timeEstimate": 12,
+          "refundFee": "0",
+          "withdrawFee": "0"
+        },
+        "quoteRequest": {
+          "dry": true,
+          "depositMode": "SIMPLE",
+          "swapType": "EXACT_INPUT",
+          "slippageTolerance": 100,
+          "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+          "depositType": "CONFIDENTIAL_INTENTS",
+          "destinationAsset": "nep141:wrap.near",
+          "amount": "1000000",
+          "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "refundType": "CONFIDENTIAL_INTENTS",
+          "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "recipientType": "CONFIDENTIAL_INTENTS",
+          "deadline": "2026-11-07T13:43:22.800Z",
+          "confidentiality": "advanced",
+          "quoteWaitingTimeMs": 0,
+          "insured": false,
+          "appFees": [
+            {
+              "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+              "fee": 20
+            }
+          ]
+        },
+        "signature": "ed25519:gAMLJuB176SewgamyuqQuTDutWoCDiN3AvvykQWQbKeH1GQ9jmAkgmjGHQkkpddYeqhDJfEqL7MiBiuJAXsce8n",
+        "timestamp": "2026-11-07T13:33:22.903Z",
+        "correlationId": "b5708e76-f0f9-4474-8c59-dd81b69ae32c"
+      },
+      "appFees": [
+        {
+          "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+          "fee": 20
+        }
+      ],
+      "quote": {
+        "amountIn": "1000000",
+        "amountInFormatted": "1.0",
+        "amountInUsd": "0.999663000000",
+        "minAmountIn": "1000000",
+        "amountOut": "268189850390144931433180",
+        "amountOutFormatted": "0.26818985039014493143318",
+        "amountOutUsd": "0.989620547940",
+        "minAmountOut": "265507951886243482118848",
+        "timeEstimate": 12,
+        "refundFee": "0",
+        "withdrawFee": "0"
+      }
+    },
+    {
+      "name": "getQuote",
+      "creds": "Bearer=user only",
+      "status": 401,
+      "ms": 323,
+      "ok": false,
+      "body": {
+        "message": "Invalid token",
+        "error": "Unauthorized",
+        "statusCode": 401,
+        "timestamp": "2026-11-07T13:33:23.552Z",
+        "path": "/v0/quote"
+      },
+      "error": "Unauthorized - API key or JWT token is invalid",
+      "appFees": null,
+      "quote": null
+    },
+    {
+      "name": "getQuote",
+      "creds": "Bearer=partner only",
+      "status": 200,
+      "ms": 665,
+      "ok": true,
+      "correlationId": "b7d02cef-e067-4616-8294-33e822546751",
+      "body": {
+        "quote": {
+          "amountIn": "1000000",
+          "amountInFormatted": "1.0",
+          "amountInUsd": "0.999663000000",
+          "minAmountIn": "1000000",
+          "amountOut": "268189850390144931433180",
+          "amountOutFormatted": "0.26818985039014493143318",
+          "amountOutUsd": "0.989620547940",
+          "minAmountOut": "265507951886243482118848",
+          "timeEstimate": 12,
+          "refundFee": "0",
+          "withdrawFee": "0"
+        },
+        "quoteRequest": {
+          "dry": true,
+          "depositMode": "SIMPLE",
+          "swapType": "EXACT_INPUT",
+          "slippageTolerance": 100,
+          "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+          "depositType": "CONFIDENTIAL_INTENTS",
+          "destinationAsset": "nep141:wrap.near",
+          "amount": "1000000",
+          "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "refundType": "CONFIDENTIAL_INTENTS",
+          "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+          "recipientType": "CONFIDENTIAL_INTENTS",
+          "deadline": "2026-11-07T13:43:23.778Z",
+          "confidentiality": "advanced",
+          "quoteWaitingTimeMs": 0,
+          "insured": false,
+          "appFees": [
+            {
+              "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+              "fee": 20
+            }
+          ]
+        },
+        "signature": "ed25519:vHyzh97x8HD42qb8C97J1zmFjMLbc7vb2mHP5qN1AT3jRtEcFyoLY1EYQwwnHf5WJP7Kug4cU9pV6fjg3uLQSAv",
+        "timestamp": "2026-11-07T13:33:23.890Z",
+        "correlationId": "b7d02cef-e067-4616-8294-33e822546751"
+      },
+      "appFees": [
+        {
+          "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+          "fee": 20
+        }
+      ],
+      "quote": {
+        "amountIn": "1000000",
+        "amountInFormatted": "1.0",
+        "amountInUsd": "0.999663000000",
+        "minAmountIn": "1000000",
+        "amountOut": "268189850390144931433180",
+        "amountOutFormatted": "0.26818985039014493143318",
+        "amountOutUsd": "0.989620547940",
+        "minAmountOut": "265507951886243482118848",
+        "timeEstimate": 12,
+        "refundFee": "0",
+        "withdrawFee": "0"
+      }
+    }
+  ],
+  "probe3": {
+    "request": {
+      "orderType": "LIMIT",
+      "baseAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+      "quoteAsset": "nep141:wrap.near",
+      "quantity": "1000000",
+      "side": "SELL",
+      "price": "1000",
+      "depositType": "CONFIDENTIAL_INTENTS",
+      "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+      "refundType": "CONFIDENTIAL_INTENTS",
+      "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+      "recipientType": "CONFIDENTIAL_INTENTS",
+      "confidentiality": "advanced",
+      "deadline": "2026-11-07T13:34:25.095Z"
+    },
+    "createOrder": [
+      {
+        "name": "createOrder",
+        "creds": "X-API-Key=partner + Bearer=user",
+        "status": 200,
+        "ms": 651,
+        "ok": true,
+        "correlationId": "32ca7491-75c9-42c0-98fe-f169b9f6c485",
+        "body": {
+          "data": {
+            "type": "orders",
+            "id": "order_yYix68O4s0dYt14Kp1Ez2",
+            "attributes": {
+              "orderType": "LIMIT",
+              "depositAddress": "a555635c46126bcdf9b19813816426e7cdf71d66ad9721e5bc3a6875e4cd5642",
+              "depositMode": "SIMPLE",
+              "depositType": "CONFIDENTIAL_INTENTS",
+              "fillStatus": "AWAITING_DEPOSIT",
+              "payoutStatus": "NOT_STARTED",
+              "isPayoutStatusFinal": false,
+              "payouts": {
+                "withdrawal": null,
+                "allWithdrawals": [],
+                "refund": null
+              },
+              "depositedAmount": "0",
+              "depositedAmountFormatted": "0.0",
+              "baseAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+              "quoteAsset": "nep141:wrap.near",
+              "quantity": "1000000",
+              "swapView": {
+                "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+                "destinationAsset": "nep141:wrap.near",
+                "swapType": "EXACT_INPUT",
+                "amountIn": "1000000",
+                "minAmountOut": "1000000000000000000000000000"
+              },
+              "side": "SELL",
+              "price": "1000",
+              "appFees": [
+                {
+                  "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+                  "fee": 20
+                }
+              ],
+              "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+              "recipientType": "CONFIDENTIAL_INTENTS",
+              "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+              "refundType": "CONFIDENTIAL_INTENTS",
+              "estimatedWithdrawFee": "0",
+              "estimatedWithdrawFeeFormatted": "0.0",
+              "estimatedRefundFee": "0",
+              "estimatedRefundFeeFormatted": "0.0",
+              "confidentiality": "advanced",
+              "timeInForce": "GTC",
+              "deadline": "2026-11-07T13:34:24.444Z",
+              "createdAt": "2026-11-07T13:33:24.829Z"
+            },
+            "links": {
+              "self": "/v0/orders/order_yYix68O4s0dYt14Kp1Ez2"
+            }
+          },
+          "meta": {
+            "correlationId": "32ca7491-75c9-42c0-98fe-f169b9f6c485",
+            "timestamp": "2026-11-07T13:33:24.865Z"
+          }
+        }
+      }
+    ],
+    "generateIntent": {
+      "name": "generateIntent",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 200,
+      "ms": 369,
+      "ok": true,
+      "correlationId": "1f3fbd38-fd80-44aa-b664-ce4ad5f0d287",
+      "body": {
+        "intent": {
+          "standard": "nep413",
+          "payload": {
+            "message": "{\"deadline\":\"2026-11-07T13:34:24.444Z\",\"intents\":[{\"intent\":\"transfer\",\"receiver_id\":\"a555635c46126bcdf9b19813816426e7cdf71d66ad9721e5bc3a6875e4cd5642\",\"tokens\":{\"imt:51e8f94d77b5e90dc9852ca6113771e11e8382ce69473a75e313e41665de7cbe:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1\":\"1000000\"}}],\"signer_id\":\"0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793\"}",
+            "nonce": "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=",
+            "recipient": "intents.far"
+          }
+        },
+        "correlationId": "1f3fbd38-fd80-44aa-b664-ce4ad5f0d287"
+      }
+    },
+    "getOrder": {
+      "name": "getOrder",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 200,
+      "ms": 348,
+      "ok": true,
+      "correlationId": "491d1eb4-8b27-4e65-9d7b-616e0b2b3612",
+      "body": {
+        "data": {
+          "type": "orders",
+          "id": "order_yYix68O4s0dYt14Kp1Ez2",
+          "attributes": {
+            "orderType": "LIMIT",
+            "depositAddress": "a555635c46126bcdf9b19813816426e7cdf71d66ad9721e5bc3a6875e4cd5642",
+            "depositMode": "SIMPLE",
+            "depositType": "CONFIDENTIAL_INTENTS",
+            "fillStatus": "AWAITING_DEPOSIT",
+            "payoutStatus": "NOT_STARTED",
+            "isPayoutStatusFinal": false,
+            "payouts": {
+              "withdrawal": null,
+              "allWithdrawals": [],
+              "refund": null
+            },
+            "depositedAmount": "0",
+            "depositedAmountFormatted": "0.0",
+            "baseAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "quoteAsset": "nep141:wrap.near",
+            "quantity": "1000000",
+            "swapView": {
+              "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+              "destinationAsset": "nep141:wrap.near",
+              "swapType": "EXACT_INPUT",
+              "amountIn": "1000000",
+              "minAmountOut": "1000000000000000000000000000"
+            },
+            "side": "SELL",
+            "price": "1000",
+            "appFees": [
+              {
+                "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+                "fee": 20
+              }
+            ],
+            "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+            "recipientType": "CONFIDENTIAL_INTENTS",
+            "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+            "refundType": "CONFIDENTIAL_INTENTS",
+            "estimatedWithdrawFee": "0",
+            "estimatedWithdrawFeeFormatted": "0.0",
+            "estimatedRefundFee": "0",
+            "estimatedRefundFeeFormatted": "0.0",
+            "confidentiality": "advanced",
+            "timeInForce": "GTC",
+            "deadline": "2026-11-07T13:34:24.444Z",
+            "createdAt": "2026-11-07T13:33:24.829Z",
+            "partialFills": []
+          },
+          "links": {
+            "self": "/v0/orders/order_yYix68O4s0dYt14Kp1Ez2"
+          }
+        },
+        "meta": {
+          "correlationId": "491d1eb4-8b27-4e65-9d7b-616e0b2b3612",
+          "timestamp": "2026-11-07T13:33:25.577Z"
+        }
+      }
+    },
+    "cancelOrder": {
+      "name": "cancelOrder",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 200,
+      "ms": 346,
+      "ok": true,
+      "correlationId": "af66668c-744d-46ef-950b-9c858a141bbe",
+      "body": {
+        "data": {
+          "type": "orders",
+          "id": "order_yYix68O4s0dYt14Kp1Ez2",
+          "attributes": {
+            "orderType": "LIMIT",
+            "depositAddress": "a555635c46126bcdf9b19813816426e7cdf71d66ad9721e5bc3a6875e4cd5642",
+            "depositMode": "SIMPLE",
+            "depositType": "CONFIDENTIAL_INTENTS",
+            "fillStatus": "PENDING_CANCEL",
+            "payoutStatus": "NOT_STARTED",
+            "isPayoutStatusFinal": false,
+            "payouts": {
+              "withdrawal": null,
+              "allWithdrawals": [],
+              "refund": null
+            },
+            "depositedAmount": "0",
+            "depositedAmountFormatted": "0.0",
+            "baseAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "quoteAsset": "nep141:wrap.near",
+            "quantity": "1000000",
+            "swapView": {
+              "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+              "destinationAsset": "nep141:wrap.near",
+              "swapType": "EXACT_INPUT",
+              "amountIn": "1000000",
+              "minAmountOut": "1000000000000000000000000000"
+            },
+            "side": "SELL",
+            "price": "1000",
+            "appFees": [
+              {
+                "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+                "fee": 20
+              }
+            ],
+            "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+            "recipientType": "CONFIDENTIAL_INTENTS",
+            "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+            "refundType": "CONFIDENTIAL_INTENTS",
+            "estimatedWithdrawFee": "0",
+            "estimatedWithdrawFeeFormatted": "0.0",
+            "estimatedRefundFee": "0",
+            "estimatedRefundFeeFormatted": "0.0",
+            "confidentiality": "advanced",
+            "timeInForce": "GTC",
+            "deadline": "2026-11-07T13:34:24.444Z",
+            "createdAt": "2026-11-07T13:33:24.829Z"
+          },
+          "links": {
+            "self": "/v0/orders/order_yYix68O4s0dYt14Kp1Ez2"
+          }
+        },
+        "meta": {
+          "correlationId": "af66668c-744d-46ef-950b-9c858a141bbe",
+          "timestamp": "2026-11-07T13:33:25.926Z"
+        }
+      }
+    },
+    "listOrders": {
+      "name": "listOrders",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 200,
+      "ms": 410,
+      "ok": true,
+      "correlationId": "948119e1-34ee-4b7c-8f4f-50d8be6c3c01",
+      "body": {
+        "data": [
+          {
+            "type": "orders",
+            "id": "order_yYix68O4s0dYt14Kp1Ez2",
+            "attributes": {
+              "orderType": "LIMIT",
+              "depositAddress": "a555635c46126bcdf9b19813816426e7cdf71d66ad9721e5bc3a6875e4cd5642",
+              "depositMode": "SIMPLE",
+              "depositType": "CONFIDENTIAL_INTENTS",
+              "fillStatus": "PENDING_CANCEL",
+              "payoutStatus": "NOT_STARTED",
+              "isPayoutStatusFinal": false,
+              "payouts": {
+                "withdrawal": null,
+                "allWithdrawals": [],
+                "refund": null
+              },
+              "depositedAmount": "0",
+              "depositedAmountFormatted": "0.0",
+              "baseAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+              "quoteAsset": "nep141:wrap.near",
+              "quantity": "1000000",
+              "swapView": {
+                "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+                "destinationAsset": "nep141:wrap.near",
+                "swapType": "EXACT_INPUT",
+                "amountIn": "1000000",
+                "minAmountOut": "1000000000000000000000000000"
+              },
+              "side": "SELL",
+              "price": "1000",
+              "appFees": [
+                {
+                  "recipient": "2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805",
+                  "fee": 20
+                }
+              ],
+              "recipient": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+              "recipientType": "CONFIDENTIAL_INTENTS",
+              "refundTo": "0d4ac075c623c60efd1102572523a9f9b784885841e90a24864e60dab5e02793",
+              "refundType": "CONFIDENTIAL_INTENTS",
+              "estimatedWithdrawFee": "0",
+              "estimatedWithdrawFeeFormatted": "0.0",
+              "estimatedRefundFee": "0",
+              "estimatedRefundFeeFormatted": "0.0",
+              "confidentiality": "advanced",
+              "timeInForce": "GTC",
+              "deadline": "2026-11-07T13:34:24.444Z",
+              "createdAt": "2026-11-07T13:33:24.829Z",
+              "partialFills": []
+            },
+            "links": {
+              "self": "/v0/orders/order_yYix68O4s0dYt14Kp1Ez2"
+            }
+          }
+        ],
+        "links": {
+          "next": null
+        },
+        "meta": {
+          "correlationId": "948119e1-34ee-4b7c-8f4f-50d8be6c3c01",
+          "timestamp": "2026-11-07T13:33:26.339Z"
+        }
+      }
+    }
+  },
+  "history": [
+    {
+      "name": "getHistory",
+      "creds": "Bearer=user only",
+      "status": 403,
+      "ms": 349,
+      "ok": false,
+      "body": {
+        "message": "History is invite-only for now",
+        "error": "Forbidden",
+        "statusCode": 403,
+        "timestamp": "2026-11-07T13:33:26.663Z",
+        "path": "/v0/account/history?limit=20"
+      },
+      "error": "History is invite-only for now"
+    },
+    {
+      "name": "getHistory",
+      "creds": "X-API-Key=partner + Bearer=user",
+      "status": 403,
+      "ms": 321,
+      "ok": false,
+      "body": {
+        "message": "History is invite-only for now",
+        "error": "Forbidden",
+        "statusCode": 403,
+        "timestamp": "2026-11-07T13:33:27.010Z",
+        "path": "/v0/account/history?limit=20"
+      },
+      "error": "History is invite-only for now"
+    }
+  ],
+  "balances": {
+    "name": "getBalances",
+    "creds": "Bearer=user only",
+    "status": 200,
+    "ms": 362,
+    "ok": true,
+    "body": {
+      "balances": []
+    }
+  }
+}

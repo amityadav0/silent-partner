@@ -1,0 +1,35 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: contract } }
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show && rustup component add clippy rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: contract }
+      - run: cargo test
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo build --release --target wasm32-unknown-unknown
+  operator:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: operator } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: operator/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

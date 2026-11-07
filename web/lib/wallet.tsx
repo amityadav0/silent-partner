@@ -1,0 +1,99 @@
+"use client";
+// Wallet selector: exactly MyNearWallet and Meteor (carried over from ~/scope/web).
+// No access key is requested at sign-in, so this site never holds a key that
+// could move funds: every deposit and withdrawal is confirmed in the wallet.
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { WalletSelector } from "@near-wallet-selector/core";
+import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
+import { CONTRACT_ID, NETWORK, RPC, TGAS } from "./config";
+
+/** Methods the site sends to the vault contract; P4 narrows this to the vault ABI. */
+export type OwnerCall = { method: string; args: Record<string, unknown>; deposit?: bigint; gas?: bigint };
+
+type Ctx = {
+  ready: boolean;
+  accountId: string | null;
+  signIn: () => void;
+  signOut: () => Promise<void>;
+  /** Sends one owner call. Browser-redirect wallets (MyNearWallet) navigate away and come back with ?transactionHashes=. */
+  call: (c: OwnerCall) => Promise<string | null>;
+};
+
+const WalletCtx = createContext<Ctx>({ ready: false, accountId: null, signIn: () => {}, signOut: async () => {}, call: async () => null });
+export const useWallet = () => useContext(WalletCtx);
+
+export function WalletProvider({ children }: { children: ReactNode }) {
+  const [selector, setSelector] = useState<WalletSelector | null>(null);
+  const [modal, setModal] = useState<WalletSelectorModal | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const [{ setupWalletSelector }, { setupModal }, { setupMyNearWallet }, { setupMeteorWallet }] = await Promise.all([
+        import("@near-wallet-selector/core"),
+        import("@near-wallet-selector/modal-ui"),
+        import("@near-wallet-selector/my-near-wallet"),
+        import("@near-wallet-selector/meteor-wallet"),
+      ]);
+      const network =
+        NETWORK === "mainnet"
+          ? { networkId: "mainnet", nodeUrl: RPC, helperUrl: "https://helper.mainnet.near.org", explorerUrl: "https://nearblocks.io", indexerUrl: "https://api.kitwallet.app" }
+          : { networkId: "testnet", nodeUrl: RPC, helperUrl: "https://helper.testnet.near.org", explorerUrl: "https://testnet.nearblocks.io", indexerUrl: "https://testnet-api.kitwallet.app" };
+      const s = await setupWalletSelector({ network, modules: [setupMyNearWallet(), setupMeteorWallet()] });
+      setSelector(s);
+      setModal(setupModal(s, { description: "Silent Partner signs nothing for you. Your wallet confirms every deposit and withdrawal." }));
+      const sub = s.store.observable.subscribe((st) => setAccountId(st.accounts.find((a) => a.active)?.accountId ?? null));
+      unsub = () => sub.unsubscribe();
+    })().catch((e) => console.error("wallet selector", e));
+    return () => unsub?.();
+  }, []);
+
+  const call = useCallback(
+    async (c: OwnerCall) => {
+      if (!selector) throw new Error("wallet not ready");
+      const [{ actionCreators }] = await Promise.all([import("@near-wallet-selector/core")]);
+      const wallet = await selector.wallet();
+      const deposit = c.deposit ?? 0n;
+      const out = await wallet.signAndSendTransaction({
+        receiverId: CONTRACT_ID,
+        actions: [actionCreators.functionCall(c.method, c.args, c.gas ?? 50n * TGAS, deposit)],
+      });
+      return (out as { transaction?: { hash?: string } } | undefined)?.transaction?.hash ?? null;
+    },
+    [selector],
+  );
+
+  const value = useMemo<Ctx>(
+    () => ({
+      ready: Boolean(selector),
+      accountId,
+      signIn: () => modal?.show(),
+      signOut: async () => {
+        if (selector) await (await selector.wallet()).signOut();
+      },
+      call,
+    }),
+    [selector, modal, accountId, call],
+  );
+  return <WalletCtx.Provider value={value}>{children}</WalletCtx.Provider>;
+}
+
+/** The account a page shows: `?owner=` (read-only view) or the signed-in wallet. */
+export function useOwner(): { owner: string | null; readOnly: boolean } {
+  const { accountId } = useWallet();
+  const [q, setQ] = useState<string | null>(null);
+  useEffect(() => setQ(new URLSearchParams(window.location.search).get("owner")), []);
+  if (q && q !== accountId) return { owner: q, readOnly: true };
+  return { owner: accountId, readOnly: false };
+}
+
+/** Tx hashes a redirect wallet appended on return, if any. */
+export function useReturnedTx(): { hashes: string[]; error: string | null } {
+  const [v, setV] = useState<{ hashes: string[]; error: string | null }>({ hashes: [], error: null });
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setV({ hashes: (p.get("transactionHashes") ?? "").split(",").filter(Boolean), error: p.get("errorCode") ? `${p.get("errorCode")}: ${decodeURIComponent(p.get("errorMessage") ?? "")}` : null });
+  }, []);
+  return v;
+}
