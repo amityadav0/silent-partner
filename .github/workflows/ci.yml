@@ -9,6 +9,7 @@ jobs:
       - run: rustup show && rustup component add clippy rustfmt
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: contract }
+      - run: cargo fmt --check
       - run: cargo test
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo build --release --target wasm32-unknown-unknown
