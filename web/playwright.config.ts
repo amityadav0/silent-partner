@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 // Runs against the static export (npm run build first).
 export default defineConfig({
   testDir: "e2e",
+  testIgnore: ["helpers.ts"],
   timeout: 60_000,
   expect: { timeout: 20_000 },
   workers: 1,

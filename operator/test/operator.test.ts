@@ -60,6 +60,11 @@ describe("signals", () => {
     expect(verifySignal(good, { ...want(), signalKey: null })).toMatchObject({ ok: false });
     expect(verifySignal(good, want(new Set([good.signal.nonce])))).toMatchObject({ ok: false, error: "replayed nonce" });
   });
+  it("signal hash vector shared with web/test/lib.test.ts", async () => {
+    const { signalHash } = await import("../src/signal.js");
+    const s = { v: 1 as const, vault: "sp-vault-60270.testnet", from: "nep141:usdc.fakes.testnet", to: "nep141:wrap.testnet", size_bps: 2500, type: "limit" as const, limit_price: "0.27", nonce: "00112233445566778899", created_ms: 1794218400000 };
+    expect(signalHash(s).toString("hex")).toBe("90ef0a734e151929b54eecf4a846190932dce915b1c82b40cd5f0c20773c4483");
+  });
   it("the signal hash signature verifies the way the contract checks it (ed25519 over the 32 raw bytes)", () => {
     const s = signSignal(sig(), leader);
     const r = verifySignal(s, want());

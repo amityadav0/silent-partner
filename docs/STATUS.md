@@ -35,11 +35,11 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] fixture tests (24 operator tests with real recorded 1Click quotes; testnet operator run in docs/testnet.md)
 
 ## P4 Web (Nov 10–11)
-- [ ] leaderboard
-- [ ] vault page
-- [ ] leader console
-- [ ] share page
-- [ ] Playwright smoke tests + docs/screens/
+- [x] leaderboard
+- [x] vault page
+- [x] leader console
+- [x] share page
+- [x] Playwright smoke tests + docs/screens/ (6 e2e passing on live testnet, including a browser-signed signal executed by the operator and recorded on-chain)
 
 ## P5 Mainnet (Nov 12)
 - [ ] runbook in NEEDS-AMIT.md
@@ -52,7 +52,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [ ] re-run all tests, final push
 
 ## Next
-P4 web: leaderboard, vault page, leader console, share page, Playwright + screens.
+P5: write the mainnet runbook into NEEDS-AMIT.md, then wait for Amit's OK.
 
 ## Blockers
 - Waiting on Amit: the $1 round trip (NEEDS-AMIT §1). It doesn't block P2–P4.

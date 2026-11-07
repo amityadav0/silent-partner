@@ -1,0 +1,59 @@
+import { describe, expect, it } from "vitest";
+import { ed25519 } from "@noble/curves/ed25519";
+import { base58 } from "@scure/base";
+import { bytesToHex } from "@noble/hashes/utils";
+import { aumBucket, maxDrawdown, navMessage, returns, toUnits, verifyNavs, type NavPost } from "../lib/vault";
+import { newSignalKey, signSignal, signalHash, type Signal } from "../lib/signal";
+
+const P = (x: number) => (BigInt(Math.round(x * 1e6)) * 10n ** 12n).toString();
+const nav = (epoch: number, price: number, over: Partial<NavPost> = {}): NavPost => ({ epoch, nav: "1000000", timestamp_ms: 1_794_218_400_000 + epoch, block_ms: 0, price: P(price), total_shares: "1", fee_shares: "0", withdrawn: "0", fills_head: "ab".repeat(32), signature: "", ...over });
+
+describe("metrics", () => {
+  it("returns from post-fee price", () => {
+    expect(returns([nav(1, 1.1), nav(2, 0.95)]).map((x) => +x.r.toFixed(6))).toEqual([0.1, -0.05]);
+  });
+  it("max drawdown table", () => {
+    const cases: [number[], number][] = [[[], 0], [[1.1, 1.2], 0], [[1.2, 0.9, 1.3, 1.17], 0.25], [[0.8], 0.2]];
+    for (const [ps, want] of cases) expect(+maxDrawdown(ps.map((p, i) => nav(i + 1, p))).toFixed(6)).toBe(want);
+  });
+  it("aum buckets", () => {
+    const cases: [string, string][] = [["999000000", "< $1k"], ["1000000000", "$1k–10k"], ["55000000000", "$10k–100k"], ["2000000000000", "> $1M"]];
+    for (const [u, want] of cases) expect(aumBucket(u, 6)).toBe(want);
+  });
+  it("exact unit parsing", () => {
+    expect(toUnits("1.5", 6)).toBe(1_500_000n);
+    expect(toUnits("0.000001", 6)).toBe(1n);
+    expect(toUnits("0.0000001", 6)).toBeNull();
+    expect(toUnits("1e6", 6)).toBeNull();
+    expect(toUnits("12", 24)).toBe(12n * 10n ** 24n);
+  });
+});
+
+describe("attestations", () => {
+  it("verifies NAV signatures against the contract's message format, flags forgeries", () => {
+    const sk = ed25519.utils.randomPrivateKey();
+    const key = "ed25519:" + base58.encode(ed25519.getPublicKey(sk));
+    const sign = (n: NavPost) => ({ ...n, signature: "ed25519:" + base58.encode(ed25519.sign(new TextEncoder().encode(navMessage("v.testnet", n)), sk)) });
+    const good = [sign(nav(1, 1)), sign(nav(2, 1.1))];
+    expect(verifyNavs("v.testnet", key, good)).toEqual({ ok: 2, bad: [] });
+    const forged = [good[0], { ...good[1], nav: "9999999" }];
+    expect(verifyNavs("v.testnet", key, forged)).toEqual({ ok: 1, bad: [2] });
+    expect(verifyNavs("other.testnet", key, good).bad).toEqual([1, 2]);
+  });
+  it("message format is the contract's", () => {
+    expect(navMessage("v", { epoch: 3, nav: "5", timestamp_ms: 7, fills_head: "ff" })).toBe("silent-partner/nav/v1|v|3|5|7|ff");
+  });
+});
+
+describe("signals", () => {
+  const s: Signal = { v: 1, vault: "sp-vault-60270.testnet", from: "nep141:usdc.fakes.testnet", to: "nep141:wrap.testnet", size_bps: 2500, type: "limit", limit_price: "0.27", nonce: "00112233445566778899", created_ms: 1794218400000 };
+  it("hash matches the operator's (vector from operator/src/signal.ts)", () => {
+    expect(bytesToHex(signalHash(s))).toBe("90ef0a734e151929b54eecf4a846190932dce915b1c82b40cd5f0c20773c4483");
+  });
+  it("signature is ed25519 over the 32 raw hash bytes", () => {
+    const k = newSignalKey();
+    const env = signSignal(s, k.secret);
+    expect(env.public_key).toBe(k.publicKey);
+    expect(ed25519.verify(base58.decode(env.signature.slice(8)), signalHash(s), base58.decode(k.publicKey.slice(8)))).toBe(true);
+  });
+});

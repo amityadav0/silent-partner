@@ -5,10 +5,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { WalletSelector } from "@near-wallet-selector/core";
 import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
-import { CONTRACT_ID, NETWORK, RPC, TGAS } from "./config";
+import { NETWORK, RPC, TGAS } from "./config";
 
-/** Methods the site sends to the vault contract; P4 narrows this to the vault ABI. */
-export type OwnerCall = { method: string; args: Record<string, unknown>; deposit?: bigint; gas?: bigint };
+/** One function call, confirmed in the wallet: to a vault or to its base token. */
+export type OwnerCall = { receiverId: string; method: string; args: Record<string, unknown>; deposit?: bigint; gas?: bigint };
 
 type Ctx = {
   ready: boolean;
@@ -56,7 +56,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const wallet = await selector.wallet();
       const deposit = c.deposit ?? 0n;
       const out = await wallet.signAndSendTransaction({
-        receiverId: CONTRACT_ID,
+        receiverId: c.receiverId,
         actions: [actionCreators.functionCall(c.method, c.args, c.gas ?? 50n * TGAS, deposit)],
       });
       return (out as { transaction?: { hash?: string } } | undefined)?.transaction?.hash ?? null;

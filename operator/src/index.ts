@@ -37,7 +37,7 @@ export function makeApp(op: Operator | null, chain: VaultChain | null, mode: Rec
 
 export const app = makeApp(null, null, { dryRun: process.env.DRY_RUN !== "0" });
 
-async function main() {
+export async function main() {
   const env = loadEnv();
   if (!env.contractId || !env.attestationKey) {
     console.log("VAULT_CONTRACT_ID / ATTESTATION_PRIVATE_KEY not set: serving health only");

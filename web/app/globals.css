@@ -58,3 +58,26 @@ code,
 pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* Silent Partner additions */
+.pos { color: #15803d; }
+.neg { color: #b91c1c; }
+@media (prefers-color-scheme: dark) {
+  .pos { color: #4ade80; }
+  .neg { color: #f87171; }
+}
+.chip { border-radius: 0.25rem; padding: 0.05rem 0.4rem; font-size: 0.75rem; font-weight: 500; }
+.chip-ok { background: #bbf7d0; color: #14532d; }
+.chip-warn { background: #fde68a; color: #78350f; }
+.chip-bad { background: #fecaca; color: #7f1d1d; }
+svg .grid { stroke: color-mix(in srgb, CanvasText 10%, transparent); stroke-width: 1; }
+svg .zero { stroke: color-mix(in srgb, CanvasText 35%, transparent); stroke-width: 1; stroke-dasharray: 3 3; }
+svg .axis { fill: GrayText; font-size: 11px; font-variant-numeric: tabular-nums; }
+svg .line-pos { stroke: #16a34a; }
+svg .line-neg { stroke: #dc2626; }
+svg .dot-pos { fill: #16a34a; }
+svg .dot-neg { fill: #dc2626; }
+table.t { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+table.t th { text-align: left; font-weight: 500; color: GrayText; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.4rem 0.5rem; }
+table.t td { white-space: nowrap; padding: 0.5rem; border-top: 1px solid color-mix(in srgb, CanvasText 12%, transparent); font-variant-numeric: tabular-nums; }
+.scroll-x { overflow-x: auto; }
