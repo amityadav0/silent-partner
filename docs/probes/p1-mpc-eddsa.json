@@ -1,0 +1,36 @@
+{
+  "ranAt": "2026-11-07T13:51:05.514Z",
+  "mpc": "v1.signer-prod.testnet",
+  "path": "silent-partner/vault/probe",
+  "predecessor": "sp-probe-1794059432.testnet",
+  "derivedPublicKey": "ed25519:FgBt63uUvvF2jLEA2UQaYj2wzNcRgLcUk1yJVqko77qG",
+  "implicitAccount": "da0d924d8b005267dd8f2a5950c524b920871769d3ffba097432ca785b360c77",
+  "prehash": "6493bb7466b44cde6e5a5ba79bf636e9a6507f7e1af7f5505f168e64aebc80b1",
+  "signTx": "FLow2PujioTcu1poRLc8jtcEMzKr5ecd7JnH9pZ4tDBR",
+  "signMs": 6490,
+  "signScheme": "Ed25519",
+  "localVerify": true,
+  "simulate": {
+    "value": {
+      "intents_executed": [
+        {
+          "intent_hash": "7mcReSTqaC7bBebwx9vfmKRsygMP5jSJnMzd7uWeTUQp",
+          "account_id": "da0d924d8b005267dd8f2a5950c524b920871769d3ffba097432ca785b360c77",
+          "nonce": "Vij2xgAlKBKzgHC+ACDI5RiAwLt7lMflGK79Up66Lyo="
+        }
+      ],
+      "logs": [
+        "EVENT_JSON:{\"standard\":\"dip4\",\"version\":\"0.4.3\",\"event\":\"intents_executed\",\"data\":[{\"intent_hash\":\"7mcReSTqaC7bBebwx9vfmKRsygMP5jSJnMzd7uWeTUQp\",\"account_id\":\"da0d924d8b005267dd8f2a5950c524b920871769d3ffba097432ca785b360c77\",\"nonce\":\"Vij2xgAlKBKzgHC+ACDI5RiAwLt7lMflGK79Up66Lyo=\"}]}"
+      ],
+      "min_deadline": "2026-11-07T14:01:06.354Z",
+      "state": {
+        "fee": 1,
+        "current_salt": "252812b3"
+      }
+    }
+  },
+  "simulateTampered": {
+    "error": "wasm execution failed with error: HostError(GuestPanic { panic_msg: \"invalid signature\" })"
+  },
+  "publicKeyHelper": true
+}

@@ -8,10 +8,10 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] operator/ (TypeScript): typecheck and vitest are green; carry-over copied from ~/scope
 - [x] web/ (Next.js 15 static export, wallet-selector with MyNearWallet + Meteor): build and vitest are green
 - [x] docs/ skeleton, README skeleton, Makefile
-- [ ] CI green on GitHub
+- [x] CI green on GitHub (run 42378666942)
 
 ## P1 Probes (Nov 8)
-- [ ] (a) Can a contract-controlled ed25519 key (Chain Signatures EdDSA) be registered on intents.far and sign transfer intents? Record the answer in DECISIONS.md
+- [x] (a) Can a contract-controlled ed25519 key (Chain Signatures EdDSA) be registered on intents.far and sign transfer intents? Record the answer in DECISIONS.md. **Yes**: D-P1a, probe in docs/probes/
 - [ ] (b) Exact steps for a $1 public→confidential→public round trip in NEEDS-AMIT.md
 - [ ] (c) OutLayer price for one run in NEEDS-AMIT.md
 
@@ -52,7 +52,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [ ] re-run all tests, final push
 
 ## Next
-P1 (a): read the near/intents source for the public-key registry and the signing standards on intents.far.
+P1 (b) round-trip steps, then (c) the OutLayer price.
 
 ## Blockers
 None.
