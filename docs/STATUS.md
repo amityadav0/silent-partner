@@ -12,8 +12,8 @@ Deadline: 2026-11-14 18:00 UTC.
 
 ## P1 Probes (Nov 8)
 - [x] (a) Can a contract-controlled ed25519 key (Chain Signatures EdDSA) be registered on intents.far and sign transfer intents? Record the answer in DECISIONS.md. **Yes**: D-P1a, probe in docs/probes/
-- [ ] (b) Exact steps for a $1 public→confidential→public round trip in NEEDS-AMIT.md
-- [ ] (c) OutLayer price for one run in NEEDS-AMIT.md
+- [x] (b) Exact steps for a $1 public→confidential→public round trip in NEEDS-AMIT.md
+- [x] (c) OutLayer price for one run in NEEDS-AMIT.md
 
 ## P2 Contract (Nov 8–9)
 - [ ] shares: deposit mints at last NAV; a withdraw request burns at the next NAV
@@ -52,7 +52,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [ ] re-run all tests, final push
 
 ## Next
-P1 (b) round-trip steps, then (c) the OutLayer price.
+P2 contract: shares, NAV, fee, stake, signals, emergency, MPC-signed intents (D-P1a).
 
 ## Blockers
-None.
+- Waiting on Amit: the $1 round trip (NEEDS-AMIT §1). It doesn't block P2–P4.

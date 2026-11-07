@@ -27,3 +27,10 @@ Each decision is dated, with its reason.
       - (iii) in emergency mode, pro-rata exits that anyone can trigger.
     - The operator chooses trades and posts NAV but cannot move funds anywhere else. That is the trust assumption the README will state.
   - **Fallback.** If 1Click limit orders (no signed quote) are needed, the contract allows a transfer to an order deposit address only when the operator co-signs and the amount is ≤ the signal's % of NAV. Recorded as an operator-trust exception in the threat model.
+- **D-P1b (2026-11-07) Round-trip path.**
+  - **Route.** Public `intents.near` USDC → 1Click shield (`INTENTS → CONFIDENTIAL_INTENTS`, same asset) → unshield (`CONFIDENTIAL_INTENTS → INTENTS`). This needs no origin chain and has 0 app fees (dry quotes, `docs/probes/p1-roundtrip-dry.json`).
+  - **Script.** `operator/scripts/roundtrip.ts` is dry by default. Live mode needs `ROUNDTRIP_LIVE=1` plus the account id typed at the prompt, and Amit runs it himself.
+  - **Vault deposits.** The same shield route will carry follower deposits into the vault: a follower deposits to the vault's public intents account, and the operator shields.
+- **D-P1c (2026-11-07) No OutLayer.** The operator is our own service.
+  - **Cost.** OutLayer costs 0.0015 NEAR per 5 s run on-chain (live `get_pricing`), or needs a $1 prepaid key for HTTPS.
+  - **Why not.** It would only attest the NAV computation, and P1a already removes the operator's custody. That's not worth a payment dependency before the deadline. It can be added later only if Amit approves the payment.
