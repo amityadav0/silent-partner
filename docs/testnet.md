@@ -84,3 +84,34 @@ Ran 2026-11-07T14:14:02.972Z with `operator/scripts/testnet-operator-run.ts`. Th
 | Epoch 4: post NAV | NAV 49.130654 USDC. The wNEAR is valued by a 1Click quote back into USDC (gross 59.930653, liabilities 10.800000) | [`DURSMNhcyA…`](https://testnet.nearblocks.io/txns/DURSMNhcyARhhVdVfYn3bd7g5Bm5vjfKkYWoYJXbPCMJ) |
 
 **Claim 0 is still open, on purpose.** The P2 script had MPC sign its payout but never submitted the signature, so the payout is in flight. The operator releases only in-flight payouts it submitted itself and that 1Click reports as failed after their deadline. An unknown one is left for review, because anyone who saw the signature log could have submitted it.
+
+## Real NEAR Intents verifier on testnet
+
+Ran 2026-11-07T14:27:24.940Z with `operator/scripts/testnet-intents.ts`.
+
+**Setup.**
+- The verifier is `defuse-0.2.10.wasm` from near/intents `releases/`, deployed to [`sp-intents-61557.testnet`](https://testnet.nearblocks.io/address/sp-intents-61557.testnet).
+- A second vault, [`sp-vault2-61557.testnet`](https://testnet.nearblocks.io/address/sp-vault2-61557.testnet), has `intents_contract` = that account. Its MPC account is `66d43ceffe902cf4075de0ca529c6e3c725b1fd6d530c9ba1d8849743c10f468`.
+
+**1. Deposit forwarding works.** A 10 USDC `ft_transfer_call` into the vault minted shares, and the contract forwarded the USDC to the verifier.
+- The vault's balance on the verifier went from 0 to 10000000.
+- 0 was left in the contract.
+
+**2. The verifier executes an MPC-signed vault transfer.**
+- The vault signed a Shield-shaped transfer through `sign_intent`: it was bound to a test-key quote, its NEP-413 recipient was the verifier's account id, and the vault's MPC key signed it on testnet MPC.
+- The real defuse contract's `execute_intents` executed it. 1000000 units moved to the stand-in deposit address `96500bc76a1a…` (balance 1000000), leaving the vault at 9000000.
+
+| Step | Tx |
+|---|---|
+| fund intents account (9 NEAR) | [`5yXLcdQaiR…`](https://testnet.nearblocks.io/txns/5yXLcdQaiRyGtUgrDtmRMj1aTH8Xj4QUhKT6KuPcRPZr) |
+| deploy defuse 0.2.10 | [`4ognLEkdwj…`](https://testnet.nearblocks.io/txns/4ognLEkdwjujM6PsxG76yWsbMev1bEgLae3zoEvkqxUt) |
+| new (intents → intents) | [`4LpssYTK4J…`](https://testnet.nearblocks.io/txns/4LpssYTK4JL6GzzxwfUgw35hn38qhmggRAEZKzE9AYNS) |
+| deploy vault2 | [`2zSn5S9wfs…`](https://testnet.nearblocks.io/txns/2zSn5S9wfshwfNaU7J9n4zf6Yi4YhquZQiXWtLgw7MdE) |
+| new (vault2 → vault2) | [`9zHh55SAKb…`](https://testnet.nearblocks.io/txns/9zHh55SAKbU1RKPDJksPRLpAXrW3fn9kBcdAyS8tfgJd) |
+| activate (op → vault2) | [`9LcBk49J8e…`](https://testnet.nearblocks.io/txns/9LcBk49J8eN4sD36Kpd4gnmsDSGmX3dKyfBnGNB1gJ4z) |
+| storage_deposit (op → usdc.fakes.testnet) | [`BAmKGrVR1w…`](https://testnet.nearblocks.io/txns/BAmKGrVR1wDgvNQPMkaPzoBuzbXbE6TZZuYfeTWPsQRp) |
+| storage_deposit (op → usdc.fakes.testnet) | [`69Mws9Gynj…`](https://testnet.nearblocks.io/txns/69Mws9Gynj4stZfhH8tztVYsKb2X6xV7UuEYHo71JBCc) |
+| mint (leader → usdc.fakes.testnet) | [`3MeVaps9Bx…`](https://testnet.nearblocks.io/txns/3MeVaps9BxVqkm7NCKYG4eKrWKWJft4XJx2TUMDw4KV8) |
+| ft_transfer_call (leader → usdc.fakes.testnet) | [`F7RXX11He4…`](https://testnet.nearblocks.io/txns/F7RXX11He4jbTNE6PF25bULoCSk3wTAJuDDmpP877pQG) |
+| sign_intent (op → vault2) | [`H21tEP1tXM…`](https://testnet.nearblocks.io/txns/H21tEP1tXMCdXzXrX3eD8k8t6vwYfJdRyUuKA5Qo3JaQ) |
+| execute_intents (op → intents) | [`7w9wYSju2Y…`](https://testnet.nearblocks.io/txns/7w9wYSju2YRsDGjAzqMAAHRwXRVMM3Z5hDwmnMVZBuNy) |

@@ -28,7 +28,7 @@ const TGAS = 1_000_000_000_000n;
 
 export class NearVault implements VaultChain {
   private account?: Account;
-  constructor(readonly contractId: string, private rpc: string, private network: "testnet" | "mainnet", private operatorId: string, private operatorKey?: string, private intentsRpc = "https://rpc.mainnet.fastnear.com") {}
+  constructor(readonly contractId: string, private rpc: string, private network: "testnet" | "mainnet", private operatorId: string, private operatorKey?: string, private intentsRpc = rpc) {}
 
   private view<T>(m: string, a: object = {}) {
     return viewCall<T>(this.rpc, this.contractId, m, a, fetch, "optimistic");

@@ -563,7 +563,7 @@ fn sign_shield_and_login() {
         },
         None
     )
-    .contains("intents.near"));
+    .contains("public intents contract"));
     assert!(sign(&mut v, "op.testnet", SignKind::Shield, login.clone(), None).contains("disagree"));
     assert!(sign(&mut v, "op.testnet", SignKind::Login, p.clone(), None).contains("disagree"));
 }
@@ -714,4 +714,39 @@ fn emergency_trades_unwind_only() {
         ),
         "<no panic>"
     );
+}
+
+#[test]
+fn public_verifier_follows_intents_contract() {
+    ctx("owner.testnet", T0_MS);
+    near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
+    let mut c = cfg();
+    c.intents_contract = Some(acc("defuse.testnet"));
+    let mut v = Vault::new(c);
+    ctx("vault.testnet", T0_MS);
+    v.on_activate(Ok(pk_str(&mpc_key())));
+    let va = vault_acct();
+    let q = sign_like_oneclick(
+        &qmsg(&[
+            ("recipient", json!(va)),
+            ("refundTo", json!(va)),
+            ("deadline", json!(QDL)),
+            ("depositType", json!("INTENTS")),
+            ("recipientType", json!("CONFIDENTIAL_INTENTS")),
+            ("refundType", json!("INTENTS")),
+            ("originAsset", json!(USDC)),
+            ("destinationAsset", json!(USDC)),
+        ]),
+        &test_key(),
+    );
+    let ok = payload(DEP, USDC, 1_000_000, "defuse.testnet", DL, &va);
+    assert_eq!(sign(&mut v, "op.testnet", SignKind::Shield, ok, Some(q.clone())), "<no panic>");
+    let wrong = payload(DEP, USDC, 1_000_000, "intents.near", DL, &va);
+    assert!(sign(&mut v, "op.testnet", SignKind::Shield, wrong, Some(q)).contains("does not match depositType"));
+    let login = Nep413Payload {
+        message: format!(r#"{{"deadline":"{DL}","intents":[],"signer_id":"{va}"}}"#),
+        nonce: "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=".into(),
+        recipient: "defuse.testnet".into(),
+    };
+    assert_eq!(sign(&mut v, "op.testnet", SignKind::Login, login, None), "<no panic>");
 }

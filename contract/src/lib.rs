@@ -498,10 +498,12 @@ impl Vault {
             "payload deadline out of window"
         );
         let mut claim_reserve: Option<(u64, U128, U64)> = None;
+        // The public verifier the vault's intents.near-side payloads are for.
+        let public_verifier = self.cfg.intents_contract.as_ref().map(|a| a.as_str()).unwrap_or("intents.near").to_string();
         match (&kind, &p.kind) {
             (SignKind::Login, Parsed::Login) => {
                 require!(is_op, "only the operator");
-                require!(p.recipient == "intents.near", "login is for intents.near");
+                require!(p.recipient == public_verifier, "login is for the public intents contract");
                 require!(quote.is_none(), "login takes no quote");
             }
             (SignKind::Login, _) | (_, Parsed::Login) => env::panic_str("kind and payload disagree"),
@@ -515,7 +517,7 @@ impl Vault {
                 require!(p.deadline_ms <= f.deadline_ms, "payload outlives the quote");
                 require!(f.slippage_bps <= self.cfg.max_slippage_bps as u64, "slippage above max");
                 let (want_token, want_recipient) = match f.deposit_type.as_str() {
-                    "INTENTS" => (f.origin_asset.clone(), "intents.near"),
+                    "INTENTS" => (f.origin_asset.clone(), public_verifier.as_str()),
                     "CONFIDENTIAL_INTENTS" => (imt(&f.origin_asset), "intents.far"),
                     _ => env::panic_str("unsupported depositType"),
                 };
