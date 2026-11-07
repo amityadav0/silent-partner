@@ -30,8 +30,8 @@ export function versionedNonce(saltHex: string, deadlineMs: number, nowMs = Date
   return Buffer.concat([Buffer.from([0x56, 0x28, 0xf6, 0xc6, 0]), salt, dl, ts, randomBytes(7)]);
 }
 
-export async function viewCall<T>(rpc: string, contract: string, method: string, args: unknown, fetchImpl: typeof fetch = fetch): Promise<T> {
-  const r = await fetchImpl(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "final", account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") } }) });
+export async function viewCall<T>(rpc: string, contract: string, method: string, args: unknown, fetchImpl: typeof fetch = fetch, finality: "final" | "optimistic" = "final"): Promise<T> {
+  const r = await fetchImpl(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") } }) });
   const j = await r.json();
   if (j.error || j.result?.error) throw new Error(`view ${contract}.${method}: ${JSON.stringify(j.error?.data ?? j.result?.error).slice(0, 300)}`);
   return JSON.parse(Buffer.from(j.result.result).toString()) as T;

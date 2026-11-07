@@ -16,14 +16,14 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] (c) OutLayer price for one run in NEEDS-AMIT.md
 
 ## P2 Contract (Nov 8–9)
-- [ ] shares: deposit mints at last NAV; a withdraw request burns at the next NAV
-- [ ] leader minimum stake of 10%
-- [ ] performance fee with a high-water mark
-- [ ] operator-signed NAV per epoch, stored with its timestamp
-- [ ] signal registry (hashes posted after execution)
-- [ ] emergency mode after 24h with no NAV
-- [ ] table tests for every path, clippy clean
-- [ ] testnet deploy with faucet accounts
+- [x] shares: deposit mints at last NAV; a withdraw request burns at the next NAV
+- [x] leader minimum stake of 10%
+- [x] performance fee with a high-water mark
+- [x] operator-signed NAV per epoch, stored with its timestamp
+- [x] signal registry (hashes posted after execution)
+- [x] emergency mode after 24h with no NAV
+- [x] table tests for every path, clippy clean (29 tests)
+- [x] testnet deploy with faucet accounts: `sp-vault-60270.testnet`, docs/testnet.md (real testnet MPC signatures)
 
 ## P3 Operator (Nov 9–10)
 - [ ] deposit watcher → mint
@@ -52,7 +52,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [ ] re-run all tests, final push
 
 ## Next
-P2 contract: shares, NAV, fee, stake, signals, emergency, MPC-signed intents (D-P1a).
+P3 operator: deposit watcher, signed signals, dry execution, fill log, NAV, withdrawals.
 
 ## Blockers
 - Waiting on Amit: the $1 round trip (NEEDS-AMIT §1). It doesn't block P2–P4.

@@ -34,3 +34,18 @@ Each decision is dated, with its reason.
 - **D-P1c (2026-11-07) No OutLayer.** The operator is our own service.
   - **Cost.** OutLayer costs 0.0015 NEAR per 5 s run on-chain (live `get_pricing`), or needs a $1 prepaid key for HTTPS.
   - **Why not.** It would only attest the NAV computation, and P1a already removes the operator's custody. That's not worth a payment dependency before the deadline. It can be added later only if Amit approves the payment.
+- **D-P2-1 (2026-11-07) What the vault key may sign.** `sign_intent` accepts four shapes and nothing else. The message JSON is parsed strictly: unknown fields are rejected, so there's no `memo` and no `msg` notification, and the transfer is exactly one intent of one token.
+  - **Login:** empty intents for intents.near. Operator only.
+  - **Shield:** INTENTS→CONFIDENTIAL_INTENTS, same asset, paying and refunding the vault.
+  - **Trade:** confidential→confidential between `allowed_assets`, paying and refunding the vault, slippage ≤ `max_slippage_bps`.
+  - **Payout:** base asset CONFIDENTIAL_INTENTS→INTENTS to the claim's `exit_account`, amount ≤ what the claim still has open.
+  - **Binding for transfers:** each transfer needs a 1Click-signed non-dry quote under the immutable `oneclick_key`. The receiver must equal the quote's `depositAddress` and the amount its `amountIn`. The token is `imt:<treasury>:<originAsset>` (FAR) or `originAsset` (intents.near), set by `depositType`. The deadline must be ≤ the quote's and ≤ now+1h.
+- **D-P2-2 (2026-11-07) Limit orders run in the operator.** 1Click limit orders have no signed quote, so the contract cannot bind their deposit address. A "limit" signal is therefore held by the operator, and executed as a signed confidential quote when the price crosses. Every fill still goes through D-P2-1.
+- **D-P2-3 (2026-11-07) Payout settlement.** A signed payout is held "in flight" until its intent deadline.
+  - **Normal mode.** The operator marks it executed at any time, or releases it, but only after the deadline, when it can no longer execute.
+  - **Emergency mode.** In-flight payouts stay counted as paid. That's the safe side for the holders who remain, and the residual risk is written up in the threat model.
+- **D-P2-4 (2026-11-07) Deposits.** Deposits arrive by NEP-141 `ft_transfer_call` of the base asset to the contract, with an empty msg. Shares are minted at the book NAV: the last NAV, plus deposits since, minus payouts since. When `intents_contract` is set (mainnet), funds are forwarded to `intents.near` with msg = the vault's implicit account, and the operator shields them.
+  - **Refunded, not minted:** before activation, when NAV is stale or in emergency, below `min_deposit`, and when a follower deposit would push the leader under `min_leader_bps`.
+  - **Seeding.** The leader seeds the vault first.
+- **D-P2-5 (2026-11-07) Testnet quote key.** 1Click has no testnet, so the testnet vault's `oneclick_key` is a test key and the operator signs quotes the way 1Click does (`operator/src/testquote.ts`). On mainnet the key is fixed at init to `ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc`, and anyone can check it with `get_config`.
+- **D-P2-6 (2026-11-07) Gas.** `sign_intent` forwards 100 TGas to MPC `sign` and 15 TGas to the callback, and is called with 300 TGas. That worked on testnet: `docs/testnet.md`.
