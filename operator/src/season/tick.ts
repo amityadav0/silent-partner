@@ -36,12 +36,13 @@ export async function tick(o: { op: Operator; vault: string; base: string; risk:
     const d = await o.decide(current);
     out.decision = { target: d.target, why: d.why, model: d.model };
     const memo = d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
-    appendFileSync(o.notesPath, JSON.stringify({ ts: now(), current, ...d, memo_hash: memo }) + "\n");
     const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo);
     if (s) {
       const r = await o.op.submitSignal(signSignal(s, KeyPair.fromString(o.signalKey as `ed25519:${string}`)));
       out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: s.size_bps, from: s.from, to: s.to } : { error: r.error };
     }
+    // Private notebook entry: the full signal and rationale, so either can be disclosed and checked later.
+    appendFileSync(o.notesPath, JSON.stringify({ ts: now(), current, ...d, memo_hash: memo, signal: s, signal_hash: out.signal && "hash" in out.signal ? out.signal.hash : null }) + "\n");
   }
   const e = await o.op.epoch();
   Object.assign(out, { epoch: e.epoch, nav: e.nav, tx: e.tx });

@@ -53,7 +53,7 @@ Deadline: 2026-11-14 18:00 UTC.
 
 ## Season (Nov 9–13): items from Amit's list, in order
 - [x] 1. Paper season: 4 demo vaults + drill vault on testnet, bots, operator in paper mode at real 1Click dry-quote prices, GitHub Actions cron every 15 min, honest "paper · testnet" labels
-- [ ] 2. AI leader on NEAR AI Cloud (rationale kept private, hash only)
+- [x] 2. AI leader on NEAR AI Cloud (rationale kept private, hash only). Waiting on `NEARAI_API_KEY` (NEEDS-AMIT §7); it holds until then
 - [ ] 3. Emergency exit drill (5-minute drill build, follower exits via the emergency path, UI)
 - [ ] 4. "What the chain sees" page
 - [ ] 5. Landing page + GitHub Pages deploy
@@ -65,4 +65,4 @@ Deadline: 2026-11-14 18:00 UTC.
 Season items 2–7 (above), then rebuild the mainnet wasm hash. Mainnet still waits for Amit (§1, §3).
 
 ## Blockers
-- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- Waiting on Amit: §7 the NEAR AI key (the AI vault holds meanwhile). §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.

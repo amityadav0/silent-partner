@@ -128,3 +128,39 @@ describe("season tick", () => {
     expect(bad.signal).toEqual({ error: "replayed nonce" });
   });
 });
+
+import { aiLeader, parseReply, prompt, DEFAULT_MODEL } from "../src/leaders/ai.js";
+
+describe("AI leader", () => {
+  const s = series((i) => 3 + i * 0.001);
+  it("parses, clamps and rounds replies; anything odd holds", () => {
+    expect(parseReply('{"target_exposure": 0.62, "rationale": "trend"}')).toEqual({ target: 0.6, rationale: "trend" });
+    expect(parseReply('sure:\n```json\n{"target_exposure": 1.5, "rationale": "x"}\n```').target).toBe(0.9);
+    expect(parseReply('{"target_exposure": -1, "rationale": "x"}').target).toBe(0);
+    expect(parseReply('{"target_exposure": null, "rationale": "wait"}')).toEqual({ target: null, rationale: "wait" });
+    expect(parseReply("no json here").target).toBeNull();
+    expect(parseReply('{"target_exposure": "lots"}').target).toBeNull();
+  });
+  it("prompt holds only public market data and the vault's own exposure", () => {
+    const p = JSON.parse(prompt(s, 0.4));
+    expect(Object.keys(p)).toEqual(["market", "vault"]);
+    expect(p.vault).toEqual({ current_near_exposure: 0.4 });
+  });
+  it("holds without a key; calls NEAR AI Cloud with one and keeps the rationale out of `why`", async () => {
+    expect(await aiLeader(s, 0, {})).toEqual({ target: null, why: "NEARAI_API_KEY not set: holding" });
+    const seen: any[] = [];
+    const f = (async (url: string, init: RequestInit) => {
+      seen.push({ url, headers: init.headers, body: JSON.parse(String(init.body)) });
+      return new Response(JSON.stringify({ id: "chatcmpl-1", choices: [{ message: { content: '{"target_exposure": 0.5, "rationale": "EMAs crossed up"}' } }] }));
+    }) as unknown as typeof fetch;
+    const d = await aiLeader(s, 0, { apiKey: "k", fetchImpl: f });
+    expect(seen[0].url).toBe("https://cloud-api.near.ai/v1/chat/completions");
+    expect(seen[0].headers.authorization).toBe("Bearer k");
+    expect(seen[0].body.model).toBe(DEFAULT_MODEL);
+    expect(d.target).toBe(0.5);
+    expect(d.why).not.toContain("EMAs");
+    expect(JSON.parse(d.rationale!)).toEqual({ chat_id: "chatcmpl-1", model: DEFAULT_MODEL, rationale: "EMAs crossed up" });
+    const err = (async () => new Response("{}", { status: 500 })) as unknown as typeof fetch;
+    expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: err })).target).toBeNull();
+  });
+});
