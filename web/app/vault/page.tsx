@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, NEAR_EXPLORER, TGAS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, fmtUnits, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
-import { Ret, ReturnsChart, Stat, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { metaOf } from "@/lib/vaults";
 
 export default function VaultPage() {
   const id = useQueryParam("id");
@@ -64,10 +65,13 @@ export default function VaultPage() {
   return (
     <section>
       <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-2xl font-semibold">{short(data.id, 14)}</h1>
+        <h1 className="text-2xl font-semibold">{metaOf(data.id).name}</h1>
+        <ModeChip id={data.id} />
         <StatusChip s={st} />
+        <code className="muted text-xs">{short(data.id, 14)}</code>
         <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
       </div>
+      {metaOf(data.id).blurb && <p className="mt-1 text-sm">{metaOf(data.id).blurb}</p>}
       <p className="muted mt-1 text-sm">
         Led by <code>{cfg.leader}</code> · performance fee {cfg.perf_fee_bps / 100}% above the high-water mark · leader stake ≥ {cfg.min_leader_bps / 100}%
       </p>
@@ -90,7 +94,7 @@ export default function VaultPage() {
           <div className="mt-3 flex gap-2">
             <input aria-label="Deposit amount" className="w-32" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
             <span className="self-center text-sm">{m.sym}</span>
-            <button className="btn btn-primary ml-auto" disabled={!accountId || st !== "live"} onClick={deposit}>Deposit</button>
+            <button className="btn btn-primary ml-auto" disabled={!accountId || st !== "active"} onClick={deposit}>Deposit</button>
           </div>
         </div>
         <div className="panel" data-testid="my-position">

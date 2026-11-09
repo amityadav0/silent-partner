@@ -7,7 +7,12 @@ import type { Nep413Payload } from "./intents.js";
 export type Leg = "trade" | "shield" | "unshield";
 export type QuoteArgs = { leg: Leg; from: string; to: string; amount: string; slippageBps: number; vault: string; recipient?: string; deadlineMs: number; dry: boolean };
 
-export function quoteBody(a: QuoteArgs) {
+/** `publicPricing`: price dry quotes on the public INTENTS legs (no partner JWT
+ *  needed; same solver market). Used by the CI paper season. */
+export function quoteBody(a: QuoteArgs, publicPricing = false) {
+  if (publicPricing && a.dry && a.leg === "trade") {
+    return { dry: true, swapType: "EXACT_INPUT", slippageTolerance: a.slippageBps, originAsset: a.from, destinationAsset: a.to, amount: a.amount, depositType: "INTENTS", recipientType: "INTENTS", refundType: "INTENTS", recipient: a.vault, refundTo: a.vault, deadline: new Date(a.deadlineMs).toISOString() };
+  }
   const types = {
     trade: ["CONFIDENTIAL_INTENTS", "CONFIDENTIAL_INTENTS", "CONFIDENTIAL_INTENTS"],
     shield: ["INTENTS", "CONFIDENTIAL_INTENTS", "INTENTS"],
@@ -24,10 +29,11 @@ export function quoteBody(a: QuoteArgs) {
 export type VerifiedQuote = { raw: QuoteResponse; signed: SignedQuote; amountIn: bigint; amountOut: bigint; minAmountOut: bigint; depositAddress?: string };
 
 export class Confidential {
-  constructor(private base: string, private jwt: string, private fetchImpl: typeof fetch = fetch, private oneClickKey?: string) {}
+  constructor(private base: string, private jwt: string, private fetchImpl: typeof fetch = fetch, private oneClickKey?: string, private publicPricing = false) {}
 
   private async req(method: "GET" | "POST", path: string, body?: unknown, bearer?: string): Promise<any> {
-    const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json", "X-API-Key": this.jwt };
+    const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
+    if (this.jwt) headers["X-API-Key"] = this.jwt;
     if (bearer) headers.authorization = `Bearer ${bearer}`;
     const r = await this.fetchImpl(`${this.base}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     const text = await r.text();
@@ -38,7 +44,7 @@ export class Confidential {
   }
 
   async quote(a: QuoteArgs): Promise<VerifiedQuote> {
-    const raw = (await this.req("POST", "/v0/quote", quoteBody(a))) as QuoteResponse;
+    const raw = (await this.req("POST", "/v0/quote", quoteBody(a, this.publicPricing))) as QuoteResponse;
     const signed = this.oneClickKey ? toSignedQuote(raw, this.oneClickKey) : toSignedQuote(raw);
     const q = raw.quote as Record<string, string>;
     return { raw, signed, amountIn: BigInt(q.amountIn), amountOut: BigInt(q.amountOut), minAmountOut: BigInt(q.minAmountOut), depositAddress: q.depositAddress };

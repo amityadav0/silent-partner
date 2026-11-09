@@ -115,3 +115,54 @@ Ran 2026-11-07T14:27:24.940Z with `operator/scripts/testnet-intents.ts`.
 | ft_transfer_call (leader → usdc.fakes.testnet) | [`F7RXX11He4…`](https://testnet.nearblocks.io/txns/F7RXX11He4jbTNE6PF25bULoCSk3wTAJuDDmpP877pQG) |
 | sign_intent (op → vault2) | [`H21tEP1tXM…`](https://testnet.nearblocks.io/txns/H21tEP1tXMCdXzXrX3eD8k8t6vwYfJdRyUuKA5Qo3JaQ) |
 | execute_intents (op → intents) | [`7w9wYSju2Y…`](https://testnet.nearblocks.io/txns/7w9wYSju2YRsDGjAzqMAAHRwXRVMM3Z5hDwmnMVZBuNy) |
+
+## Paper season (item 1, 2026-11-09)
+
+Four demo vaults plus a drill vault, deployed by `operator/scripts/season-setup.ts`. All of them point at the real defuse verifier on testnet (`sp-intents-61557.testnet`), so deposits are forwarded to each vault's MPC-derived account there. The operator `sp-sop-92991.testnet` runs from GitHub Actions every 15 minutes (`.github/workflows/season.yml`): bots decide from public market data, signals are paper-filled at real 1Click dry-quote prices (public legs, no partner key), and a signed NAV is posted per vault.
+
+| Vault | Leader | Strategy |
+|---|---|---|
+| [`sp-momo-92991.testnet`](https://testnet.nearblocks.io/address/sp-momo-92991.testnet) | `sp-lmomo-92991.testnet` | Momentum bot: Rule-based: long NEAR when the 1h EMA is above the 6h EMA, flat when below. |
+| [`sp-meanrev-92991.testnet`](https://testnet.nearblocks.io/address/sp-meanrev-92991.testnet) | `sp-lmeanrev-92991.testnet` | Mean-reversion bot: Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above. |
+| [`sp-ai-92991.testnet`](https://testnet.nearblocks.io/address/sp-ai-92991.testnet) | `sp-lai-92991.testnet` | AI leader: An LLM on NEAR AI Cloud decides each epoch from public market data; it commits to its rationale by hash only. |
+| [`sp-manual-92991.testnet`](https://testnet.nearblocks.io/address/sp-manual-92991.testnet) | `sp-lmanual-92991.testnet` | Manual leader: A human leader signing signals by hand. |
+| [`sp-drill-92991.testnet`](https://testnet.nearblocks.io/address/sp-drill-92991.testnet) | `sp-leader-60270.testnet` | Emergency drill: Test build with a 5-minute NAV timeout, for the emergency-exit drill. |
+
+Followers: `sp-follower-60270.testnet`, `sp-fund-61557.testnet`. Fill logs and bot notebooks are sealed (AES-256-GCM) in the `season-state` branch; `last-run.json` there shows the last tick, redacted to what the chain shows.
+
+<details><summary>Setup transactions (30)</summary>
+
+| Step | Tx |
+|---|---|
+| sp-lmomo-92991.testnet → usdc.fakes.testnet.ft_transfer_call | [`6awKBsbWBz…`](https://testnet.nearblocks.io/txns/6awKBsbWBzQFTrcZJVJu8Xezdff1HXWb4H8mQFHSSPef) |
+| sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`68s5HSqXnW…`](https://testnet.nearblocks.io/txns/68s5HSqXnWWYEqoRApMbEaun7Z5RT8ZTv3PLYdgeFF91) |
+| sp-fund-61557.testnet → usdc.fakes.testnet.ft_transfer_call | [`HSsG549WBD…`](https://testnet.nearblocks.io/txns/HSsG549WBD3p8CTvCPhQvUarrwNcAPX6M4uv9Tt6QAwb) |
+| deploy sp-meanrev-92991.testnet (release build) | [`BJHjQZCGRC…`](https://testnet.nearblocks.io/txns/BJHjQZCGRC3ovLxnVs3Em5oRreHaZeAexRQsHqiQyhxx) |
+| sp-meanrev-92991.testnet → sp-meanrev-92991.testnet.new | [`68uKR8fZu5…`](https://testnet.nearblocks.io/txns/68uKR8fZu5JtdjEyh2xd1B8D75hiQVqBR2497tBgMTyf) |
+| sp-sop-92991.testnet → sp-meanrev-92991.testnet.activate | [`416SJ94fBt…`](https://testnet.nearblocks.io/txns/416SJ94fBtWaJAhvsTjhpwYtYZz4hnLUU7epnfawubD4) |
+| sp-lmeanrev-92991.testnet → sp-meanrev-92991.testnet.set_signal_key | [`AfW7b6Uevb…`](https://testnet.nearblocks.io/txns/AfW7b6Uevb6p91QaeHReMUdMjdW7E2mLdZ5jAaBLhXiy) |
+| sp-lmeanrev-92991.testnet → usdc.fakes.testnet.ft_transfer_call | [`5dwA8VrV6C…`](https://testnet.nearblocks.io/txns/5dwA8VrV6CC3fz2uSbLphFALLPGoWd2BNiK2RFvgsKFo) |
+| sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`ARZpMSS4ez…`](https://testnet.nearblocks.io/txns/ARZpMSS4ezEJaYwk3DRdH2LWEC1CVvrJ64n7LAXVVDud) |
+| sp-fund-61557.testnet → usdc.fakes.testnet.ft_transfer_call | [`9pCY3aXYDW…`](https://testnet.nearblocks.io/txns/9pCY3aXYDWZLoiebmYqjBd8CpsRGUet4XEyrfqUnFoyK) |
+| deploy sp-ai-92991.testnet (release build) | [`46YZbtXQMb…`](https://testnet.nearblocks.io/txns/46YZbtXQMbumD6DymRpF2Ns4rfkAmYXGTUMaAn58YpPV) |
+| sp-ai-92991.testnet → sp-ai-92991.testnet.new | [`3cDhZeXyVq…`](https://testnet.nearblocks.io/txns/3cDhZeXyVqKpHiyAtxU1Nh3r9fqdSyW3Bk2es4ggaPL2) |
+| sp-sop-92991.testnet → sp-ai-92991.testnet.activate | [`DS8AMKDQez…`](https://testnet.nearblocks.io/txns/DS8AMKDQezuCvLEFuEnQy1jkijy1qkjXgCyfeL1x5sfi) |
+| sp-lai-92991.testnet → sp-ai-92991.testnet.set_signal_key | [`HykuVkHM1w…`](https://testnet.nearblocks.io/txns/HykuVkHM1wnbiRHVdC2o2fzqjvMKRoSL756TY5snsk4f) |
+| sp-lai-92991.testnet → usdc.fakes.testnet.ft_transfer_call | [`4zkuH4qji4…`](https://testnet.nearblocks.io/txns/4zkuH4qji4ViX1FqwRrP7CwkJSR7Eq1Dm2YRiX7LzNY8) |
+| sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`2kzpgvwAoJ…`](https://testnet.nearblocks.io/txns/2kzpgvwAoJu2bJN8JuXudtYXj4QC5biSSaoGdQzEcKwo) |
+| sp-fund-61557.testnet → usdc.fakes.testnet.ft_transfer_call | [`EyiPGvkQAk…`](https://testnet.nearblocks.io/txns/EyiPGvkQAkCL2TY32C7KqMNmoxkArHwD87HdXNWXiUir) |
+| deploy sp-manual-92991.testnet (release build) | [`7pr69bHGF6…`](https://testnet.nearblocks.io/txns/7pr69bHGF63CDLMytu5qXKwR8ghmnKTUL2czXA1mUuPg) |
+| sp-manual-92991.testnet → sp-manual-92991.testnet.new | [`EyRYKmtPcR…`](https://testnet.nearblocks.io/txns/EyRYKmtPcRPHWi3nkyQjBC6wT5Q2zgZXhSH1KVEdA5pV) |
+| sp-sop-92991.testnet → sp-manual-92991.testnet.activate | [`BkJGfKQ5E3…`](https://testnet.nearblocks.io/txns/BkJGfKQ5E3bV5W98oAWJU8rsrd8nLYQEKsnhg72Ce9XR) |
+| sp-lmanual-92991.testnet → sp-manual-92991.testnet.set_signal_key | [`EuTLd1b4tq…`](https://testnet.nearblocks.io/txns/EuTLd1b4tqjiGgvF89Ni5PigopqACYMuh8xAwV7uoSNq) |
+| sp-lmanual-92991.testnet → usdc.fakes.testnet.ft_transfer_call | [`2MwUsjQ8b3…`](https://testnet.nearblocks.io/txns/2MwUsjQ8b3gA2kjq79o1WKaJ55ZWLDgFk5rR9M4G95Fu) |
+| sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`fv6DrmCL1b…`](https://testnet.nearblocks.io/txns/fv6DrmCL1bX2oM29AS59ezJN4qj7esHG4ko28KkoGM4) |
+| sp-fund-61557.testnet → usdc.fakes.testnet.ft_transfer_call | [`Eh3UKv562K…`](https://testnet.nearblocks.io/txns/Eh3UKv562KLDmbfartVG4mwSX9BUTSosg9M6N1YDmB5e) |
+| deploy sp-drill-92991.testnet (drill build) | [`GVwLkH9fKe…`](https://testnet.nearblocks.io/txns/GVwLkH9fKeVXcfpEpGnRy9JQvab7iKj6FKzgKZQxW1Y4) |
+| sp-drill-92991.testnet → sp-drill-92991.testnet.new | [`AbTRnnyaZB…`](https://testnet.nearblocks.io/txns/AbTRnnyaZBQhTSNTKx3i2qj4aEw3BdNDpPskYTBq29G9) |
+| sp-sop-92991.testnet → sp-drill-92991.testnet.activate | [`HG7MLsoAzZ…`](https://testnet.nearblocks.io/txns/HG7MLsoAzZsuWE8fNRk4cqCoU4qBnQqpte3AY56rUamn) |
+| sp-leader-60270.testnet → sp-drill-92991.testnet.set_signal_key | [`6KjzpmtXha…`](https://testnet.nearblocks.io/txns/6KjzpmtXha68Wg8cT2NTUv27nkiT86nenmcoq3BLTGbn) |
+| sp-leader-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`FKbyXxLgLB…`](https://testnet.nearblocks.io/txns/FKbyXxLgLBzzMkC4nmMaanJEfJjX4zhXj5xuo784Ezyx) |
+| sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`65gxuA6EFh…`](https://testnet.nearblocks.io/txns/65gxuA6EFhbAzcqHmsdy3MfnhEjqHKnwvnseRAL7Lq6P) |
+
+</details>

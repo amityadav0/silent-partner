@@ -71,6 +71,7 @@ export function fixtureFetch(routes: Record<string, Route>, seen: { path: string
 
 /** Dry quote routing by asset pair and deposit type. */
 export const dryQuotes: Route = (b) => {
+  if (b.depositType === "INTENTS" && b.recipientType === "INTENTS") return { status: 201, text: fixture(b.originAsset === USDC ? "public-usdc-wnear" : "public-wnear-usdc") };
   const key = b.depositType === "INTENTS" ? "shield-usdc" : b.recipientType === "INTENTS" ? "unshield-usdc" : b.originAsset === USDC ? "trade-usdc-wnear" : "trade-wnear-usdc";
   return { status: 201, text: fixture(key) };
 };

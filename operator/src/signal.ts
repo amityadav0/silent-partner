@@ -19,6 +19,8 @@ export const SignalSchema = z.object({
   limit_price: z.string().regex(/^\d+(\.\d+)?$/).optional(),
   /** limit only: give up after this time. */
   expires_ms: z.number().int().optional(),
+  /** Optional sha256 (hex) commitment to a private note, e.g. an AI leader's rationale. */
+  memo_hash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
   nonce: z.string().regex(/^[0-9a-f]{16,64}$/),
   created_ms: z.number().int(),
 }).refine((s) => s.from !== s.to, "from and to must differ")

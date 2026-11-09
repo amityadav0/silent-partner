@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { ASSETS } from "@/lib/config";
 import { aumBucket, maxDrawdown, priceOf, returns, status, verifyNavs } from "@/lib/vault";
-import { Ret, ReturnsChart, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { metaOf } from "@/lib/vaults";
 
 /** Public share card for one vault: returns and proof, nothing else. */
 export default function Share() {
@@ -23,9 +24,11 @@ export default function Share() {
       <div className="panel">
         <div className="flex items-center gap-2">
           <span className="muted text-xs uppercase tracking-wide">Silent Partner vault</span>
+          <ModeChip id={data.id} />
           <StatusChip s={status(data.vault)} />
         </div>
-        <h1 className="mt-1 text-xl font-semibold">{short(data.id, 16)}</h1>
+        <h1 className="mt-1 text-xl font-semibold">{metaOf(data.id).name}</h1>
+        <p className="muted text-xs">{short(data.id, 16)}</p>
         <p className="muted text-sm">Led by {short(data.cfg.leader, 12)}</p>
         <div className="mt-4 text-5xl font-bold tabular-nums" data-testid="share-return"><Ret r={m.ret} /></div>
         <p className="muted text-sm">

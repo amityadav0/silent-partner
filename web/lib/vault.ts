@@ -83,10 +83,10 @@ export function verifyNavs(contract: string, attestationKey: string, navs: NavPo
   return { ok: navs.length - bad.length, bad };
 }
 
-export function status(v: VaultView): "live" | "stale" | "emergency" | "inactive" {
+export function status(v: VaultView): "active" | "stale" | "emergency" | "inactive" {
   if (!v.vault_account) return "inactive";
   if (v.emergency) return "emergency";
-  return v.stale ? "stale" : "live";
+  return v.stale ? "stale" : "active";
 }
 
 export const pct = (x: number, digits = 2) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(digits)}%`;

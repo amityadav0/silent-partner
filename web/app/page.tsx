@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ASSETS, VAULTS } from "@/lib/config";
 import { aumBucket, loadVault, maxDrawdown, priceOf, status, verifyNavs, type VaultData } from "@/lib/vault";
-import { Ret, StatusChip, short } from "./ui";
+import { metaOf, modeLabel } from "@/lib/vaults";
+import { ModeChip, Ret, StatusChip, short } from "./ui";
 
 type Row = { d: VaultData; ret: number; dd: number; verified: string };
 
@@ -52,8 +53,8 @@ export default function Leaderboard() {
               <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
                 <td>{i + 1}</td>
                 <td>
-                  <Link href={`/vault/?id=${r.d.id}`}>{short(r.d.id, 10)}</Link>
-                  <div className="muted text-xs">leader {short(r.d.cfg.leader, 8)}</div>
+                  <Link href={`/vault/?id=${r.d.id}`} className="font-semibold">{metaOf(r.d.id).name}</Link> <ModeChip id={r.d.id} />
+                  <div className="muted text-xs">{short(r.d.id, 10)} · leader {short(r.d.cfg.leader, 8)}</div>
                 </td>
                 <td className="font-semibold"><Ret r={r.ret} /></td>
                 <td className="neg">{r.dd === 0 ? <span className="muted">0%</span> : `−${(r.dd * 100).toFixed(2)}%`}</td>
@@ -66,6 +67,9 @@ export default function Leaderboard() {
           </tbody>
         </table>
       </div>
+      <p className="muted mt-2 text-xs" data-testid="honesty">
+        Numbers marked <b>paper · testnet</b> are paper trades: fills are priced by real 1Click dry quotes, but no real funds move and the vaults hold testnet tokens. NAVs and signals are real testnet transactions.
+      </p>
       {errors.map((e) => <p key={e} className="neg mt-2 text-sm">{e}</p>)}
       <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
         <div><div className="font-semibold">One fill, one price</div><p className="muted mt-1">The operator executes each leader signal once, for the whole vault, through a 1Click confidential quote. Nobody gets in ahead of the followers.</p></div>

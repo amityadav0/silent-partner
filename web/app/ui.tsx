@@ -1,4 +1,5 @@
 "use client";
+import { metaOf, modeLabel } from "@/lib/vaults";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -77,8 +78,14 @@ export function Ret({ r }: { r: number }) {
   return <span className={r >= 0 ? "pos" : "neg"}>{pct(r)}</span>;
 }
 
+/** Honest provenance label: "paper · testnet" or "live · mainnet". */
+export function ModeChip({ id }: { id: string }) {
+  const m = metaOf(id);
+  return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds"}>{modeLabel(m)}</span>;
+}
+
 export function StatusChip({ s }: { s: string }) {
-  const cls = s === "live" ? "chip-ok" : s === "emergency" ? "chip-bad" : "chip-warn";
+  const cls = s === "active" ? "chip-ok" : s === "emergency" ? "chip-bad" : "chip-warn";
   return <span className={`chip ${cls}`} data-testid="status">{s}</span>;
 }
 

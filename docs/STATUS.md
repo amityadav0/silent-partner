@@ -51,8 +51,18 @@ Deadline: 2026-11-14 18:00 UTC.
 ## P7 Buffer (Nov 14)
 - [ ] re-run all tests, final push
 
+## Season (Nov 9–13): items from Amit's list, in order
+- [x] 1. Paper season: 4 demo vaults + drill vault on testnet, bots, operator in paper mode at real 1Click dry-quote prices, GitHub Actions cron every 15 min, honest "paper · testnet" labels
+- [ ] 2. AI leader on NEAR AI Cloud (rationale kept private, hash only)
+- [ ] 3. Emergency exit drill (5-minute drill build, follower exits via the emergency path, UI)
+- [ ] 4. "What the chain sees" page
+- [ ] 5. Landing page + GitHub Pages deploy
+- [ ] 6. UX: position P&L, withdrawal states, create-vault wizard, sparklines and sorting, refresh screens
+- [ ] 7. Hardening: property tests, fresh-context review, fixes, threat-model list
+- [ ] after 7: rebuild the reproducible mainnet wasm and update NEEDS-AMIT §3 (contract changed in D-S-1)
+
 ## Next
-Waiting for Amit: §1 round trip and §3 mainnet OK. Meanwhile, finish the reproducible build hash for §3 step 0, then P7 checks.
+Season items 2–7 (above), then rebuild the mainnet wasm hash. Mainnet still waits for Amit (§1, §3).
 
 ## Blockers
 - Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.

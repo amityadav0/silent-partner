@@ -1,0 +1,69 @@
+# Testnet paper season: every 15 minutes the bot leaders decide, the operator
+# paper-fills their signals at real 1Click dry-quote prices and posts a signed
+# NAV epoch to each testnet vault. Testnet keys only (repo secrets); no mainnet
+# key exists in this repository's secrets.
+#
+# Manual leader: run this workflow with `signal` = a signed signal envelope
+#   gh workflow run season.yml -f signal="$(npx tsx scripts/season-signal.ts …)"
+# (workflow inputs are visible in the run, at the same time the signal executes).
+name: season
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      signal:
+        description: "Manual leader: signed signal envelope (JSON)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: season
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: season-state
+          path: season-state
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: operator/package-lock.json
+      - run: npm ci
+        working-directory: operator
+      - name: tick
+        working-directory: operator
+        env:
+          SEASON_OPERATOR_KEY: ${{ secrets.SEASON_OPERATOR_KEY }}
+          SEASON_ATTESTATION_KEY: ${{ secrets.SEASON_ATTESTATION_KEY }}
+          SEASON_SIGNAL_KEYS: ${{ secrets.SEASON_SIGNAL_KEYS }}
+          SEASON_STATE_KEY: ${{ secrets.SEASON_STATE_KEY }}
+          NEARAI_API_KEY: ${{ secrets.NEARAI_API_KEY }}
+          SEASON_SIGNAL: ${{ inputs.signal }}
+          SEASON_STATE_DIR: ../season-state
+        # Contract logs (public anyway) are noisy; the runner prints one redacted line per vault.
+        run: |
+          set +e
+          npx tsx scripts/season.ts > /tmp/season.log 2>&1; code=$?
+          grep -E '^\{|unavailable|Error' /tmp/season.log
+          exit $code
+      - name: save sealed state
+        if: always()
+        working-directory: season-state
+        run: |
+          git config user.name "season-bot"
+          git config user.email "season-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -qm "season tick $(date -u +%FT%TZ)"
+          git push -q

@@ -1,0 +1,50 @@
+{
+  "network": "testnet",
+  "mode": "paper",
+  "operator": "sp-sop-92991.testnet",
+  "intents_contract": "sp-intents-61557.testnet",
+  "base": "nep141:usdc.fakes.testnet",
+  "risk": "nep141:wrap.testnet",
+  "followers": [
+    "sp-follower-60270.testnet",
+    "sp-fund-61557.testnet"
+  ],
+  "createdAt": "2026-11-09T03:02:06.515Z",
+  "vaults": [
+    {
+      "id": "sp-momo-92991.testnet",
+      "leader": "sp-lmomo-92991.testnet",
+      "strategy": "momentum",
+      "name": "Momentum bot",
+      "blurb": "Rule-based: long NEAR when the 1h EMA is above the 6h EMA, flat when below."
+    },
+    {
+      "id": "sp-meanrev-92991.testnet",
+      "leader": "sp-lmeanrev-92991.testnet",
+      "strategy": "mean-reversion",
+      "name": "Mean-reversion bot",
+      "blurb": "Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above."
+    },
+    {
+      "id": "sp-ai-92991.testnet",
+      "leader": "sp-lai-92991.testnet",
+      "strategy": "ai",
+      "name": "AI leader",
+      "blurb": "An LLM on NEAR AI Cloud decides each epoch from public market data; it commits to its rationale by hash only."
+    },
+    {
+      "id": "sp-manual-92991.testnet",
+      "leader": "sp-lmanual-92991.testnet",
+      "strategy": "manual",
+      "name": "Manual leader",
+      "blurb": "A human leader signing signals by hand."
+    },
+    {
+      "id": "sp-drill-92991.testnet",
+      "leader": "sp-leader-60270.testnet",
+      "strategy": "drill",
+      "name": "Emergency drill",
+      "blurb": "Test build with a 5-minute NAV timeout, for the emergency-exit drill."
+    }
+  ]
+}

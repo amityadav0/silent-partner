@@ -1,7 +1,8 @@
+import { DEFAULT_VAULTS } from "./vaults";
 // Public build-time config. Nothing here is a secret.
 export const NETWORK = (process.env.NEXT_PUBLIC_NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
 /** Vault contracts listed on the leaderboard. */
-export const VAULTS = (process.env.NEXT_PUBLIC_VAULTS ?? "sp-vault-60270.testnet").split(",").map((s) => s.trim()).filter(Boolean);
+export const VAULTS = (process.env.NEXT_PUBLIC_VAULTS ?? DEFAULT_VAULTS.join(",")).split(",").map((s) => s.trim()).filter(Boolean);
 export const OPERATOR_API = (process.env.NEXT_PUBLIC_OPERATOR_API ?? "http://localhost:8788").replace(/\/$/, "");
 // rpc.{testnet,mainnet}.near.org are deprecated and rate-limit (429).
 export const RPC = process.env.NEXT_PUBLIC_NEAR_RPC ?? (NETWORK === "mainnet" ? "https://rpc.mainnet.fastnear.com" : "https://rpc.testnet.fastnear.com");

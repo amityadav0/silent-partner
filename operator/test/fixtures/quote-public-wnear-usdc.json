@@ -1,0 +1,42 @@
+{
+  "quote": {
+    "amountIn": "10000000000000000000000000",
+    "amountInFormatted": "10.0",
+    "amountInUsd": "36.300000000000",
+    "minAmountIn": "10000000000000000000000000",
+    "amountOut": "36022919",
+    "amountOutFormatted": "36.022919",
+    "amountOutUsd": "36.001089111086",
+    "minAmountOut": "35842804",
+    "timeEstimate": 10,
+    "refundFee": "0",
+    "withdrawFee": "0"
+  },
+  "quoteRequest": {
+    "dry": true,
+    "depositMode": "SIMPLE",
+    "swapType": "EXACT_INPUT",
+    "slippageTolerance": 50,
+    "originAsset": "nep141:wrap.near",
+    "depositType": "INTENTS",
+    "destinationAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    "amount": "10000000000000000000000000",
+    "refundTo": "7164eb86180b4bfefcc6cc906aff0673c80f49b9d3837f0916b93dee7bb12a8f",
+    "refundType": "INTENTS",
+    "recipient": "7164eb86180b4bfefcc6cc906aff0673c80f49b9d3837f0916b93dee7bb12a8f",
+    "recipientType": "INTENTS",
+    "deadline": "2026-11-09T03:16:49.951Z",
+    "confidentiality": "public",
+    "quoteWaitingTimeMs": 0,
+    "insured": false,
+    "appFees": [
+      {
+        "recipient": "5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd",
+        "fee": 20
+      }
+    ]
+  },
+  "signature": "ed25519:5X1VKaMVLo7APPSuWdgpVN2duRw6fk3nTZQpDD7L4EyPuNME7jxr8rbfQv74HRPo68ev1hheHGVHwmMGATqEMKVy",
+  "timestamp": "2026-11-09T03:06:50.244Z",
+  "correlationId": "d2bd8f9c-9bc1-4930-b749-fadb7fbbce27"
+}
