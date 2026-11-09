@@ -173,3 +173,19 @@ export function claimState(c: Claim): WState {
   if (c.in_flight.length > 0 || BigInt(c.paid) > 0n) return "paying";
   return "burned";
 }
+
+/** Annualised mean / volatility of per-post returns (no risk-free rate). Null until there is at
+ *  least a day and 20 posts of history. Same rule as the season's track-record card. */
+export function sharpeLike(navs: NavPost[]): number | null {
+  if (navs.length < 20 || navs[navs.length - 1].timestamp_ms - navs[0].timestamp_ms < 86_400_000) return null;
+  const p = navs.map((n) => priceOf(n.price));
+  const rs = p.slice(1).map((x, i) => x / p[i] - 1);
+  const mean = rs.reduce((a, b) => a + b, 0) / rs.length;
+  const sd = Math.sqrt(rs.reduce((a, b) => a + (b - mean) ** 2, 0) / (rs.length - 1));
+  const span = navs[navs.length - 1].timestamp_ms - navs[0].timestamp_ms;
+  if (sd === 0) return null;
+  return (mean / sd) * Math.sqrt((365 * 86_400_000) / (span / (navs.length - 1)));
+}
+
+/** The season job's pre-rendered track-record card for a vault (public, on-chain data only). */
+export const cardUrl = (vault: string) => `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/${vault}.png`;

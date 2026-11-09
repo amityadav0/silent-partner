@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ASSETS } from "@/lib/config";
-import { aumBucket, maxDrawdown, priceOf, returns, status, verifyNavs } from "@/lib/vault";
+import { aumBucket, cardUrl, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
+import { useState } from "react";
 import { Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
 
@@ -13,7 +14,14 @@ export default function Share() {
   const m = useMemo(() => {
     if (!data) return null;
     const last = data.navs.at(-1);
-    return { ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(data.navs), v: verifyNavs(data.id, data.cfg.attestation_key, data.navs), since: data.navs[0]?.timestamp_ms };
+    return {
+      ret: last ? priceOf(last.price) - 1 : 0,
+      dd: maxDrawdown(data.navs),
+      v: verifyNavs(data.id, data.cfg.attestation_key, data.navs),
+      since: data.navs[0]?.timestamp_ms,
+      sharpe: sharpeLike(data.navs),
+      leaderPct: Number(data.vault.total_shares) > 0 ? Number(data.vault.leader_shares) / Number(data.vault.total_shares) : 0,
+    };
   }, [data]);
   if (id === null) return <p>Missing <code>?id=</code>.</p>;
   if (error) return <p className="neg">{error}</p>;
@@ -36,13 +44,38 @@ export default function Share() {
           {" · "}max drawdown {m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}
           {" · "}AUM {aumBucket(data.vault.book_nav, ASSETS[data.cfg.base_asset_id]?.decimals ?? 6)}
         </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-sm tabular-nums sm:grid-cols-4" data-testid="track-record">
+          <div><div className="muted text-xs">Max drawdown</div>{m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}</div>
+          <div><div className="muted text-xs">Sharpe-like</div>{m.sharpe === null ? <span className="muted">after 24h</span> : m.sharpe.toFixed(2)}</div>
+          <div><div className="muted text-xs">Epochs live</div>{data.navs.length}</div>
+          <div><div className="muted text-xs">Leader holds</div>{(m.leaderPct * 100).toFixed(1)}%</div>
+        </div>
         <div className="mt-4"><ReturnsChart points={returns(data.navs)} height={150} /></div>
         <p className={`mt-3 text-sm ${allOk ? "pos" : "neg"}`} data-testid="share-proof">
           {allOk ? "✓" : "✗"} {m.v.ok} of {data.navs.length} NAV posts verified in your browser against the operator&apos;s key {short(data.cfg.attestation_key, 6)}
         </p>
         <p className="muted mt-1 text-xs">Positions are private. The vault trades through NEAR Confidential Intents, and only NAV is published.</p>
       </div>
+      <ShareImage id={data.id} name={metaOf(data.id).name} ret={m.ret} />
       <p className="mt-3 text-center text-sm"><Link href={`/vault/?id=${data.id}`}>Open the vault</Link></p>
     </section>
+  );
+}
+
+/** The season job's PNG of this card (regenerated every tick), ready to attach to a post. */
+function ShareImage({ id, name, ret }: { id: string; name: string; ret: number }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return null;
+  const url = cardUrl(id);
+  const text = `${name} on Silent Partner: ${ret >= 0 ? "+" : "−"}${Math.abs(ret * 100).toFixed(2)}% after fees, every NAV verified in your browser, positions never public. Built at #NEARHackathon`;
+  return (
+    <div className="panel mt-3" data-testid="share-image">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={`${name} track-record card`} className="w-full rounded" onError={() => setOk(false)} />
+      <p className="mt-2 flex flex-wrap gap-3 text-sm">
+        <a href={url} download={`${id}.png`}>Open the image</a>
+        <a href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(typeof window === "undefined" ? "" : window.location.href)}`}>Post on X</a>
+      </p>
+    </div>
   );
 }

@@ -155,3 +155,9 @@ test("copy stop-loss control on an upgraded vault, as a follower", async ({ page
   await expect(page.getByTestId("stop-loss")).toContainText("Copy stop-loss");
   await expect(page.getByRole("button", { name: "Set stop-loss" })).toBeDisabled(); // read-only view
 });
+
+test("track record card: drawdown, Sharpe-like, epochs, leader share", async ({ page }) => {
+  await page.goto("/s/?id=sp-momo-92991.testnet");
+  await expect(page.getByTestId("track-record")).toContainText("Leader holds");
+  await expect(page.getByTestId("track-record")).toContainText("Epochs live");
+});

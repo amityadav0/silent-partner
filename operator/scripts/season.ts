@@ -29,6 +29,8 @@ import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
 import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
+import { cardPng, cardSvg } from "../src/season/card.js";
+import { viewCall } from "../src/intents.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
 const local = existsSync("data/season-keys.json") ? JSON.parse(readFileSync("data/season-keys.json", "utf8")) : {};
@@ -96,6 +98,29 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
     results.push({ vault: v.id, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }
   console.log(JSON.stringify(redact(results[results.length - 1])));
+}
+
+// Track-record cards (public PNGs, only on-chain data): season-state/cards/<vault>.png.
+const STYLE: Record<string, [string, string]> = {
+  momentum: ["Bot", "EMA crossover"], "mean-reversion": ["Bot", "Buys −1.5σ, sells +1.5σ"], manual: ["Human", "Signs by hand"],
+  ai: ["AI", "Momentum + volatility, own judgement"], "ai-trend": ["AI", "Rides momentum"], "ai-contrarian": ["AI", "Fades extremes"],
+  "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
+};
+mkdirSync(join(sealed, "cards"), { recursive: true });
+for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
+  try {
+    const navs: { epoch: number; timestamp_ms: number; price: string }[] = [];
+    for (let from = 0; ; from += 100) {
+      const page = await viewCall<typeof navs>(env.rpc, v.id, "get_navs", { from, limit: 100 }, fetch, "optimistic");
+      navs.push(...page);
+      if (page.length < 100) break;
+    }
+    const g = await viewCall<{ leader_shares: string; total_shares: string }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
+    const [badge, style] = STYLE[v.strategy] ?? ["", ""];
+    writeFileSync(join(sealed, "cards", `${v.id}.png`), cardPng(cardSvg({ name: v.name, badge, style, vault: v.id, navs, leaderShares: g.leader_shares, totalShares: g.total_shares, asOf: new Date() })));
+  } catch (x) {
+    console.log(JSON.stringify({ card_error: v.id, error: String((x as Error).message).slice(0, 120) }));
+  }
 }
 
 // Keep-online check (D-S-11): warn when an account the season spends from has

@@ -230,3 +230,27 @@ describe("house AI leaders", () => {
     expect((await aiLeader(s, 0.5, { apiKey: "k", fetchImpl: reply(0), persona: "ai-trend" })).target).toBe(0);
   });
 });
+
+import { sharpeLike, trackRecord, cardSvg, cardPng } from "../src/season/card.js";
+
+describe("track-record card", () => {
+  const E18 = 10n ** 18n;
+  const nav = (i: number, x: number, dt = 3_600_000) => ({ epoch: i + 1, timestamp_ms: i * dt, price: (BigInt(Math.round(x * 1e6)) * 10n ** 12n).toString() });
+  it("return, max drawdown and leader share come from the posts", () => {
+    const t = trackRecord([nav(0, 1.1), nav(1, 0.99), nav(2, 1.05)], "100", "1000");
+    expect(t.ret).toBeCloseTo(0.05);
+    expect(t.maxDrawdown).toBeCloseTo(0.1);
+    expect(t.leaderPct).toBe(0.1);
+  });
+  it("Sharpe-like waits for a day of history", () => {
+    expect(sharpeLike(Array.from({ length: 10 }, (_, i) => nav(i, 1 + i / 1000)))).toBeNull();
+    const day = Array.from({ length: 30 }, (_, i) => nav(i, 1 + i / 1000 + (i % 2) / 2000));
+    expect(sharpeLike(day)).toBeGreaterThan(0);
+    void E18;
+  });
+  it("renders a PNG with only public numbers", () => {
+    const svg = cardSvg({ name: "X <y>", badge: "AI", style: "s", vault: "v.testnet", navs: [nav(0, 1.01)], leaderShares: "1", totalShares: "10", asOf: new Date(0) });
+    expect(svg).toContain("X &lt;y&gt;");
+    expect(cardPng(svg).subarray(0, 4).toString("hex")).toBe("89504e47");
+  });
+});
