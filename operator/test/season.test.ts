@@ -34,7 +34,7 @@ describe("strategies", () => {
   });
   it("summary is public market data only", () => {
     const s = summary(series((i) => 3 + i * 0.001));
-    expect(Object.keys(s).sort()).toEqual(["ema_1h", "ema_6h", "high_24h", "low_24h", "price", "ret_1h", "ret_24h", "ret_6h", "vol_24h"]);
+    expect(Object.keys(s).sort()).toEqual(["ema_1h", "ema_6h", "high_24h", "low_24h", "price", "ret_1h", "ret_24h", "ret_6h", "vol_24h", "vol_annual"]);
     expect(s.ret_24h).toBeGreaterThan(0);
   });
 });
@@ -213,5 +213,20 @@ describe("NAV price from 1Click quotes", () => {
     expect(priced[0].amount).toBe("10000000");
     expect(priced[1].amount).toBe(b.amountOut); // sells what the buy would get
     expect(quotes.every((q) => q.signature.startsWith("ed25519:"))).toBe(true);
+  });
+});
+
+import { PERSONAS, systemPrompt } from "../src/leaders/ai.js";
+
+describe("house AI leaders", () => {
+  const s = series((i) => 3 + i * 0.001);
+  const reply = (w: number) => (async () => new Response(JSON.stringify({ id: "c", choices: [{ message: { content: `{"target_weight": ${w}, "rationale": "r"}` } }] }))) as unknown as typeof fetch;
+  it("each persona has its own mandate, and its bounds are enforced in code", async () => {
+    expect(Object.keys(PERSONAS).sort()).toEqual(["ai", "ai-contrarian", "ai-conviction", "ai-trend", "ai-voltarget"]);
+    expect(systemPrompt(PERSONAS["ai-voltarget"])).toContain("annualised volatility");
+    expect((await aiLeader(s, 0.5, { apiKey: "k", fetchImpl: reply(0), persona: "ai-conviction" })).target).toBe(0.2);
+    expect((await aiLeader(s, 0.5, { apiKey: "k", fetchImpl: reply(1), persona: "ai-conviction" })).target).toBe(0.8);
+    expect((await aiLeader(s, 0.5, { apiKey: "k", fetchImpl: reply(0.05), persona: "ai-voltarget" })).target).toBe(0.2);
+    expect((await aiLeader(s, 0.5, { apiKey: "k", fetchImpl: reply(0), persona: "ai-trend" })).target).toBe(0);
   });
 });

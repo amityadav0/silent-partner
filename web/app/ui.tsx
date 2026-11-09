@@ -1,5 +1,5 @@
 "use client";
-import { metaOf, modeLabel } from "@/lib/vaults";
+import { badgeOf, metaOf, modeLabel } from "@/lib/vaults";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -84,6 +84,17 @@ export function Ret({ r }: { r: number }) {
 export function ModeChip({ id }: { id: string }) {
   const m = metaOf(id);
   return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds"}>{modeLabel(m)}</span>;
+}
+
+/** Who leads (AI / Bot / Human) and the leader's risk level. */
+export function LeaderChips({ id }: { id: string }) {
+  const m = metaOf(id);
+  return (
+    <>
+      <span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.leaderKind === "ai" ? "Decides on NEAR AI Cloud; its reasoning stays private (hash only)" : undefined}>{badgeOf(m)}</span>
+      {m.risk && <span className={`chip chip-risk-${m.risk}`} data-testid="risk">{m.risk} risk</span>}
+    </>
+  );
 }
 
 export function StatusChip({ s }: { s: string }) {

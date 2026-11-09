@@ -171,3 +171,17 @@ Each decision is dated, with its reason.
   - **Mainnet parameters** (`docs/mainnet-init.json`): `max_age_ms` 120 s, `tolerance_bps` 25, `max_spread_bps` 40 (testnet quotes ran at ~22 bps), `min_interval_ms` 1 h (the operator's default epoch), `window_up_bps` 200.
   - **Season vaults** (oracle path, earlier code) are unchanged. They're paper vaults with a mock feed, and the same bound fixes apply to any new oracle-priced vault.
 - **D-P5-7 (2026-11-09) Mainnet artifact rebuilt after the NAV-price review.** `cargo near build reproducible-wasm` at commit `f97e5c0` (embedded in the wasm's source metadata) produced sha256 `900eab41ace013735412d51e95e282591e9891ae0ac9755da5847110a88653ff` (code hash `AhLgYYNpisHbEAFppwNRQhoB2RAK2dXruVKd7CbRUTae`, 389,596 bytes). It supersedes D-P5-6.
+- **D-S-9 (2026-11-09) Leader roster: 8 house leaders.** All paper/testnet, all on the season loop.
+  - **AI on NEAR AI Cloud, one model, different mandates** (`operator/src/leaders/ai.ts`, `PERSONAS`):
+    - Allocator (the existing AI vault, renamed);
+    - Trend Rider;
+    - Contrarian;
+    - Vol Target (40% annualised-vol target, always 20–100% invested);
+    - Conviction (50% baseline, 20–80%).
+  - **Bots and human:** the two quant bots and the manual leader.
+  - **Bounds.** Each persona's weight bounds are enforced in code after the model answers. Vol Target and Conviction are invested by design, so trades happen.
+  - **Leaderboard.** Every leader has a name, a one-line style, a risk level and an AI/Bot/Human badge on the leaderboard and vault page. Rationales stay private (hash only).
+  - **Cost.** ~$0.04/day per AI leader.
+  - **Funding.** The faucet rate-limits per IP ("retry in 8 hours").
+    - **Rejected:** requesting accounts from a GitHub runner's IP (refused as circumventing the faucet's limit, and not attempted); global-contract deploys (they don't remove the per-NAV storage cost, which dominates); deleting old test vaults to reclaim NEAR (breaks links in docs/testnet.md).
+    - **Chosen:** fund the new accounts from testnet NEAR the project already holds (old probe, operator and drill accounts), 8–9 NEAR per vault. That covers code plus NAV storage through Nov 25 (~0.29 NEAR/day per vault).

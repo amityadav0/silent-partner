@@ -29,8 +29,36 @@
       "id": "sp-ai-92991.testnet",
       "leader": "sp-lai-92991.testnet",
       "strategy": "ai",
-      "name": "AI leader",
-      "blurb": "An LLM on NEAR AI Cloud decides each epoch from public market data; it commits to its rationale by hash only."
+      "name": "Allocator",
+      "blurb": "AI (NEAR AI Cloud): picks a NEAR weight 0–100% each epoch from momentum, volatility and its own reasoning."
+    },
+    {
+      "id": "sp-trend-8952.testnet",
+      "leader": "sp-ltrend-8952.testnet",
+      "strategy": "ai-trend",
+      "name": "Trend Rider",
+      "blurb": "AI: rides trends: high NEAR weight when 1h and 6h momentum agree, low when they turn."
+    },
+    {
+      "id": "sp-contra-8952.testnet",
+      "leader": "sp-lcontra-8952.testnet",
+      "strategy": "ai-contrarian",
+      "name": "Contrarian",
+      "blurb": "AI: fades extremes: buys sharp drops, trims spikes, drifts back to 40% mid-range."
+    },
+    {
+      "id": "sp-voltgt-8952.testnet",
+      "leader": "sp-lvoltgt-8952.testnet",
+      "strategy": "ai-voltarget",
+      "name": "Vol Target",
+      "blurb": "AI: sizes NEAR to a 40% annualised volatility target, 20–100% invested."
+    },
+    {
+      "id": "sp-convict-8952.testnet",
+      "leader": "sp-lconvict-8952.testnet",
+      "strategy": "ai-conviction",
+      "name": "Conviction",
+      "blurb": "AI: 50% NEAR baseline, tilting 20–80% by conviction."
     },
     {
       "id": "sp-manual-92991.testnet",

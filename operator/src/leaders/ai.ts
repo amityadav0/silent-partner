@@ -10,12 +10,45 @@ export const NEARAI_URL = "https://cloud-api.near.ai/v1";
 /** Served from NEAR AI's attested TEE infrastructure. */
 export const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017";
 
-const SYSTEM = [
-  "You are an active allocator for a copy-trading vault that holds only USDC and NEAR. Every 15 minutes you choose the vault's target NEAR weight: the share of NAV held in NEAR, from 0 (all USDC) to 1 (all NEAR).",
-  "Decide from the public market summary (recent returns at 1h/6h/24h, EMAs, volatility, range) and your own judgement: lean into momentum when it is strong, cut exposure when volatility spikes against you, and size by conviction.",
-  "Always give a target, even if it equals the current weight. The vault trades only when your target is at least 5 points away from the current weight; nothing forces a trade. A round trip costs about 0.3%.",
-  'Reply with one JSON object and nothing else: {"target_weight": <number 0..1>, "rationale": "<2-4 sentences>"}',
-].join(" ");
+/** House AI leaders: one model, different mandates. Bounds are enforced in code, not only asked for. */
+export type Persona = { name: string; mandate: string; min: number; max: number };
+export const PERSONAS: Record<string, Persona> = {
+  ai: {
+    name: "Allocator",
+    min: 0, max: 1,
+    mandate: "Decide from the summary and your own judgement: lean into momentum when it is strong, cut exposure when volatility spikes against you, and size by conviction.",
+  },
+  "ai-trend": {
+    name: "Trend Rider",
+    min: 0, max: 1,
+    mandate: "You are a trend follower. Hold a high NEAR weight (70-100%) when the 1h and 6h returns and the EMAs agree upward, cut to a low weight (0-20%) when they turn down, and stay in between when they disagree.",
+  },
+  "ai-contrarian": {
+    name: "Contrarian",
+    min: 0, max: 1,
+    mandate: "You fade extremes. Buy NEAR after sharp drops toward the bottom of the 24h range, trim after spikes toward the top, and drift back toward 40% when price is mid-range.",
+  },
+  "ai-voltarget": {
+    name: "Vol Target",
+    min: 0.2, max: 1,
+    mandate: "Keep the vault's risk near a 40% annualised volatility target: weight ≈ 0.40 / vol_annual (NEAR's annualised volatility), between 20% and 100%. Shade it ±10 points by trend.",
+  },
+  "ai-conviction": {
+    name: "Conviction",
+    min: 0.2, max: 0.8,
+    mandate: "Your baseline is 50% NEAR. Tilt between 20% and 80% by how convinced you are about the next few hours; never outside that range.",
+  },
+};
+
+export function systemPrompt(p: Persona): string {
+  return [
+    `You are "${p.name}", an AI leader of a copy-trading vault that holds only USDC and NEAR. Every 15 minutes you choose the vault's target NEAR weight: the share of NAV held in NEAR, from ${p.min} to ${p.max}.`,
+    p.mandate,
+    "You see only the public market summary below (returns at 1h/6h/24h, EMAs, volatility, range) and the vault's current weight.",
+    "Always give a target, even if it equals the current weight. The vault trades only when your target is at least 5 points away from the current weight; nothing forces a trade. A round trip costs about 0.3%.",
+    'Reply with one JSON object and nothing else: {"target_weight": <number>, "rationale": "<2-4 sentences>"}',
+  ].join(" ");
+}
 
 /** The AI trades only on moves of at least this much NAV weight. */
 export const AI_MIN_STEP = 0.05;
@@ -49,7 +82,8 @@ export function parseReply(text: string): { target: number | null; rationale: st
   }
 }
 
-export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch }): Promise<Decision> {
+export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string }): Promise<Decision> {
+  const persona = PERSONAS[o.persona ?? "ai"] ?? PERSONAS.ai;
   if (!o.apiKey) return { target: null, why: "NEARAI_API_KEY not set: holding" };
   const model = o.model || DEFAULT_MODEL;
   const f = o.fetchImpl ?? fetch;
@@ -57,11 +91,13 @@ export async function aiLeader(s: Series, current: number, o: { apiKey?: string;
     const r = await f(`${NEARAI_URL}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${o.apiKey}` },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 }),
+      body: JSON.stringify({ model, messages: [{ role: "system", content: systemPrompt(persona) }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 }),
     });
     const j = (await r.json()) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } };
     if (!r.ok) return { target: null, why: `NEAR AI ${r.status}: holding`, model };
-    const { target, rationale } = parseReply(j.choices?.[0]?.message?.content ?? "");
+    const parsed = parseReply(j.choices?.[0]?.message?.content ?? "");
+    const target = parsed.target === null ? null : Math.min(persona.max, Math.max(persona.min, parsed.target));
+    const rationale = parsed.rationale;
     // chat id: lets the leader fetch NEAR AI's TEE signature for this completion when it discloses.
     const usage = j.usage ? { prompt_tokens: j.usage.prompt_tokens, completion_tokens: j.usage.completion_tokens } : undefined;
     return { target, why: target === null ? "model holds" : `model target ${target}`, rationale: JSON.stringify({ chat_id: j.id ?? null, model, rationale }), model, usage };

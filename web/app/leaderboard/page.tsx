@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, VAULTS } from "@/lib/config";
 import { aumBucket, loadVault, maxDrawdown, priceOf, returns, status, verifyNavs, type VaultData } from "@/lib/vault";
 import { metaOf, modeLabel } from "@/lib/vaults";
-import { ModeChip, Ret, Sparkline, StatusChip, short } from "../ui";
+import { LeaderChips, ModeChip, Ret, Sparkline, StatusChip, short } from "../ui";
 
 type Row = { d: VaultData; ret: number; dd: number; verified: string; aum: number };
 type Key = "ret" | "dd" | "aum" | "epochs" | "name";
@@ -69,8 +69,8 @@ export default function Leaderboard() {
               <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
                 <td>{i + 1}</td>
                 <td>
-                  <Link href={`/vault/?id=${r.d.id}`} className="font-semibold">{metaOf(r.d.id).name}</Link> <ModeChip id={r.d.id} />
-                  <div className="muted text-xs" title={`leader ${r.d.cfg.leader}`}>{r.d.id}</div>
+                  <Link href={`/vault/?id=${r.d.id}`} className="font-semibold">{metaOf(r.d.id).name}</Link> <LeaderChips id={r.d.id} /> <ModeChip id={r.d.id} />
+                  <div className="muted text-xs" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{metaOf(r.d.id).style}</div>
                 </td>
                 <td className="font-semibold"><Ret r={r.ret} /></td>
                 <td><Sparkline points={returns(r.d.navs)} /></td>

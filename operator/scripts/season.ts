@@ -87,11 +87,11 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
     const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), new FillLog(v.id, join(plain, fills)), KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
     let decide: Decide | undefined;
     if (market && STRATEGIES[v.strategy]) decide = async (cur) => STRATEGIES[v.strategy](market!, cur);
-    if (market && v.strategy === "ai") decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL });
+    if (market && v.strategy.startsWith("ai")) decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL, persona: v.strategy });
     // one manual signal per vault per tick; the rest wait for the next tick
     const m = v.strategy === "manual" ? pending.find((p) => p.env?.signal?.vault === v.id) : undefined;
     if (m?.file) consumed.push(m.file);
-    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes), minStep: v.strategy === "ai" ? AI_MIN_STEP : undefined }));
+    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes), minStep: v.strategy.startsWith("ai") ? AI_MIN_STEP : undefined }));
   } catch (x) {
     results.push({ vault: v.id, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }

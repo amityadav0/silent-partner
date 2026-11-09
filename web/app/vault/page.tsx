@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, NEAR_EXPLORER, TGAS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, fmtUnits, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
-import { Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { LeaderChips, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
 import { EmergencyBanner } from "./emergency";
 import { PositionDetails } from "./position";
@@ -71,6 +71,7 @@ export default function VaultPage() {
     <section>
       <div className="flex flex-wrap items-baseline gap-3">
         <h1 className="text-2xl font-semibold">{metaOf(data.id).name}</h1>
+        <LeaderChips id={data.id} />
         <ModeChip id={data.id} />
         <StatusChip s={st} />
         <code className="muted text-xs">{short(data.id, 14)}</code>

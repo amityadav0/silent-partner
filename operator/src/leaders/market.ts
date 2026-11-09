@@ -34,6 +34,7 @@ export function summary(s: Series) {
     ret_6h: +ret(p, 72).toFixed(4),
     ret_24h: +(last / p[0] - 1).toFixed(4),
     vol_24h: +(stats(r).sd * Math.sqrt(r.length)).toFixed(4),
+    vol_annual: +(stats(r).sd * Math.sqrt(r.length) * Math.sqrt(365)).toFixed(3),
     ema_1h: +ema(p.slice(-36), 12).toFixed(4),
     ema_6h: +ema(p, 72).toFixed(4),
     high_24h: +Math.max(...p).toFixed(4),
