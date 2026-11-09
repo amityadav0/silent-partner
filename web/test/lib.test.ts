@@ -214,3 +214,25 @@ describe("follow from any chain", () => {
     expect(CHAINS.map((c) => c.name)).toEqual(["Base", "Arbitrum", "Ethereum", "Solana"]);
   });
 });
+
+import { secp256k1 } from "@noble/curves/secp256k1";
+import { keccak_256 } from "@noble/hashes/sha3";
+import { personalHash, proofMessage, recoverAddress, verifyProof } from "../lib/trackrecord";
+
+describe("bring your track record", () => {
+  const priv = secp256k1.utils.randomPrivateKey();
+  const addr = "0x" + bytesToHex(keccak_256(secp256k1.getPublicKey(priv, false).subarray(1)).subarray(12));
+  const sign = (m: string) => {
+    const s = secp256k1.sign(personalHash(m), priv);
+    return "0x" + bytesToHex(s.toCompactRawBytes()) + (27 + s.recovery).toString(16);
+  };
+  it("recovers the signer of an EIP-191 message and accepts only the exact proof", () => {
+    const m = proofMessage("v.near", addr, "2026-11-09T10:00:00Z");
+    const p = { vault: "v.near", address: addr, issued: "2026-11-09T10:00:00Z", message: m, signature: sign(m) };
+    expect(recoverAddress(m, p.signature)).toBe(addr);
+    expect(verifyProof(p)).toBe(true);
+    expect(verifyProof({ ...p, vault: "other.near" })).toBe(false); // the proof names one vault
+    expect(verifyProof({ ...p, address: "0x" + "11".repeat(20) })).toBe(false); // someone else's address
+    expect(recoverAddress(m, "0x1234")).toBeNull();
+  });
+});

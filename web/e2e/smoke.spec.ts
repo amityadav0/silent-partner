@@ -161,3 +161,25 @@ test("track record card: drawdown, Sharpe-like, epochs, leader share", async ({ 
   await expect(page.getByTestId("track-record")).toContainText("Leader holds");
   await expect(page.getByTestId("track-record")).toContainText("Epochs live");
 });
+
+test("bring your track record: a pasted EIP-191 proof verifies in the browser", async ({ page }) => {
+  const { secp256k1 } = await import("@noble/curves/secp256k1");
+  const { keccak_256 } = await import("@noble/hashes/sha3");
+  const { bytesToHex } = await import("@noble/hashes/utils");
+  const priv = secp256k1.utils.randomPrivateKey();
+  const addr = "0x" + bytesToHex(keccak_256(secp256k1.getPublicKey(priv, false).subarray(1)).subarray(12));
+  const issued = "2026-11-09T10:00:00Z";
+  const msg = `Silent Partner track record\nvault: sp-convict-8952.testnet\naddress: ${addr}\nissued: ${issued}`;
+  const m = new TextEncoder().encode(msg);
+  const h = keccak_256(new Uint8Array([...new TextEncoder().encode(`\x19Ethereum Signed Message:\n${m.length}`), ...m]));
+  const s = secp256k1.sign(h, priv);
+  const sig = "0x" + bytesToHex(s.toCompactRawBytes()) + (27 + s.recovery).toString(16);
+  await page.goto("/track/");
+  await page.getByTestId("tr-vault").fill("sp-convict-8952.testnet");
+  await page.getByText("Or sign elsewhere and paste").click();
+  await page.getByTestId("tr-address").fill(addr);
+  await page.getByTestId("tr-issued").fill(issued);
+  await page.getByTestId("tr-signature").fill(sig);
+  await page.getByTestId("tr-verify").click();
+  await expect(page.getByTestId("tr-result")).toContainText(`✓ ${addr} signed for sp-convict-8952.testnet`);
+});

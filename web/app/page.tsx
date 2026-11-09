@@ -72,7 +72,7 @@ export default function Landing() {
             <li>Keep at least 10% of the vault: skin in the game that followers can verify.</li>
             <li>Sign signals from the <Link href="/leader/">leader console</Link>, a script, or a bot. The paper season includes an AI leader that decides on NEAR AI Cloud.</li>
           </ul>
-          <Link href="/create/" className="btn mt-3 inline-block no-underline">Create a vault</Link>
+          <Link href="/create/" className="btn mt-3 inline-block no-underline">Create a vault</Link> <Link href="/track/" className="btn mt-3 ml-2 inline-block no-underline">Bring your track record</Link>
         </div>
         <div className="panel">
           <h2 className="font-semibold">For followers</h2>

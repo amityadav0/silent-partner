@@ -16,7 +16,8 @@ Each step says what to do, what you should see, and where it lives.
 4. **See an operator lie refused.** The operator's own key signed a NAV 20% too high and the contract rejected it: tx [`9sSBzqNo…`](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn). Each post must carry two 1Click-signed quotes, and the NAV must fit NEAR's move. Code: [`contract/src/lib.rs`](contract/src/lib.rs) `check_band`; tests: `contract/src/prop_tests.rs` `quotes_bound_honest_pass_lies_fail`, and [docs/testnet.md](docs/testnet.md#nav-quote-band-after-the-review-fixes-d-h-6-2026-11-09).
 5. **See a follower leave without the operator.** In the [drill vault](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-leader-60270.testnet), the operator was stopped and a follower exited pro rata, paying themselves out through the real intents verifier. Every tx is in [docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09).
 6. **See an AI leader decide privately.** [`season-state/last-run.json`](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/last-run.json) shows, per AI leader and per tick, only the model, a 20-point target bucket and the hash of its rationale. The rationale itself is sealed (AES-GCM) on that branch, and on-chain signals commit to it by hash. Code: [`operator/src/leaders/ai.ts`](operator/src/leaders/ai.ts), [`operator/scripts/season.ts`](operator/scripts/season.ts).
-7. **See the vault key refuse a theft.** A payout to the operator's own account was refused on-chain, and a payout can't be settled twice: [docs/testnet.md](docs/testnet.md) "thief payout refused" and "Settlement check".
+7. **Follow from another chain, or lead from chat.** On the vault page, "Deposit from another chain" gets a real 1Click quote (Base, Arbitrum, Ethereum or Solana → USDC into the vault, 20–45 s). [`extension/`](extension/) is an IronClaw tool: "move the vault to 40% NEAR" was executed this way on testnet ([docs/testnet.md](docs/testnet.md) "Trade from chat").
+8. **See the vault key refuse a theft.** A payout to the operator's own account was refused on-chain, and a payout can't be settled twice: [docs/testnet.md](docs/testnet.md) "thief payout refused" and "Settlement check".
 
 ## Built during NEAR HACKATHON
 
@@ -48,7 +49,7 @@ Each step says what to do, what you should see, and where it lives.
 ## Run it
 
 ```sh
-make test                                   # contract (62, incl. property tests) + operator (48) + web (22) unit tests
+make test                                   # contract (66, incl. property tests) + operator (53) + web (24) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
 cd web && npm run build && npm run serve    # http://localhost:3000, reads testnet live
@@ -58,7 +59,7 @@ make e2e                                    # Playwright against live testnet (n
 More proof: [docs/testnet.md](docs/testnet.md) (every testnet transaction), [docs/probes/](docs/probes/) (mainnet `intents.near` accepts an MPC-signed intent, a read-only simulation), [docs/mainnet.md](docs/mainnet.md) (mainnet transactions, once run) and [docs/screens/](docs/screens/).
 
 **Roadmap.**
-- **Bring your track record.** A trader proves they own a public Hyperliquid or EVM address by signing a message, and their public stats appear on their private vault's profile. Consent only: nobody is listed without signing.
+- **Bring your track record** (first version live at [/track/](https://amityadav0.github.io/silent-partner/track/)). A trader proves they own a public Hyperliquid or EVM address by signing an EIP-191 message naming their vault. The browser verifies it and shows live Hyperliquid stats; linked proofs appear on the vault page after a pull request. Consent only: nobody is listed without signing. Next: an on-chain registry in the vault instead of a pull request.
 - **NAV computed in a TEE** (OutLayer), so the attestation proves the computation itself.
 
 ---
