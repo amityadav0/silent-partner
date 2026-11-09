@@ -170,3 +170,4 @@ Each decision is dated, with its reason.
   6. **Low: overflow at 1e30 scaling.** It overflowed above ~340 USDC quotes. Now 256-bit `mul_div`, with a property test against u128.
   - **Mainnet parameters** (`docs/mainnet-init.json`): `max_age_ms` 120 s, `tolerance_bps` 25, `max_spread_bps` 40 (testnet quotes ran at ~22 bps), `min_interval_ms` 1 h (the operator's default epoch), `window_up_bps` 200.
   - **Season vaults** (oracle path, earlier code) are unchanged. They're paper vaults with a mock feed, and the same bound fixes apply to any new oracle-priced vault.
+- **D-P5-7 (2026-11-09) Mainnet artifact rebuilt after the NAV-price review.** `cargo near build reproducible-wasm` at commit `f97e5c0` (embedded in the wasm's source metadata) produced sha256 `900eab41ace013735412d51e95e282591e9891ae0ac9755da5847110a88653ff` (code hash `AhLgYYNpisHbEAFppwNRQhoB2RAK2dXruVKd7CbRUTae`, 389,596 bytes). It supersedes D-P5-6.

@@ -77,7 +77,7 @@ Deadline: 2026-11-14 18:00 UTC.
 ## NAV price review (Nov 9)
 - [x] fresh-context review of the NAV price path; 6 findings fixed (D-H-6); testnet rerun: honest accepted, +20% and reused quotes rejected
 - [x] threat-model §7 row 16: quote shopping bounded (≈1.85%/post, ≈3.6%/24h with mainnet params)
-- [ ] reproducible mainnet wasm rebuilt; NEEDS-AMIT §3 hash
+- [x] reproducible mainnet wasm rebuilt at f97e5c0 (D-P5-7); NEEDS-AMIT §3 hash
 
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
