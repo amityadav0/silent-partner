@@ -19,16 +19,16 @@ pub(crate) fn acc(s: &str) -> AccountId {
 pub(crate) fn att_key() -> SigningKey {
     SigningKey::from_bytes(&[3u8; 32])
 }
-fn leader_key() -> SigningKey {
+pub(crate) fn leader_key() -> SigningKey {
     SigningKey::from_bytes(&[5u8; 32])
 }
-fn mpc_key() -> SigningKey {
+pub(crate) fn mpc_key() -> SigningKey {
     SigningKey::from_bytes(&[11u8; 32])
 }
-fn pk_str(k: &SigningKey) -> String {
+pub(crate) fn pk_str(k: &SigningKey) -> String {
     format!("ed25519:{}", near_sdk::bs58::encode(k.verifying_key().to_bytes()).into_string())
 }
-fn sig_str(sig: ed25519_dalek::Signature) -> String {
+pub(crate) fn sig_str(sig: ed25519_dalek::Signature) -> String {
     format!("ed25519:{}", near_sdk::bs58::encode(sig.to_bytes()).into_string())
 }
 fn vault_acct() -> String {
@@ -61,6 +61,7 @@ pub(crate) fn cfg() -> Config {
         max_slippage_bps: 100,
         min_deposit: U128(1_000_000),
         allowed_assets: vec![USDC.into(), WNEAR.into()],
+        nav_oracle: None,
     }
 }
 
@@ -87,7 +88,15 @@ pub(crate) fn post(v: &mut Vault, epoch: u64, nav: u128, ms: u64) -> NavPost {
     let head = "ab".repeat(32);
     ctx("op.testnet", ms);
     let m = v.nav_message(epoch, U128(nav), ms, head.clone());
-    v.post_nav(epoch, U128(nav), ms, head, sig_str(att_key().sign(m.as_bytes())))
+    posted(v.post_nav(epoch, U128(nav), ms, head, sig_str(att_key().sign(m.as_bytes()))))
+}
+
+/// The NavPost of a post applied without an oracle (no promise).
+pub(crate) fn posted(r: PromiseOrValue<Option<NavPost>>) -> NavPost {
+    match r {
+        PromiseOrValue::Value(Some(p)) => p,
+        _ => panic!("post was not applied synchronously"),
+    }
 }
 
 pub(crate) fn panics<R>(f: impl FnOnce() -> R) -> String {
@@ -239,7 +248,7 @@ fn nav_post_validation_table() {
         assert!(got.contains(want), "{want}: got {got}");
     }
     ctx("op.testnet", t);
-    let p = v.post_nav(1, U128(2_000_000), t, head.clone(), good(&v, 1, 2_000_000, t));
+    let p = posted(v.post_nav(1, U128(2_000_000), t, head.clone(), good(&v, 1, 2_000_000, t)));
     assert_eq!((p.epoch, p.fee_shares.0, p.price.0), (1, 0, math::PRICE_SCALE));
     assert_eq!(v.get_navs(0, 10).len(), 1);
 }
@@ -267,24 +276,36 @@ fn fee_and_hwm_across_epochs() {
 }
 
 #[test]
-fn withdrawal_burns_at_next_nav() {
+fn withdrawal_is_priced_at_one_nav_and_burned_at_the_lower_of_two() {
     let mut v = vault();
     deposit(&mut v, "leader.testnet", 1_000_000, T0_MS);
     deposit(&mut v, "follower.testnet", 4_000_000, T0_MS);
     ctx("follower.testnet", T0_MS + 10);
-    let id = v.request_withdraw(U128(2_000_000), acc("follower.testnet"));
+    v.request_withdraw(U128(2_000_000), acc("follower.testnet"));
     assert_eq!(v.get_shares(acc("follower.testnet")), (U128(4_000_000), U128(2_000_000)));
-    // locked shares can't be requested twice
     assert!(panics(|| v.request_withdraw(U128(2_000_001), acc("follower.testnet"))).contains("not enough free shares"));
-    // NAV falls to 4,000,000 (price 0.8) → payout 1,600,000
-    let p = post(&mut v, 1, 4_000_000, T0_MS + 1000);
-    assert_eq!(p.withdrawn.0, 1_600_000);
+    // post 1: NAV flat at 5,000,000 (price 1.0): priced, nothing burned yet, no longer cancellable
+    let p1 = post(&mut v, 1, 5_000_000, T0_MS + 1000);
+    assert_eq!(p1.withdrawn.0, 0);
+    assert!(v.get_claims(0, 10).is_empty() && v.get_pending().is_empty());
+    let m = v.get_maturing();
+    assert_eq!((m.len(), m[0].priced_epoch, m[0].priced_at.0), (1, 1, p1.price.0));
+    ctx("follower.testnet", T0_MS + 1001);
+    assert!(panics(|| v.cancel_withdraw(0)).contains("no such request"));
+    // post 2: NAV falls to 4,000,000 (price 0.8) → burned at min(1.0, 0.8) = 0.8 → 1,600,000
+    let p2 = post(&mut v, 2, 4_000_000, T0_MS + 2000);
+    assert_eq!(p2.withdrawn.0, 1_600_000);
     let c = &v.get_claims(0, 10)[0];
-    assert_eq!((c.id, c.amount.0, c.paid.0, c.emergency), (0, 1_600_000, 0, false));
+    assert_eq!((c.amount.0, c.epoch), (1_600_000, 2));
     assert_eq!(v.get_shares(acc("follower.testnet")), (U128(2_000_000), U128(0)));
     assert_eq!(v.get_vault().book_nav.0, 2_400_000);
-    assert!(v.get_pending().is_empty());
-    let _ = id;
+    // the other way: priced low, NAV jumps → still the lower (priced) price
+    ctx("follower.testnet", T0_MS + 2001);
+    v.request_withdraw(U128(2_000_000), acc("follower.testnet")); // everything left
+    let p3 = post(&mut v, 3, 4_000_000, T0_MS + 3000); // priced at 0.8 (pre-fee; no fee below HWM)
+    post(&mut v, 4, 8_000_000, T0_MS + 4000); // price would be 1.6
+    let c = &v.get_claims(0, 10)[1];
+    assert_eq!(c.amount.0, 2_000_000 * p3.price.0 / math::PRICE_SCALE);
 }
 
 #[test]
@@ -580,7 +601,8 @@ fn vault_with_claim(amount: u128, emergency: bool) -> Vault {
         ctx("anyone.testnet", T0_MS);
         v.trigger_emergency(None);
     } else {
-        post(&mut v, 1, 10_000_000, T0_MS + 1);
+        post(&mut v, 1, 10_000_000, T0_MS + 1); // priced
+        post(&mut v, 2, 10_000_000, T0_MS + 2); // burned: claim opens
     }
     v
 }
@@ -918,7 +940,8 @@ fn position_tracks_cost_basis() {
     deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
     ctx("follower.testnet", T0_MS);
     v.request_withdraw(U128(4_000_000), acc("exit.testnet"));
-    post(&mut v, 1, 11_000_000, T0_MS + 1); // +10%, fee to the leader, then the burn
+    post(&mut v, 1, 11_000_000, T0_MS + 1); // +10%, fee to the leader; the request is priced
+    post(&mut v, 2, 11_000_000, T0_MS + 2); // flat: burned at min(priced, now)
     let p = v.get_position(acc("follower.testnet"));
     let c = v.get_claims(0, 1)[0].clone();
     assert_eq!(p.deposited.0, 8_000_000);
@@ -955,4 +978,204 @@ fn leader_locked_shares_do_not_count_toward_the_stake() {
     ctx("follower.testnet", T0_MS + 2);
     v.cancel_withdraw(r);
     assert!(math::leader_ok(shares(&v, "leader.testnet"), v.total_shares, 1000));
+}
+
+// ---------------- NAV bound from a public price ----------------
+
+pub(crate) const FEED: &str = "c415de8d2eba7db216527dff4b60e8f3a5311c740dadb233e13e12547e226750";
+
+pub(crate) fn oracle_vault() -> Vault {
+    ctx("owner.testnet", T0_MS);
+    near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
+    let mut c = cfg();
+    c.nav_oracle = Some(NavOracle {
+        contract: acc("pyth.testnet"),
+        price_id: FEED.into(),
+        max_age_s: 60,
+        tolerance_bps: 50,
+    });
+    let mut v = Vault::new(c);
+    ctx("vault.testnet", T0_MS);
+    v.on_activate(Ok(pk_str(&mpc_key())));
+    v
+}
+
+pub(crate) fn px(p: i64) -> OraclePrice {
+    OraclePrice {
+        price: near_sdk::json_types::I64(p),
+        conf: U64(0),
+        expo: -8,
+        publish_time: 0,
+    }
+}
+
+/// Post `nav` and answer the oracle with `price` (None: no fresh price). Returns whether it applied.
+pub(crate) fn post_with_price(v: &mut Vault, nav: u128, price: Option<OraclePrice>, ms: u64) -> bool {
+    let epoch = v.epoch + 1;
+    let head = "ab".repeat(32);
+    ctx("op.testnet", ms);
+    let m = v.nav_message(epoch, U128(nav), ms, head.clone());
+    let sig = sig_str(att_key().sign(m.as_bytes()));
+    assert!(matches!(
+        v.post_nav(epoch, U128(nav), ms, head.clone(), sig.clone()),
+        PromiseOrValue::Promise(_)
+    ));
+    ctx("vault.testnet", ms);
+    v.on_nav_price(epoch, U128(nav), ms, head, sig, Ok(price)).is_some()
+}
+
+#[test]
+fn nav_is_bounded_by_the_risky_assets_move() {
+    let mut v = oracle_vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    // first post: nothing to compare against yet; records the oracle price
+    assert!(post_with_price(&mut v, 10_000_000, Some(px(400_000_000)), T0_MS + 1));
+    // tolerance = slippage 100 + 50 = 150 bps (conf 0)
+    // NEAR +10%: anything from −1.5% to +11.5% per share is plausible
+    let book = v.book_nav;
+    assert!(!post_with_price(&mut v, 11_200_000, Some(px(440_000_000)), T0_MS + 2), "+12% with NEAR +10%");
+    assert_eq!((v.epoch, v.book_nav), (1, book), "a rejected post changes nothing");
+    assert!(!post_with_price(&mut v, 9_800_000, Some(px(440_000_000)), T0_MS + 3), "−2% with NEAR +10%");
+    assert!(
+        post_with_price(&mut v, 10_500_000, Some(px(440_000_000)), T0_MS + 4),
+        "+5% with NEAR +10%: half exposure"
+    );
+    // NEAR flat: the vault can only lose costs or gain within tolerance
+    assert!(!post_with_price(&mut v, 10_900_000, Some(px(440_000_000)), T0_MS + 5));
+    // a missing or stale oracle price rejects the post and unblocks the next one
+    assert!(!post_with_price(&mut v, 10_400_000, None, T0_MS + 6));
+    assert_eq!(v.posting_since_ms, 0);
+    // a wide confidence interval widens the band
+    let wide = OraclePrice {
+        conf: U64(4_400_000),
+        ..px(440_000_000)
+    }; // 1%
+    let band = v.nav_band(wide.clone()).unwrap();
+    assert_eq!(band, (-(100 + 50 + 100), 100 + 50 + 100)); // slippage + tolerance + conf_now (last conf 0)
+}
+
+#[test]
+fn one_oracle_post_at_a_time() {
+    let mut v = oracle_vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    let head = "ab".repeat(32);
+    ctx("op.testnet", T0_MS + 1);
+    let m = v.nav_message(1, U128(2_000_000), T0_MS + 1, head.clone());
+    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())));
+    assert!(panics(|| v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())))).contains("already waiting"));
+    // a callback that never ran stops blocking after the timeout
+    ctx("op.testnet", T0_MS + 1 + 10 * 60_000 + 1);
+    let m2 = v.nav_message(1, U128(2_000_000), T0_MS + 2, head.clone());
+    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 2, head, sig_str(att_key().sign(m2.as_bytes())));
+}
+
+#[test]
+fn oracle_config_is_checked() {
+    let bad = |f: &dyn Fn(&mut Config)| {
+        let mut c = cfg();
+        c.nav_oracle = Some(NavOracle {
+            contract: acc("pyth.testnet"),
+            price_id: FEED.into(),
+            max_age_s: 60,
+            tolerance_bps: 50,
+        });
+        f(&mut c);
+        ctx("owner.testnet", T0_MS);
+        panics(|| Vault::new(c))
+    };
+    assert_eq!(bad(&|_| {}), "<no panic>");
+    assert!(bad(&|c| c.allowed_assets.push("nep141:third".into())).contains("one risky asset"));
+    assert!(bad(&|c| c.nav_oracle.as_mut().unwrap().price_id = "xyz".into()).contains("32-byte hex"));
+    assert!(bad(&|c| c.nav_oracle.as_mut().unwrap().max_age_s = 0).contains("max_age_s"));
+}
+
+#[test]
+fn migrates_season_v1_state() {
+    use crate::migrate::{ConfigV1, VaultV1};
+    ctx("vault.testnet", T0_MS);
+    near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
+    let c = cfg();
+    let mut shares = LookupMap::new(b"s");
+    shares.insert(acc("leader.testnet"), 2_000_000u128);
+    let mut navs = Vector::new(b"n");
+    navs.push(NavPost {
+        epoch: 1,
+        nav: U128(2_000_000),
+        timestamp_ms: T0_MS,
+        block_ms: T0_MS,
+        price: U128(math::PRICE_SCALE),
+        total_shares: U128(2_000_000),
+        fee_shares: U128(0),
+        withdrawn: U128(0),
+        fills_head: "ab".repeat(32),
+        signature: "x".into(),
+    });
+    let mut signals = Vector::new(b"g");
+    signals.push(Signal {
+        index: 0,
+        hash: "cd".repeat(32),
+        leader_sig: "s".into(),
+        fill_hash: "ef".repeat(32),
+        executed_ms: T0_MS,
+        recorded_ms: T0_MS,
+        epoch: 1,
+    });
+    let old = VaultV1 {
+        cfg: ConfigV1 {
+            owner: c.owner.clone(),
+            operator: c.operator.clone(),
+            leader: c.leader.clone(),
+            base_token: c.base_token.clone(),
+            base_asset_id: c.base_asset_id.clone(),
+            intents_contract: c.intents_contract.clone(),
+            mpc_contract: c.mpc_contract.clone(),
+            mpc_path: c.mpc_path.clone(),
+            oneclick_key: c.oneclick_key.clone(),
+            attestation_key: c.attestation_key.clone(),
+            perf_fee_bps: c.perf_fee_bps,
+            min_leader_bps: c.min_leader_bps,
+            max_slippage_bps: c.max_slippage_bps,
+            min_deposit: c.min_deposit,
+            allowed_assets: c.allowed_assets.clone(),
+        },
+        vault_account: Some(vault_acct()),
+        shares,
+        locked: LookupMap::new(b"l"),
+        total_shares: 2_000_000,
+        book_nav: 2_000_000,
+        hwm: math::PRICE_SCALE,
+        last_nav_ms: T0_MS,
+        epoch: 1,
+        emergency: false,
+        navs,
+        pending: IterableMap::new(b"p"),
+        next_request: 0,
+        claims: Vector::new(b"c"),
+        signals,
+        signal_key: Some(pk_str(&leader_key())),
+        basis: LookupMap::new(b"b"),
+    };
+    let mut old = old;
+    old.shares.flush();
+    old.navs.flush();
+    old.signals.flush();
+    env::state_write(&old);
+    let v = Vault::migrate_v1(Some(NavOracle {
+        contract: acc("oracle.testnet"),
+        price_id: FEED.into(),
+        max_age_s: 120,
+        tolerance_bps: 50,
+    }));
+    assert_eq!((v.epoch, v.total_shares, v.book_nav), (1, 2_000_000, 2_000_000));
+    assert_eq!(shares_of(&v, "leader.testnet"), 2_000_000);
+    assert_eq!(v.get_navs(0, 10).len(), 1);
+    assert_eq!(v.get_config().nav_oracle.unwrap().max_age_s, 120);
+    // recorded signal hashes were backfilled: a replay is refused
+    ctx("op.testnet", T0_MS + 1);
+    assert!(v.signal_hashes.contains(&"cd".repeat(32)));
+}
+
+fn shares_of(v: &Vault, who: &str) -> u128 {
+    v.get_shares(acc(who)).0 .0
 }

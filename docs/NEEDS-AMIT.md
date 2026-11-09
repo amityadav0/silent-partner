@@ -237,3 +237,11 @@ Two more rule checks:
    gh secret set NEARAI_API_KEY --repo amityadav0/silent-partner   # paste the key at the prompt
    ```
    The next 15-minute tick picks it up. To use another model, set the repo variable/secret `NEARAI_MODEL`.
+
+## 8. Pyth Hermes API key, for the mainnet NAV bound (follow-up item 2)
+
+The vault now rejects any NAV whose per-share move doesn't fit NEAR's price move (D-H-3). On mainnet it reads `pyth-oracle.near`. Pyth on NEAR is pull-based: its stored NEAR/USD price was 75 days old today, so the operator must push a fresh signed update from Pyth's Hermes service before each NAV post. Hermes now answers `401 unauthorized` without an API key.
+
+1. Get a Hermes API key from Pyth (https://docs.pyth.network): an account signup, so it's yours.
+2. Put `PYTH_HERMES_KEY=…` in `.env`. The operator (`src/oracle.ts`, `PythPush`) then calls `update_price_feeds` on `pyth-oracle.near` before each epoch. It pays Pyth's update fee from the operator account: a fraction of a cent per update, but it is a mainnet payment, so it starts only with the rest of §3.
+3. Without a key, mainnet NAV posts are rejected ("no fresh oracle price") and the vault goes stale. Alternatively, deploy with `"nav_oracle": null` in `docs/mainnet-init.json` to run without the bound (back to attested-only NAV).

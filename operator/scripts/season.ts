@@ -26,6 +26,7 @@ import { loadEnv } from "../src/config.js";
 import { nearUsd, type Series } from "../src/leaders/market.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
 import { aiLeader } from "../src/leaders/ai.js";
+import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
 
@@ -61,6 +62,20 @@ const consumed: string[] = pending.filter((p) => p.env === null).map((p) => p.fi
 let market: Series | null = null;
 try { market = await nearUsd(); } catch (x) { console.log("market data unavailable; bots hold:", (x as Error).message); }
 
+// NAV bound: put a fresh NEAR/USD price in the vaults' oracle before the posts.
+// The writer is a separate account (SEASON_ORACLE_KEY), not the operator.
+let oracle: { tx?: string; error?: string } | null = null;
+const oracleCfg = (S as any).oracle as { contract: string; writer: string } | undefined;
+const oracleKey = e.SEASON_ORACLE_KEY || local.oracleWriter;
+if (oracleCfg && oracleKey && market) {
+  try {
+    oracle = { tx: (await new MockFeed(env.rpc, oracleCfg.contract, oracleCfg.writer, oracleKey).push(market.p[market.p.length - 1])).tx };
+  } catch (x) {
+    oracle = { error: String((x as Error).message).slice(0, 200) };
+  }
+  console.log(JSON.stringify({ oracle }));
+}
+
 const results: TickResult[] = [];
 const files: string[] = [];
 for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
@@ -94,5 +109,5 @@ for (const p of pending) if (p.file && !manualIds.has(p.env?.signal?.vault)) con
 sealDir(plain, join(sealed, "state"), files, stateKey);
 for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
-writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt: new Date().toISOString(), marketData: !!market, results: results.map(redact) }, null, 2) + "\n");
+writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt: new Date().toISOString(), marketData: !!market, oracle, results: results.map(redact) }, null, 2) + "\n");
 if (results.some((r) => r.error)) process.exitCode = 1;

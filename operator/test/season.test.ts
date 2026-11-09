@@ -164,3 +164,20 @@ describe("AI leader", () => {
     expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: err })).target).toBeNull();
   });
 });
+
+import { toPythPrice } from "../src/oracle.js";
+import { NavRejected } from "../src/chain.js";
+
+describe("NAV bound plumbing", () => {
+  it("Pyth price encoding: 8 decimals, confidence as a fraction", () => {
+    expect(toPythPrice(3.6123, 0.0005, 100)).toEqual({ price: "361230000", conf: "180615", expo: -8, publish_time: 100 });
+  });
+  it("a NAV the bound rejects is noted in the log and surfaced", async () => {
+    const chain = new FakeChain();
+    chain.public = 40_000_000n;
+    chain.postNav = async () => { throw new NavRejected("tx-r", "silent-partner.nav_rejected epoch=1 nav=1 reason=share return 900bps outside [-150, 150]bps (asset 0bps)"); };
+    const op = new Operator(chain, new Confidential("https://1click.test", "", fixtureFetch({ "/v0/quote": dryQuotes })), new FillLog("vault.testnet", null), KeyPair.fromRandom("ed25519"), "ed25519:x", { dryRun: true, chainWrites: true, slippageBps: 50, minShield: 1_000_000n, assetMap: {}, decimals: {}, signalMaxAgeMs: 300_000, pollMs: 0, pollTries: 1 }, () => NOW, async () => {});
+    await expect(op.epoch()).rejects.toThrow(/NAV rejected/);
+    expect(op.log.entries.at(-1)!.data).toMatchObject({ msg: "NAV rejected by the oracle bound", tx: "tx-r" });
+  });
+});

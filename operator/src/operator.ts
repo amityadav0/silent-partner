@@ -19,7 +19,7 @@
 // Amit's OK).
 import { KeyPair } from "near-api-js";
 import { base58 } from "@scure/base";
-import type { VaultChain, Claim, SignKind } from "./chain.js";
+import { NavRejected, type VaultChain, type Claim, type SignKind } from "./chain.js";
 import { Confidential, TERMINAL, type Leg, type VerifiedQuote } from "./confidential.js";
 import { FillLog } from "./filllog.js";
 import { fold } from "./ledger.js";
@@ -242,7 +242,17 @@ export class Operator {
     // Built here, not fetched: the attestation key signs only bytes we chose (= contract `nav_message`).
     const message = navMessage(this.chain.contractId, epoch, nav.toString(), ts, head);
     const signature = "ed25519:" + base58.encode(this.attestation.sign(new TextEncoder().encode(message)).signature);
-    const tx = this.cfg.chainWrites ? await this.chain.postNav(epoch, nav.toString(), ts, head, signature) : null;
+    let tx: string | null = null;
+    if (this.cfg.chainWrites) {
+      try {
+        tx = await this.chain.postNav(epoch, nav.toString(), ts, head, signature);
+      } catch (e) {
+        if (!(e instanceof NavRejected)) throw e;
+        // The bound refused it: record why; the next epoch posts afresh.
+        this.log.append("note", { msg: "NAV rejected by the oracle bound", epoch, nav: nav.toString(), tx: e.tx, reason: e.log.slice(0, 200) }, this.now());
+        throw e;
+      }
+    }
     if (tx) await this.payClaims();
     return { epoch, nav: nav.toString(), head, tx, signature };
   }

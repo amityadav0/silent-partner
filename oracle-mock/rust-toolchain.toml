@@ -1,0 +1,5 @@
+[toolchain]
+# near-sdk 5.30 needs rustc >= 1.95; matches the cargo-near 0.22.0 reproducible image.
+channel = "1.98.1"
+targets = ["wasm32-unknown-unknown"]
+components = ["clippy", "rustfmt"]

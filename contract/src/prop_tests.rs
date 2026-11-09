@@ -219,3 +219,57 @@ proptest! {
         prop_assert!(parse(&pl(m)).is_err(), "duplicate token key accepted");
     }
 }
+
+// ---------------- NAV bound and two-step withdrawals ----------------
+
+use crate::tests::{oracle_vault, post_with_price, px};
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 100, ..ProptestConfig::default() })]
+
+    /// An honest operator is never blocked: a vault holding any mix w ∈ [0, 1]
+    /// of NEAR, paying trading costs within slippage, is always accepted as
+    /// NEAR's price walks. A NAV outside the band is always rejected and changes nothing.
+    #[test]
+    fn honest_navs_pass_and_lies_fail(steps in prop::collection::vec((-1500i64..=1500, 0u32..=1000, 0u32..=100, 200u32..3000, any::<bool>()), 1..25)) {
+        let mut v = oracle_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 1;
+        let mut near: i64 = 400_000_000;
+        prop_assert!(post_with_price(&mut v, 10_000_000, Some(px(near)), t));
+        for (move_bps, w_milli, cost_bps, lie_bps, up) in steps {
+            t += 1000;
+            let next = (near as i128 * (10_000 + move_bps as i128) / 10_000) as i64;
+            let r_near = math::oracle_return_bps(near, -8, next, -8).unwrap();
+            let p_last = v.navs.get(v.navs.len() - 1).unwrap().price.0 as i128;
+            // honest: w of NAV moved with NEAR, minus up to the slippage cap in costs
+            let ret = r_near * w_milli as i128 / 1000 - cost_bps as i128;
+            let honest_price = p_last * (10_000 + ret) / 10_000;
+            let honest_nav = (honest_price * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            // a lie beyond the band (tolerance 150 bps)
+            let edge = if up { r_near.max(0) + 150 } else { r_near.min(0) - 150 };
+            let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
+            let lie_nav = ((p_last * (10_000 + lie_ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            let (epoch, book) = (v.epoch, v.book_nav);
+            prop_assert!(!post_with_price(&mut v, lie_nav, Some(px(next)), t), "lie {} bps accepted (asset {} bps)", lie_ret, r_near);
+            prop_assert_eq!((v.epoch, v.book_nav), (epoch, book));
+            prop_assert!(post_with_price(&mut v, honest_nav, Some(px(next)), t + 1), "honest {} bps rejected (asset {} bps)", ret, r_near);
+            near = next;
+            t += 1;
+        }
+    }
+
+    /// A matured withdrawal never pays more than the lower of its two prices,
+    /// and never lowers the price of the holders who stay.
+    #[test]
+    fn matured_payout_takes_the_lower_price(shares in 1u128..1_000_000_000, total_extra in 0u128..1_000_000_000, nav in 0u128..10_000_000_000, priced_milli in 1u128..5000) {
+        let total = shares + total_extra;
+        let priced_at = math::PRICE_SCALE * priced_milli / 1000;
+        let pay = math::matured_payout(shares, nav, total, priced_at);
+        prop_assert!(pay * total <= shares * nav);
+        prop_assert!(pay <= shares * priced_at / math::PRICE_SCALE);
+        if total_extra > 0 {
+            prop_assert!(math::price(nav - pay, total - shares) >= math::price(nav, total));
+        }
+    }
+}

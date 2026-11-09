@@ -53,6 +53,49 @@ pub fn performance_fee(nav: u128, shares: u128, hwm: u128, fee_bps: u128) -> (u1
     (fee_shares, new_hwm)
 }
 
+/// Return in bps between two prices of the same oracle feed, `price × 10^expo`.
+/// None if either price is not positive or the exponents are too far apart.
+pub fn oracle_return_bps(p0: i64, e0: i32, p1: i64, e1: i32) -> Option<i128> {
+    if p0 <= 0 || p1 <= 0 || (e0 - e1).abs() > 18 {
+        return None;
+    }
+    // bring both to the smaller exponent
+    let e = e0.min(e1);
+    let a = p0 as i128 * 10i128.pow((e0 - e) as u32);
+    let b = p1 as i128 * 10i128.pow((e1 - e) as u32);
+    Some((b - a) * BPS as i128 / a)
+}
+
+/// The oracle's confidence interval as bps of its price (rounded up).
+pub fn conf_bps(price: i64, conf: u64) -> i128 {
+    if price <= 0 {
+        return i128::MAX / 4;
+    }
+    (conf as i128 * BPS as i128 + price as i128 - 1) / price as i128
+}
+
+/// Per-share return in bps from `p_last` to `p_now` (both × PRICE_SCALE).
+pub fn share_return_bps(p_last: u128, p_now: u128) -> i128 {
+    if p_last == 0 {
+        return 0;
+    }
+    (p_now as i128 - p_last as i128) * BPS as i128 / p_last as i128
+}
+
+/// A vault holding only the base asset and one risky asset at any weight in
+/// [0, 1] returns between 0 and the risky asset's return. `tol` covers trading
+/// costs, slippage and the oracle's confidence.
+pub fn within_band(r_vault: i128, r_asset: i128, tol: i128) -> bool {
+    r_vault >= r_asset.min(0) - tol && r_vault <= r_asset.max(0) + tol
+}
+
+/// Payout for a withdrawal priced at the previous post (`priced_at`, × PRICE_SCALE)
+/// and burned now: the lower of the two prices, so a holder can't leave on a
+/// NAV that the next one shows to have been too high.
+pub fn matured_payout(shares: u128, nav: u128, total: u128, priced_at: u128) -> u128 {
+    payout_for_shares(shares, nav, total).min(shares * priced_at / PRICE_SCALE)
+}
+
 /// Does `leader` hold at least `min_bps` of `total`? An empty vault passes.
 pub fn leader_ok(leader: u128, total: u128, min_bps: u128) -> bool {
     total == 0 || leader * BPS >= min_bps * total

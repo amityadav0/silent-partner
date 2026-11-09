@@ -32,6 +32,13 @@ export interface VaultChain {
 
 const TGAS = 1_000_000_000_000n;
 
+/** The contract's NAV bound refused the post (nothing changed on-chain). */
+export class NavRejected extends Error {
+  constructor(readonly tx: string, readonly log: string) {
+    super(`NAV rejected (${tx}): ${log}`);
+  }
+}
+
 export class NearVault implements VaultChain {
   private account?: Account;
   constructor(readonly contractId: string, private rpc: string, private network: "testnet" | "mainnet", private operatorId: string, private operatorKey?: string, private intentsRpc = rpc) {}
@@ -75,8 +82,15 @@ export class NearVault implements VaultChain {
     return inContract + onIntents;
   }
   async postNav(epoch: number, nav: string, timestamp_ms: number, fills_head: string, signature: string) {
-    // A post burns up to 100 queued withdrawals: give it room.
-    return (await this.call("post_nav", { epoch, nav, timestamp_ms, fills_head, signature }, 300n * TGAS)).tx;
+    // A post burns up to 100 queued withdrawals and may wait for the oracle: give it room.
+    const o = await (await this.acct()).functionCall({ contractId: this.contractId, methodName: "post_nav", args: { epoch, nav, timestamp_ms, fills_head, signature }, gas: 300n * TGAS, attachedDeposit: 0n });
+    const failure = (o.receipts_outcome as any[]).map((r) => r.outcome.status?.Failure).find(Boolean);
+    if (failure) throw new Error(`post_nav: ${JSON.stringify(failure).slice(0, 300)}`);
+    // With a NAV oracle the post resolves in a callback that returns null on rejection.
+    const logs = (o.receipts_outcome as any[]).flatMap((r) => r.outcome.logs as string[]);
+    const rejected = logs.find((l) => l.startsWith("silent-partner.nav_rejected"));
+    if (rejected) throw new NavRejected(o.transaction.hash, rejected);
+    return o.transaction.hash;
   }
   async recordSignal(hash: string, leader_sig: string, fill_hash: string, executed_ms: number) {
     return (await this.call("record_signal", { hash, leader_sig, fill_hash, executed_ms })).tx;

@@ -15,6 +15,8 @@ jobs:
       - run: cargo clippy --all-targets --features drill -- -D warnings
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo build --release --target wasm32-unknown-unknown
+      - name: oracle mock (testnet stand-in for Pyth)
+        run: cargo test --manifest-path ../oracle-mock/Cargo.toml
   operator:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: operator } }

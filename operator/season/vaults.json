@@ -46,5 +46,13 @@
       "name": "Emergency drill",
       "blurb": "Test build with a 5-minute NAV timeout, for the emergency-exit drill."
     }
-  ]
+  ],
+  "oracle": {
+    "contract": "oracle.sp-lai-92991.testnet",
+    "price_id": "c415de8d2eba7db216527dff4b60e8f3a5311c740dadb233e13e12547e226750",
+    "max_age_s": 300,
+    "tolerance_bps": 50,
+    "writer": "feed.sp-lai-92991.testnet",
+    "kind": "mock (Pyth-compatible), fed from CoinGecko by the season job"
+  }
 }

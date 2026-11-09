@@ -20,6 +20,7 @@
 
 pub mod intent;
 pub mod math;
+pub mod migrate;
 pub mod quote;
 
 use intent::{Nep413Payload, Parsed};
@@ -51,6 +52,10 @@ pub const MPC_DOMAIN_EDDSA: u64 = 1;
 const GAS_MPC_SIGN: Gas = Gas::from_tgas(100);
 const GAS_CALLBACK: Gas = Gas::from_tgas(15);
 const GAS_VIEW: Gas = Gas::from_tgas(10);
+/// The NAV callback burns up to 100 withdrawals.
+const GAS_NAV_CALLBACK: Gas = Gas::from_tgas(200);
+/// A post whose callback never ran (out of gas) stops blocking after this long.
+const POSTING_TIMEOUT_MS: u64 = 10 * 60 * 1000;
 const GAS_FT_FORWARD: Gas = Gas::from_tgas(60);
 
 /// `imt:<treasury>:<public id>`: the confidential token id 1Click spends on intents.far.
@@ -63,6 +68,11 @@ pub fn imt(public_id: &str) -> String {
 pub trait Mpc {
     fn sign(&mut self, request: near_sdk::serde_json::Value);
     fn derived_public_key(&self, path: String, predecessor: AccountId, domain_id: u64) -> String;
+}
+
+#[ext_contract(ext_oracle)]
+pub trait PriceOracle {
+    fn get_price_no_older_than(&self, price_id: String, age: u64) -> Option<OraclePrice>;
 }
 
 #[ext_contract(ext_verifier)]
@@ -99,6 +109,45 @@ pub struct Config {
     pub min_deposit: U128,
     /// Public asset ids the vault may trade between (must include the base).
     pub allowed_assets: Vec<String>,
+    /// Bound each posted NAV by a public price (base + one risky asset only).
+    /// None: NAV is bounded only by the attestation.
+    pub nav_oracle: Option<NavOracle>,
+}
+
+/// A Pyth-compatible price feed for the vault's risky asset in base units
+/// (`get_price_no_older_than(price_id, age) -> Option<Price>`), e.g.
+/// `pyth-oracle.near` with the NEAR/USD feed.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct NavOracle {
+    pub contract: AccountId,
+    /// Feed id, 32 bytes hex (no 0x).
+    pub price_id: String,
+    /// Oldest acceptable price, seconds.
+    pub max_age_s: u64,
+    /// Added to the band on top of `max_slippage_bps` and the oracle's
+    /// confidence: fees and valuation differences (1Click quotes vs. oracle).
+    pub tolerance_bps: u16,
+}
+
+/// Pyth's price shape: `price × 10^expo`, ± `conf`.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct OraclePrice {
+    pub price: near_sdk::json_types::I64,
+    pub conf: U64,
+    pub expo: i32,
+    pub publish_time: i64,
+}
+
+/// A withdrawal priced at one NAV post and burned at the next, at the lower price.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Maturing {
+    pub request: WithdrawRequest,
+    /// Post-fee share price × 1e18 at the post that priced it.
+    pub priced_at: U128,
+    pub priced_epoch: u64,
 }
 
 #[near(serializers = [json, borsh])]
@@ -248,6 +297,12 @@ pub struct Vault {
     /// 1Click deposit addresses already paid by a signed transfer: one quote, one transfer.
     used_deposits: LookupSet<String>,
     signal_hashes: LookupSet<String>,
+    /// Withdrawals priced at the last post, burned at the next.
+    maturing: IterableMap<u64, Maturing>,
+    /// Oracle price at the last post (the band's starting point).
+    last_oracle: Option<OraclePrice>,
+    /// A post waiting for its oracle callback (block ms), 0 when none.
+    posting_since_ms: u64,
 }
 
 #[near]
@@ -261,6 +316,12 @@ impl Vault {
         require!(quote::decode_ed25519::<32>(&cfg.attestation_key).is_some(), "bad attestation_key");
         #[cfg(feature = "drill")]
         require!(env::current_account_id().as_str().ends_with(".testnet"), "drill builds are testnet only");
+        if let Some(o) = &cfg.nav_oracle {
+            require!(cfg.allowed_assets.len() == 2, "the NAV bound needs exactly base + one risky asset");
+            require!(unhex32(&o.price_id).is_some(), "price_id must be 32-byte hex");
+            require!(o.max_age_s > 0 && o.max_age_s <= 3600, "max_age_s must be 1..3600");
+            require!(o.tolerance_bps <= 1000, "tolerance above 10%");
+        }
         Self {
             cfg,
             vault_account: None,
@@ -281,6 +342,9 @@ impl Vault {
             basis: LookupMap::new(b"b"),
             used_deposits: LookupSet::new(b"u"),
             signal_hashes: LookupSet::new(b"h"),
+            maturing: IterableMap::new(b"m"),
+            last_oracle: None,
+            posting_since_ms: 0,
         }
     }
 
@@ -353,7 +417,7 @@ impl Vault {
         let s = shares.0;
         require!(s > 0, "zero shares");
         require!(self.free_shares(&who) >= s, "not enough free shares");
-        require!(self.pending.len() < MAX_PENDING_WITHDRAWALS, "withdrawal queue full");
+        require!(self.pending.len() + self.maturing.len() < MAX_PENDING_WITHDRAWALS, "withdrawal queue full");
         require!(!self.pending.values().any(|r| r.account == who), "one pending withdrawal per account");
         // No dust requests (they cost storage and queue slots), unless it's everything you have.
         require!(
@@ -407,60 +471,70 @@ impl Vault {
 
     /// Operator: post NAV for the next epoch. Charges the performance fee, then
     /// burns every pending withdrawal at the post-fee price and opens claims.
-    pub fn post_nav(&mut self, epoch: u64, nav: U128, timestamp_ms: u64, fills_head: String, signature: String) -> NavPost {
+    pub fn post_nav(&mut self, epoch: u64, nav: U128, timestamp_ms: u64, fills_head: String, signature: String) -> PromiseOrValue<Option<NavPost>> {
         self.only_operator();
-        require!(self.vault_account.is_some(), "not active");
-        require!(!self.emergency, "emergency");
-        require!(epoch == self.epoch + 1, "epoch must be last + 1");
-        require!(timestamp_ms > self.last_nav_ms && timestamp_ms <= now_ms() + 60_000, "bad timestamp");
-        require!(
-            fills_head.len() == 64 && fills_head.bytes().all(|c| c.is_ascii_hexdigit()),
-            "fills_head must be 32-byte hex"
-        );
-        let key = quote::decode_ed25519::<32>(&self.cfg.attestation_key).unwrap();
-        let sig = quote::decode_ed25519::<64>(&signature).unwrap_or_else(|| env::panic_str("bad signature encoding"));
-        let msg = self.nav_message(epoch, nav, timestamp_ms, fills_head.clone());
-        require!(env::ed25519_verify(&sig, msg.as_bytes(), &key), "NAV signature does not verify");
-
-        let (fee_shares, hwm) = math::performance_fee(nav.0, self.total_shares, self.hwm, self.cfg.perf_fee_bps as u128);
-        if fee_shares > 0 {
-            let leader = self.cfg.leader.clone();
-            self.shares.insert(leader.clone(), self.balance(&leader) + fee_shares);
-            self.total_shares += fee_shares;
-        }
-        self.hwm = hwm;
-        let price = math::price(nav.0, self.total_shares);
-        let (mut nav_left, mut withdrawn) = (nav.0, 0u128);
-        let reqs: Vec<WithdrawRequest> = self.pending.values().cloned().collect();
-        self.pending.clear();
-        for r in reqs {
-            let pay = math::payout_for_shares(r.shares.0, nav_left, self.total_shares);
-            self.burn(&r.account, r.shares.0);
-            nav_left -= pay;
-            withdrawn += pay;
-            self.open_claim(r.account, r.exit_account, pay, epoch, false);
-        }
-        self.book_nav = nav_left;
-        self.epoch = epoch;
-        self.last_nav_ms = timestamp_ms;
-        let post = NavPost {
-            epoch,
-            nav,
-            timestamp_ms,
-            block_ms: now_ms(),
-            price: U128(price),
-            total_shares: U128(self.total_shares),
-            fee_shares: U128(fee_shares),
-            withdrawn: U128(withdrawn),
-            fills_head,
-            signature,
+        self.check_nav_post(epoch, nav, timestamp_ms, &fills_head, &signature);
+        let Some(o) = self.cfg.nav_oracle.clone() else {
+            return PromiseOrValue::Value(Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature)));
         };
-        self.navs.push(post.clone());
-        env::log_str(&format!(
-            "silent-partner.nav epoch={epoch} nav={} price={price} fee_shares={fee_shares} withdrawn={withdrawn}",
-            nav.0
-        ));
-        post
+        require!(
+            self.posting_since_ms == 0 || now_ms() > self.posting_since_ms + POSTING_TIMEOUT_MS,
+            "a NAV post is already waiting for its oracle price"
+        );
+        self.posting_since_ms = now_ms();
+        PromiseOrValue::Promise(
+            ext_oracle::ext(o.contract)
+                .with_static_gas(GAS_VIEW)
+                .get_price_no_older_than(o.price_id, o.max_age_s)
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(GAS_NAV_CALLBACK)
+                        .on_nav_price(epoch, nav, timestamp_ms, fills_head, signature),
+                ),
+        )
+    }
+
+    /// Applies the NAV if the oracle answered with a fresh price and the per-share
+    /// return since the last post lies in the band the risky asset's move allows.
+    /// A rejection changes nothing (logged as `silent-partner.nav_rejected`).
+    #[private]
+    pub fn on_nav_price(
+        &mut self,
+        epoch: u64,
+        nav: U128,
+        timestamp_ms: u64,
+        fills_head: String,
+        signature: String,
+        #[callback_result] r: Result<Option<OraclePrice>, PromiseError>,
+    ) -> Option<NavPost> {
+        self.posting_since_ms = 0;
+        let reject = |why: String| {
+            env::log_str(&format!("silent-partner.nav_rejected epoch={epoch} nav={} reason={why}", nav.0));
+            None
+        };
+        let Ok(Some(p)) = r else {
+            return reject("no fresh oracle price".into());
+        };
+        // The state may have moved while the oracle answered.
+        if self.emergency || epoch != self.epoch + 1 || timestamp_ms <= self.last_nav_ms {
+            return reject("stale post".into());
+        }
+        if let Err(why) = self.check_band(nav.0, &p) {
+            return reject(why);
+        }
+        self.last_oracle = Some(p);
+        Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature))
+    }
+
+    pub fn get_maturing(&self) -> Vec<Maturing> {
+        self.maturing.values().cloned().collect()
+    }
+
+    /// The band a NAV for the next post must fall in, given an oracle price now:
+    /// (low, high) per-share return in bps since the last post, or None if unbounded.
+    pub fn nav_band(&self, price: OraclePrice) -> Option<(i64, i64)> {
+        let (r, tol) = self.band_inputs(&price).ok()??;
+        Some(((r.min(0) - tol) as i64, (r.max(0) + tol) as i64))
     }
 
     // ---------- signals ----------
@@ -514,11 +588,18 @@ impl Vault {
             return;
         }
         self.emergency = true;
-        // Pending withdrawals become exits at the last NAV.
-        let reqs: Vec<WithdrawRequest> = self.pending.values().cloned().collect();
+        // Pending and maturing withdrawals become exits at the last NAV
+        // (maturing ones at the lower of their priced-at and the last NAV).
+        let mut reqs: Vec<(WithdrawRequest, u128)> = self.maturing.values().map(|m| (m.request.clone(), m.priced_at.0)).collect();
+        reqs.extend(self.pending.values().map(|r| (r.clone(), u128::MAX)));
+        self.maturing.clear();
         self.pending.clear();
-        for r in reqs {
-            let pay = math::payout_for_shares(r.shares.0, self.book_nav, self.total_shares);
+        for (r, priced_at) in reqs {
+            let pay = math::payout_for_shares(r.shares.0, self.book_nav, self.total_shares).min(if priced_at == u128::MAX {
+                u128::MAX
+            } else {
+                r.shares.0 * priced_at / math::PRICE_SCALE
+            });
             self.burn(&r.account, r.shares.0);
             self.book_nav -= pay;
             self.open_claim(r.account, r.exit_account, pay, self.epoch, true);
@@ -754,7 +835,7 @@ impl Vault {
             stale: self.is_stale(),
             emergency: self.emergency,
             leader_shares: U128(self.balance(&self.cfg.leader)),
-            pending_withdrawals: self.pending.len(),
+            pending_withdrawals: self.pending.len() + self.maturing.len(),
             signals: self.signals.len() as u64,
         }
     }
@@ -806,6 +887,109 @@ impl Vault {
 impl Vault {
     fn only_operator(&self) {
         require!(env::predecessor_account_id() == self.cfg.operator, "only the operator");
+    }
+
+    fn check_nav_post(&self, epoch: u64, nav: U128, timestamp_ms: u64, fills_head: &str, signature: &str) {
+        require!(self.vault_account.is_some(), "not active");
+        require!(!self.emergency, "emergency");
+        require!(epoch == self.epoch + 1, "epoch must be last + 1");
+        require!(timestamp_ms > self.last_nav_ms && timestamp_ms <= now_ms() + 60_000, "bad timestamp");
+        require!(
+            fills_head.len() == 64 && fills_head.bytes().all(|c| c.is_ascii_hexdigit()),
+            "fills_head must be 32-byte hex"
+        );
+        let key = quote::decode_ed25519::<32>(&self.cfg.attestation_key).unwrap();
+        let sig = quote::decode_ed25519::<64>(signature).unwrap_or_else(|| env::panic_str("bad signature encoding"));
+        let msg = self.nav_message(epoch, nav, timestamp_ms, fills_head.to_string());
+        require!(env::ed25519_verify(&sig, msg.as_bytes(), &key), "NAV signature does not verify");
+    }
+
+    /// (risky asset's return since the last post, tolerance), both bps; None when
+    /// there's nothing to compare against yet (first post, no oracle price, empty vault).
+    fn band_inputs(&self, p: &OraclePrice) -> Result<Option<(i128, i128)>, String> {
+        let (Some(last), Some(o)) = (&self.last_oracle, &self.cfg.nav_oracle) else {
+            return Ok(None);
+        };
+        if self.total_shares == 0 || self.navs.is_empty() {
+            return Ok(None);
+        }
+        let r = math::oracle_return_bps(last.price.0, last.expo, p.price.0, p.expo).ok_or("bad oracle price")?;
+        let tol = self.cfg.max_slippage_bps as i128 + o.tolerance_bps as i128 + math::conf_bps(p.price.0, p.conf.0) + math::conf_bps(last.price.0, last.conf.0);
+        Ok(Some((r, tol)))
+    }
+
+    fn check_band(&self, nav: u128, p: &OraclePrice) -> Result<(), String> {
+        let Some((r, tol)) = self.band_inputs(p)? else {
+            return Ok(());
+        };
+        let p_last = self.navs.get(self.navs.len() - 1).map(|n| n.price.0).unwrap_or(math::PRICE_SCALE);
+        let rv = math::share_return_bps(p_last, math::price(nav, self.total_shares));
+        if math::within_band(rv, r, tol) {
+            Ok(())
+        } else {
+            Err(format!(
+                "share return {rv}bps outside [{}, {}]bps (asset {r}bps)",
+                r.min(0) - tol,
+                r.max(0) + tol
+            ))
+        }
+    }
+
+    /// Fee above the HWM, then: withdrawals priced at the previous post burn at
+    /// min(that price, this price); requests pending now are priced at this post.
+    fn apply_nav(&mut self, epoch: u64, nav: U128, timestamp_ms: u64, fills_head: String, signature: String) -> NavPost {
+        let (fee_shares, hwm) = math::performance_fee(nav.0, self.total_shares, self.hwm, self.cfg.perf_fee_bps as u128);
+        if fee_shares > 0 {
+            let leader = self.cfg.leader.clone();
+            self.shares.insert(leader.clone(), self.balance(&leader) + fee_shares);
+            self.total_shares += fee_shares;
+        }
+        self.hwm = hwm;
+        let price = math::price(nav.0, self.total_shares);
+        let (mut nav_left, mut withdrawn) = (nav.0, 0u128);
+        let matured: Vec<Maturing> = self.maturing.values().cloned().collect();
+        self.maturing.clear();
+        for m in matured {
+            let r = m.request;
+            let pay = math::matured_payout(r.shares.0, nav_left, self.total_shares, m.priced_at.0);
+            self.burn(&r.account, r.shares.0);
+            nav_left -= pay;
+            withdrawn += pay;
+            self.open_claim(r.account, r.exit_account, pay, epoch, false);
+        }
+        let reqs: Vec<WithdrawRequest> = self.pending.values().cloned().collect();
+        self.pending.clear();
+        for r in reqs {
+            self.maturing.insert(
+                r.id,
+                Maturing {
+                    request: r,
+                    priced_at: U128(price),
+                    priced_epoch: epoch,
+                },
+            );
+        }
+        self.book_nav = nav_left;
+        self.epoch = epoch;
+        self.last_nav_ms = timestamp_ms;
+        let post = NavPost {
+            epoch,
+            nav,
+            timestamp_ms,
+            block_ms: now_ms(),
+            price: U128(price),
+            total_shares: U128(self.total_shares),
+            fee_shares: U128(fee_shares),
+            withdrawn: U128(withdrawn),
+            fills_head,
+            signature,
+        };
+        self.navs.push(post.clone());
+        env::log_str(&format!(
+            "silent-partner.nav epoch={epoch} nav={} price={price} fee_shares={fee_shares} withdrawn={withdrawn}",
+            nav.0
+        ));
+        post
     }
 
     fn public_verifier(&self) -> String {

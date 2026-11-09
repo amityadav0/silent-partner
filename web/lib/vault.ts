@@ -162,8 +162,10 @@ export function pnl(p: Position, price: string): { value: bigint; abs: bigint; p
   return { value, abs, pct: dep > 0n ? Number((abs * 1_000_000n) / dep) / 1_000_000 : null };
 }
 
-export type WState = "requested" | "burned" | "paying" | "paid";
-export const W_STEPS: WState[] = ["requested", "burned", "paying", "paid"];
+export type WState = "requested" | "priced" | "burned" | "paying" | "paid";
+export const W_STEPS: WState[] = ["requested", "priced", "burned", "paying", "paid"];
+/** A request priced at one NAV post, burned at the next at the lower of the two prices. */
+export type Maturing = { request: WithdrawRequest; priced_at: string; priced_epoch: number };
 
 /** Where a claim is: burned (claim open, payout not started), paying (payout signed or in flight), paid. */
 export function claimState(c: Claim): WState {

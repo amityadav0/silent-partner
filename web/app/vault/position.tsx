@@ -4,10 +4,10 @@
 import { useEffect, useState } from "react";
 import { TGAS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
-import { claimState, fmtUnits, pnl, view, W_STEPS, type Claim, type Config, type Position, type VaultView, type WithdrawRequest, type WState } from "@/lib/vault";
+import { claimState, fmtUnits, pnl, view, W_STEPS, type Claim, type Config, type Maturing, type Position, type VaultView, type WithdrawRequest, type WState } from "@/lib/vault";
 import { EmergencyPayout } from "./emergency";
 
-const LABEL: Record<WState, string> = { requested: "Requested", burned: "Burned at NAV", paying: "Paying out", paid: "Paid" };
+const LABEL: Record<WState, string> = { requested: "Requested", priced: "Priced at NAV", burned: "Burned (claim)", paying: "Paying out", paid: "Paid" };
 
 function Track({ at, testid }: { at: WState; testid?: string }) {
   const i = W_STEPS.indexOf(at);
@@ -22,9 +22,11 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
   const { accountId, call } = useWallet();
   const [pos, setPos] = useState<Position | null | "n/a">(null);
   const [pending, setPending] = useState<WithdrawRequest[]>([]);
+  const [maturing, setMaturing] = useState<Maturing[]>([]);
   useEffect(() => {
     view<Position>(id, "get_position", { account_id: viewer }).then(setPos, () => setPos("n/a"));
     view<WithdrawRequest[]>(id, "get_pending").then((r) => setPending(r.filter((x) => x.account === viewer)), () => setPending([]));
+    view<Maturing[]>(id, "get_maturing").then((r) => setMaturing(r.filter((x) => x.request.account === viewer)), () => setMaturing([])); // older vaults: no such view
   }, [id, viewer, refresh]);
   const p = pos && pos !== "n/a" ? pnl(pos, vault.price) : null;
   return (
@@ -40,7 +42,7 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
         </div>
       )}
       {pos === "n/a" && <p className="muted text-xs">P&amp;L needs per-holder cost basis, which this vault&apos;s contract version predates.</p>}
-      {(pending.length > 0 || claims.length > 0) && <h3 className="mt-4 text-sm font-semibold">Withdrawals</h3>}
+      {(pending.length > 0 || maturing.length > 0 || claims.length > 0) && <h3 className="mt-4 text-sm font-semibold">Withdrawals</h3>}
       <ul className="mt-1 space-y-3 text-xs">
         {pending.map((r) => (
           <li key={`r${r.id}`} data-testid={`request-${r.id}`}>
@@ -49,7 +51,16 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
               {accountId === r.account && <button className="btn ml-auto text-xs" onClick={() => call({ receiverId: id, method: "cancel_withdraw", args: { id: r.id }, gas: 30n * TGAS }).then(onDone)}>Cancel</button>}
             </div>
             <Track at="requested" testid="track" />
-            <p className="muted">Burns at the next NAV (epoch {vault.epoch + 1}), at that NAV&apos;s post-fee price. The payout then goes to <code>{r.exit_account}</code>.</p>
+            <p className="muted">Priced at the next NAV (epoch {vault.epoch + 1}), burned at the one after, at the lower of the two prices. The payout then goes to <code>{r.exit_account}</code>.</p>
+          </li>
+        ))}
+        {maturing.map((m) => (
+          <li key={`m${m.request.id}`} data-testid={`maturing-${m.request.id}`}>
+            <div className="tabular-nums">
+              {BigInt(m.request.shares).toLocaleString()} shares priced at epoch {m.priced_epoch}: at most {fmtUnits((BigInt(m.request.shares) * BigInt(m.priced_at)) / 10n ** 18n, dec)} {sym}
+            </div>
+            <Track at="priced" testid="track" />
+            <p className="muted">Burns at the next NAV at min(this price, that price), so nobody leaves on a NAV the next one shows was too high.</p>
           </li>
         ))}
         {claims.map((c) => {
