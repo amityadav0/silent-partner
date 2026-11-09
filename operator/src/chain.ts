@@ -4,7 +4,7 @@ import { connect, keyStores, providers, KeyPair, type Account } from "near-api-j
 import { viewCall, type Nep413Payload } from "./intents.js";
 import type { SignedQuote } from "./carry/signedQuote.js";
 
-export type SignKind = "Login" | "Shield" | "Trade" | { Payout: { claim_id: number } };
+export type SignKind = "Login" | "Shield" | "Trade" | { Payout: { claim_id: number } } | { PublicPayout: { claim_id: number } };
 export type VaultView = { vault_account: string | null; total_shares: string; book_nav: string; price: string; hwm: string; epoch: number; last_nav_ms: number; stale: boolean; emergency: boolean; leader_shares: string; pending_withdrawals: number; signals: number };
 export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: { prehash: string; amount: string; deadline_ms: number; signed: boolean }[]; epoch: number; emergency: boolean };
 export type Config = { base_token: string; base_asset_id: string; allowed_assets: string[]; max_slippage_bps: number; intents_contract: string | null; leader: string };

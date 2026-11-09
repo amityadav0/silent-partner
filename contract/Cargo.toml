@@ -13,6 +13,10 @@ image_digest = "sha256:90cf2abe31d75946d82f1c6eee70802332b4d499ac39c01a5c41f2280
 passed_env = []
 container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked"]
 
+[features]
+# Testnet-only emergency drill build: NAV goes stale after 5 minutes.
+drill = []
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

@@ -28,7 +28,13 @@ use near_sdk::store::{IterableMap, LookupMap, Vector};
 use near_sdk::{env, ext_contract, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError, PromiseOrValue};
 use quote::{QuoteFacts, SignedQuote};
 
+/// NAV older than this freezes deposits and opens emergency mode.
+#[cfg(not(feature = "drill"))]
 pub const NAV_STALE_MS: u64 = 24 * 60 * 60 * 1000;
+/// Test-only build (`--features drill`) for the testnet emergency drill: 5 minutes.
+/// `new` refuses to initialise a drill build on any account outside `.testnet`.
+#[cfg(feature = "drill")]
+pub const NAV_STALE_MS: u64 = 5 * 60 * 1000;
 pub const MAX_INTENT_AHEAD_MS: u64 = 60 * 60 * 1000;
 pub const MAX_PENDING_WITHDRAWALS: u32 = 100;
 pub const MPC_DOMAIN_EDDSA: u64 = 1;
@@ -157,6 +163,27 @@ pub enum SignKind {
     Trade,
     /// Unshield of the base asset to a claim's exit account.
     Payout { claim_id: u64 },
+    /// Direct transfer of the base asset from the vault's *public* intents
+    /// balance to a claim's exit account (no quote: nothing is swapped). Lets
+    /// holders exit from funds that were never shielded without 1Click.
+    PublicPayout { claim_id: u64 },
+}
+
+/// What a holder has put in and taken out, in base units, for P&L.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Basis {
+    pub deposited: U128,
+    /// Sum of claims opened for this holder (what their burned shares were worth).
+    pub claimed: U128,
+}
+
+#[near(serializers = [json])]
+pub struct PositionView {
+    pub shares: U128,
+    pub locked: U128,
+    pub deposited: U128,
+    pub claimed: U128,
 }
 
 #[near(serializers = [json])]
@@ -196,6 +223,7 @@ pub struct Vault {
     claims: Vector<Claim>,
     signals: Vector<Signal>,
     signal_key: Option<String>,
+    basis: LookupMap<AccountId, Basis>,
 }
 
 #[near]
@@ -207,6 +235,8 @@ impl Vault {
         require!(cfg.allowed_assets.contains(&cfg.base_asset_id), "allowed_assets must include the base asset");
         require!(quote::decode_ed25519::<32>(&cfg.oneclick_key).is_some(), "bad oneclick_key");
         require!(quote::decode_ed25519::<32>(&cfg.attestation_key).is_some(), "bad attestation_key");
+        #[cfg(feature = "drill")]
+        require!(env::current_account_id().as_str().ends_with(".testnet"), "drill builds are testnet only");
         Self {
             cfg,
             vault_account: None,
@@ -224,6 +254,7 @@ impl Vault {
             claims: Vector::new(b"c"),
             signals: Vector::new(b"g"),
             signal_key: None,
+            basis: LookupMap::new(b"b"),
         }
     }
 
@@ -507,6 +538,16 @@ impl Vault {
                 require!(quote.is_none(), "login takes no quote");
             }
             (SignKind::Login, _) | (_, Parsed::Login) => env::panic_str("kind and payload disagree"),
+            (SignKind::PublicPayout { claim_id }, Parsed::Transfer { receiver_id, token, amount }) => {
+                require!(quote.is_none(), "public payout takes no quote");
+                require!(p.recipient == public_verifier, "public payout is for the public intents contract");
+                require!(token == &self.cfg.base_asset_id, "payouts are in the base asset");
+                let c = self.claims.get(*claim_id as u32).unwrap_or_else(|| env::panic_str("no such claim"));
+                require!(is_op || c.emergency, "only the operator pays non-emergency claims");
+                require!(receiver_id == c.exit_account.as_str(), "payout must go to the claim's exit account");
+                require!(*amount > 0 && *amount <= open_of(c), "payout exceeds the claim");
+                claim_reserve = Some((*claim_id, U128(*amount), U64(p.deadline_ms)));
+            }
             (_, Parsed::Transfer { receiver_id, token, amount }) => {
                 require!(is_op || self.emergency, "only the operator");
                 let q = quote.as_ref().unwrap_or_else(|| env::panic_str("quote required"));
@@ -530,7 +571,7 @@ impl Vault {
                         self.check_payout(&f, &vault, claim_id, is_op);
                         claim_reserve = Some((claim_id, U128(f.amount_in), U64(p.deadline_ms)));
                     }
-                    SignKind::Login => unreachable!(),
+                    SignKind::Login | SignKind::PublicPayout { .. } => unreachable!(),
                 }
             }
         }
@@ -605,9 +646,16 @@ impl Vault {
     /// at any time; `false` releases it, only after its deadline has passed (so a
     /// signed intent can no longer execute). In emergency, in-flight payouts stay
     /// counted (the safe side for the remaining holders).
+    ///
+    /// In emergency the claimant may also confirm (`executed = true`) their own
+    /// payout, since the operator may be gone; only the operator can release.
     pub fn settle_payout(&mut self, claim_id: u64, prehash: String, executed: bool) {
-        self.only_operator();
         let mut c = self.claims.get(claim_id as u32).cloned().unwrap_or_else(|| env::panic_str("no such claim"));
+        let caller = env::predecessor_account_id();
+        require!(
+            caller == self.cfg.operator || (executed && c.emergency && caller == c.account),
+            "only the operator"
+        );
         let i = c
             .in_flight
             .iter()
@@ -674,6 +722,17 @@ impl Vault {
     pub fn get_signal_key(&self) -> Option<String> {
         self.signal_key.clone()
     }
+
+    /// Shares plus cost basis: P&L = shares × price + claimed − deposited.
+    pub fn get_position(&self, account_id: AccountId) -> PositionView {
+        let b = self.basis.get(&account_id).cloned().unwrap_or_default();
+        PositionView {
+            shares: U128(self.balance(&account_id)),
+            locked: U128(self.locked_of(&account_id)),
+            deposited: b.deposited,
+            claimed: b.claimed,
+        }
+    }
 }
 
 // ---------- internals ----------
@@ -726,6 +785,9 @@ impl Vault {
         self.shares.insert(who.clone(), self.balance(who) + minted);
         self.total_shares += minted;
         self.book_nav += amount;
+        let mut b = self.basis.get(who).cloned().unwrap_or_default();
+        b.deposited = U128(b.deposited.0 + amount);
+        self.basis.insert(who.clone(), b);
         Ok(minted)
     }
 
@@ -739,6 +801,9 @@ impl Vault {
 
     fn open_claim(&mut self, account: AccountId, exit_account: AccountId, amount: u128, epoch: u64, emergency: bool) -> u64 {
         let id = self.claims.len() as u64;
+        let mut b = self.basis.get(&account).cloned().unwrap_or_default();
+        b.claimed = U128(b.claimed.0 + amount);
+        self.basis.insert(account.clone(), b);
         self.claims.push(Claim {
             id,
             account: account.clone(),
@@ -793,9 +858,13 @@ impl Vault {
         );
         require!(f.recipient == c.exit_account.as_str(), "payout must go to the claim's exit account");
         require!(f.refund_to == vault, "payout must refund the vault");
-        let open = c.amount.0 - c.paid.0 - c.in_flight.iter().map(|x| x.amount.0).sum::<u128>();
-        require!(f.amount_in <= open, "payout exceeds the claim");
+        require!(f.amount_in <= open_of(c), "payout exceeds the claim");
     }
+}
+
+/// What a claim still has open: amount − paid − in flight.
+fn open_of(c: &Claim) -> u128 {
+    c.amount.0 - c.paid.0 - c.in_flight.iter().map(|x| x.amount.0).sum::<u128>()
 }
 
 fn now_ms() -> u64 {

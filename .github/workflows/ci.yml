@@ -11,6 +11,8 @@ jobs:
         with: { workspaces: contract }
       - run: cargo fmt --check
       - run: cargo test
+      - run: cargo test --features drill
+      - run: cargo clippy --all-targets --features drill -- -D warnings
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo build --release --target wasm32-unknown-unknown
   operator:

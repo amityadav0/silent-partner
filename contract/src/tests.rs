@@ -750,3 +750,104 @@ fn public_verifier_follows_intents_contract() {
     };
     assert_eq!(sign(&mut v, "op.testnet", SignKind::Login, login, None), "<no panic>");
 }
+
+// ---------------- public-leg payouts and cost basis ----------------
+
+#[test]
+fn public_payout_table() {
+    let va = vault_acct();
+    let p = |to: &str, token: &str, amt: u128, recipient: &str| payload(to, token, amt, recipient, DL, &va);
+    type Case = (bool, &'static str, Nep413Payload, Option<SignedQuote>, &'static str);
+    let cases: Vec<Case> = vec![
+        (false, "op.testnet", p("exit.testnet", USDC, 4_000_000, "intents.near"), None, "<no panic>"),
+        (
+            false,
+            "anyone.testnet",
+            p("exit.testnet", USDC, 1_000_000, "intents.near"),
+            None,
+            "only the operator",
+        ),
+        (true, "anyone.testnet", p("exit.testnet", USDC, 1_000_000, "intents.near"), None, "<no panic>"),
+        (
+            true,
+            "anyone.testnet",
+            p("thief.testnet", USDC, 1_000_000, "intents.near"),
+            None,
+            "exit account",
+        ),
+        (true, "anyone.testnet", p("exit.testnet", WNEAR, 1_000_000, "intents.near"), None, "base asset"),
+        (
+            true,
+            "anyone.testnet",
+            p("exit.testnet", &imt(USDC), 1_000_000, "intents.near"),
+            None,
+            "base asset",
+        ),
+        (
+            true,
+            "anyone.testnet",
+            p("exit.testnet", USDC, 1_000_000, "intents.far"),
+            None,
+            "public intents contract",
+        ),
+        (
+            true,
+            "anyone.testnet",
+            p("exit.testnet", USDC, 4_000_001, "intents.near"),
+            None,
+            "exceeds the claim",
+        ),
+        (
+            true,
+            "anyone.testnet",
+            p("exit.testnet", USDC, 1, "intents.near"),
+            Some(payout_q(&[])),
+            "takes no quote",
+        ),
+    ];
+    for (i, (emergency, who, pl, q, want)) in cases.into_iter().enumerate() {
+        let mut v = vault_with_claim(4_000_000, emergency);
+        let got = sign(&mut v, who, SignKind::PublicPayout { claim_id: 0 }, pl, q);
+        assert!(got.contains(want), "case {i} {want}: got {got}");
+    }
+}
+
+#[test]
+fn public_payout_reserves_and_claimant_confirms_in_emergency() {
+    let mut v = vault_with_claim(4_000_000, true);
+    let pl = payload("exit.testnet", USDC, 4_000_000, "intents.near", DL, &vault_acct());
+    ctx("anyone.testnet", T0_MS);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl.clone(), None);
+    // fully reserved: a second one is refused
+    assert!(panics(|| v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl.clone(), None)).contains("exceeds the claim"));
+    let pre = v.get_claims(0, 1)[0].in_flight[0].prehash.clone();
+    // a stranger can't settle; the claimant can confirm but not release
+    ctx("anyone.testnet", T0_MS);
+    assert!(panics(|| v.settle_payout(0, pre.clone(), true)).contains("only the operator"));
+    ctx("follower.testnet", T0_MS + 2 * MAX_INTENT_AHEAD_MS);
+    assert!(panics(|| v.settle_payout(0, pre.clone(), false)).contains("only the operator"));
+    v.settle_payout(0, pre, true);
+    let c = v.get_claims(0, 1)[0].clone();
+    assert_eq!((c.paid.0, c.in_flight.len()), (4_000_000, 0));
+}
+
+#[test]
+fn position_tracks_cost_basis() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    ctx("follower.testnet", T0_MS);
+    v.request_withdraw(U128(4_000_000), acc("exit.testnet"));
+    post(&mut v, 1, 11_000_000, T0_MS + 1); // +10%, fee to the leader, then the burn
+    let p = v.get_position(acc("follower.testnet"));
+    let c = v.get_claims(0, 1)[0].clone();
+    assert_eq!(p.deposited.0, 8_000_000);
+    assert_eq!(p.claimed, c.amount);
+    assert_eq!(p.shares.0, 4_000_000);
+    let price = v.get_vault().price.0;
+    let value = p.shares.0 * price / math::PRICE_SCALE;
+    // follower gained ~8% net of the 20% fee on 10%
+    let pnl = (value + p.claimed.0) as i128 - p.deposited.0 as i128;
+    assert!(pnl > 600_000 && pnl < 700_000, "pnl {pnl}");
+    assert_eq!(v.get_position(acc("nobody.testnet")).deposited.0, 0);
+}
