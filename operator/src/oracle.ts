@@ -1,14 +1,9 @@
-// Price feeds for the contract's NAV bound. Before each NAV post the operator
-// makes sure the vault's oracle holds a fresh price of the risky asset:
-//   * PythPush (mainnet): fetch a signed update from Pyth's Hermes service
-//     (needs a Hermes API key) and submit it to pyth-oracle.near
-//     (`update_price_feeds`, paying Pyth's small update fee). Pyth verifies the
-//     signatures; the operator can't choose the price.
-//   * MockFeed (testnet paper season): Pyth's testnet contract only takes
-//     Hermes data, so the season writes the public market price (CoinGecko) to
-//     a Pyth-compatible mock (`oracle-mock/`) from a separate writer account.
+// Oracle feed for vaults whose NAV band reads a Pyth-compatible oracle: the
+// testnet paper-season vaults, which read a mock (`oracle-mock/`) written with
+// the public market price (CoinGecko) by a separate writer account. Mainnet
+// vaults don't use an oracle: their band is priced by two 1Click-signed quotes
+// attached to each NAV post (Operator.priceQuotes, D-H-5).
 import { connect, keyStores, KeyPair, type Account } from "near-api-js";
-import { viewCall } from "./intents.js";
 
 export const NEAR_USD_FEED = "c415de8d2eba7db216527dff4b60e8f3a5311c740dadb233e13e12547e226750";
 export type OraclePrice = { price: string; conf: string; expo: number; publish_time: number };
@@ -44,19 +39,5 @@ export class MockFeed {
     const failure = (o.receipts_outcome as any[]).map((r) => r.outcome.status?.Failure).find(Boolean);
     if (failure) throw new Error(`set_price: ${JSON.stringify(failure).slice(0, 200)}`);
     return { tx: o.transaction.hash, price };
-  }
-}
-
-/** Mainnet: submit Pyth's signed Hermes update to pyth-oracle.near. Untested until a Hermes key exists (NEEDS-AMIT §8). */
-export class PythPush {
-  constructor(private rpc: string, private oracle: string, private payer: string, private payerKey: string, private hermesKey: string, private priceId = NEAR_USD_FEED, private hermes = "https://hermes.pyth.network") {}
-  async push(): Promise<{ tx: string }> {
-    const r = await fetch(`${this.hermes}/v2/updates/price/latest?ids%5B%5D=${this.priceId}&encoding=hex`, { headers: { authorization: `Bearer ${this.hermesKey}` } });
-    if (!r.ok) throw new Error(`hermes ${r.status}`);
-    const data = ((await r.json()) as { binary: { data: string[] } }).binary.data[0];
-    const fee = BigInt(await viewCall<string>(this.rpc, this.oracle, "get_update_fee_estimate", { data }));
-    const a = await account("mainnet", this.rpc, this.payer, this.payerKey);
-    const o = await a.functionCall({ contractId: this.oracle, methodName: "update_price_feeds", args: { data }, gas: 300_000_000_000_000n, attachedDeposit: fee });
-    return { tx: o.transaction.hash };
   }
 }

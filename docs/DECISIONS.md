@@ -137,3 +137,14 @@ Each decision is dated, with its reason.
   - **Instructions.** Each epoch it chooses a target NEAR weight from 0 to 100% (rounded to 1 point), from the public summary (1h/6h/24h returns, EMAs, volatility, range) plus its own reasoning. It must always give a target, sized by conviction.
   - **When it trades.** Only when |target − current| ≥ 5 points (`AI_MIN_STEP`; the bots keep 10). There are no forced trades.
   - **Public log.** It shows only the target as a 20-point bucket (`ai_target_band`) and the rationale's hash (`ai_rationale_hash`), plus the model and token counts. The exact target and the rationale stay in the sealed notebook.
+- **D-H-5 (2026-11-09) The NAV band is priced by 1Click-signed quotes; Pyth is dropped for mainnet.**
+  - **Choice.** `Config.nav_quotes` (base id, risky id, `max_age_ms`, `tolerance_bps`, `max_spread_bps`). With each `post_nav` the operator passes two fresh dry quotes: 10 USDC → wNEAR, then exactly that much wNEAR → USDC, so both sides are the same size. The contract verifies both with its immutable `oneclick_key` (the same verifier and key that bind every trade), requires them ≤ 5 minutes old by 1Click's own timestamp, and takes the bracket [bid, ask]. The band uses the mid's return since the last post, widened by max slippage + tolerance + both half-spreads (instead of an oracle confidence). A half-spread above `max_spread_bps` (100 bps) is refused, so an oversized quote can't buy a wide band. The check is synchronous: no cross-contract call, no fee, no key.
+  - **Rejected alternatives:**
+    1. Pyth `pyth-oracle.near`: the stored NEAR/USD price was 75 days old, and fresh updates need Hermes, which now requires an API key and pays a fee per update.
+    2. Burrow `priceoracle.near`: all 17 assets `null`, last `wrap.near` report ~230 days old (D-H-4).
+    3. Hermes beta on testnet: also key-gated.
+    4. Running our own oracle on mainnet: a feed we'd have to trust and operate.
+  - **Why quotes.** 1Click quotes are what the vault trades at, and their key is already the root of trust for trades. Price trust and execution trust now have one root.
+  - **Season vaults.** They keep the Pyth-compatible mock adapter (`nav_oracle`): their `oneclick_key` is the testnet test key, so quotes signed by real 1Click couldn't be verified there, and re-keying a deployed vault isn't allowed.
+  - **Removed.** `PythPush` and the `PYTH_*` env vars.
+  - **Testnet run.** `quotes.sp-lmeanrev-92991.testnet` is configured with 1Click's real key and the mainnet USDC/wNEAR pair. Its posts carried real public 1Click dry quotes (half-spread ~22 bps). Honest posts were accepted; +20% was rejected. See docs/testnet.md.

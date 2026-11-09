@@ -245,7 +245,8 @@ export class Operator {
     let tx: string | null = null;
     if (this.cfg.chainWrites) {
       try {
-        tx = await this.chain.postNav(epoch, nav.toString(), ts, head, signature);
+        const priceQuotes = await this.priceQuotes();
+        tx = await this.chain.postNav(epoch, nav.toString(), ts, head, signature, priceQuotes);
       } catch (e) {
         if (!(e instanceof NavRejected)) throw e;
         // The bound refused it: record why; the next epoch posts afresh.
@@ -255,6 +256,22 @@ export class Operator {
     }
     if (tx) await this.payClaims();
     return { epoch, nav: nav.toString(), head, tx, signature };
+  }
+
+  /**
+   * For vaults whose NAV band is priced by 1Click quotes: two fresh dry quotes,
+   * base → risky for `PRICE_QUOTE_BASE` units, then risky → base for exactly
+   * what that bought (same size both ways). Signed by 1Click; the contract
+   * verifies them with its immutable `oneclick_key`.
+   */
+  async priceQuotes(): Promise<VerifiedQuote["signed"][] | undefined> {
+    const nq = (await this.chain.getConfig()).nav_quotes;
+    if (!nq) return undefined;
+    const { vaultAccount } = await this.meta();
+    const q = (from: string, to: string, amount: bigint) => this.oc.quote({ leg: "trade", from, to, amount: amount.toString(), slippageBps: this.cfg.slippageBps, vault: vaultAccount, deadlineMs: this.now() + 10 * 60_000, dry: true });
+    const buy = await q(nq.base_id, nq.risk_id, PRICE_QUOTE_BASE);
+    const sell = await q(nq.risk_id, nq.base_id, buy.amountOut);
+    return [buy.signed, sell.signed];
   }
 
   // ---------------- withdrawals ----------------
@@ -344,6 +361,9 @@ export class Operator {
     return this.log.append("payout", { claim_id: c.id, exit_account: c.exit_account, amount: open.toString(), dry: false, status: settled.result, prehash, sign_tx: tx, exec_tx: execTx, settle_tx: settled.tx }, this.now()).hash;
   }
 }
+
+/** Size of the base → risky price quote: 10 USDC (6 decimals). */
+export const PRICE_QUOTE_BASE = 10_000_000n;
 
 /** The exact string the attestation key signs (contract `nav_message`). */
 export const navMessage = (contract: string, epoch: number, nav: string, ts: number, head: string) => `silent-partner/nav/v1|${contract}|${epoch}|${nav}|${ts}|${head}`;

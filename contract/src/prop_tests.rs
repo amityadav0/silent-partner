@@ -273,3 +273,45 @@ proptest! {
         }
     }
 }
+
+use crate::tests::{post_q, price_quotes, quotes_vault};
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 100, ..ProptestConfig::default() })]
+
+    /// Same guarantee with 1Click-signed quotes: honest NAVs at any NEAR weight
+    /// pass for any spread under the cap; anything outside the widened band fails.
+    #[test]
+    fn quotes_bound_honest_pass_lies_fail(steps in prop::collection::vec((-1500i64..=1500, 0u32..=1000, 0u32..=100, 0u32..=95, 200u32..3000, any::<bool>()), 1..15)) {
+        let k = crate::quote::tests::test_key();
+        let mut v = quotes_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 60_000;
+        let mut usd: u128 = 4_000_000;
+        let mut hs_last = 20u32;
+        prop_assert_eq!(post_q(&mut v, 10_000_000, price_quotes(usd, hs_last as u128, t, &k), t), Ok(true));
+        for (move_bps, w_milli, cost_bps, hs, lie_bps, up) in steps {
+            t += 60_000;
+            let next = (usd as i128 * (10_000 + move_bps as i128) / 10_000) as u128;
+            let qs = price_quotes(next, hs as u128, t, &k);
+            let point = v.price_from_quotes(qs.clone());
+            let last = v.last_price.clone().unwrap();
+            let r = math::mid_return_bps(last.mid.0, point.mid.0).unwrap();
+            let tol = 150 + point.half_spread_bps as i128 + last.half_spread_bps as i128;
+            let p_last = v.navs.get(v.navs.len() - 1).unwrap().price.0 as i128;
+            let ret = r * w_milli as i128 / 1000 - cost_bps as i128;
+            let honest = ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            let edge = if up { r.max(0) + tol } else { r.min(0) - tol };
+            let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
+            let lie = ((p_last * (10_000 + lie_ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            let (epoch, book) = (v.epoch, v.book_nav);
+            prop_assert_eq!(post_q(&mut v, lie, qs.clone(), t), Ok(false), "lie {} bps accepted (asset {} bps)", lie_ret, r);
+            prop_assert_eq!((v.epoch, v.book_nav), (epoch, book));
+            prop_assert_eq!(post_q(&mut v, honest, qs, t + 1), Ok(true), "honest {} bps rejected (asset {} bps)", ret, r);
+            usd = next;
+            hs_last = hs;
+            t += 1;
+        }
+        let _ = hs_last;
+    }
+}

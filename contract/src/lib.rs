@@ -109,9 +109,38 @@ pub struct Config {
     pub min_deposit: U128,
     /// Public asset ids the vault may trade between (must include the base).
     pub allowed_assets: Vec<String>,
-    /// Bound each posted NAV by a public price (base + one risky asset only).
-    /// None: NAV is bounded only by the attestation.
+    /// Bound each posted NAV by a public price (base + one risky asset only),
+    /// read from a Pyth-compatible oracle. Used by the testnet season vaults.
     pub nav_oracle: Option<NavOracle>,
+    /// Or by two 1Click-signed quotes passed with each post, verified with
+    /// `oneclick_key`: the same signature root as every trade. Mainnet uses this.
+    /// At most one of `nav_oracle` / `nav_quotes`; neither: attestation only.
+    pub nav_quotes: Option<NavQuotes>,
+}
+
+/// NAV price from two signed 1Click quotes per post: base → risky and risky →
+/// base, at most `max_age_ms` old. Their bid/ask bracket sets the price; its
+/// half-spread widens the band (as the oracle's confidence would).
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct NavQuotes {
+    /// 1Click asset ids priced (normally `base_asset_id` and the risky allowed asset).
+    pub base_id: String,
+    pub risk_id: String,
+    pub max_age_ms: u64,
+    pub tolerance_bps: u16,
+    /// Quotes wider than this (half-spread) are refused: a huge quote size can't buy a wide band.
+    pub max_spread_bps: u16,
+}
+
+/// A price at a NAV post: `mid` in the source's own fixed-point units, and how
+/// uncertain it is (oracle confidence, or the quotes' half-spread), in bps.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PricePoint {
+    pub mid: U128,
+    pub half_spread_bps: u32,
+    pub source: String,
 }
 
 /// A Pyth-compatible price feed for the vault's risky asset in base units
@@ -299,8 +328,8 @@ pub struct Vault {
     signal_hashes: LookupSet<String>,
     /// Withdrawals priced at the last post, burned at the next.
     maturing: IterableMap<u64, Maturing>,
-    /// Oracle price at the last post (the band's starting point).
-    last_oracle: Option<OraclePrice>,
+    /// Price at the last post (the band's starting point).
+    last_price: Option<PricePoint>,
     /// A post waiting for its oracle callback (block ms), 0 when none.
     posting_since_ms: u64,
 }
@@ -316,6 +345,13 @@ impl Vault {
         require!(quote::decode_ed25519::<32>(&cfg.attestation_key).is_some(), "bad attestation_key");
         #[cfg(feature = "drill")]
         require!(env::current_account_id().as_str().ends_with(".testnet"), "drill builds are testnet only");
+        require!(cfg.nav_oracle.is_none() || cfg.nav_quotes.is_none(), "one NAV price source at most");
+        if let Some(q) = &cfg.nav_quotes {
+            require!(cfg.allowed_assets.len() == 2, "the NAV bound needs exactly base + one risky asset");
+            require!(q.base_id != q.risk_id, "quote assets must differ");
+            require!(q.max_age_ms > 0 && q.max_age_ms <= 15 * 60 * 1000, "max_age_ms must be 1 ms..15 min");
+            require!(q.tolerance_bps <= 1000 && q.max_spread_bps <= 500, "tolerance or spread cap too wide");
+        }
         if let Some(o) = &cfg.nav_oracle {
             require!(cfg.allowed_assets.len() == 2, "the NAV bound needs exactly base + one risky asset");
             require!(unhex32(&o.price_id).is_some(), "price_id must be 32-byte hex");
@@ -343,7 +379,7 @@ impl Vault {
             used_deposits: LookupSet::new(b"u"),
             signal_hashes: LookupSet::new(b"h"),
             maturing: IterableMap::new(b"m"),
-            last_oracle: None,
+            last_price: None,
             posting_since_ms: 0,
         }
     }
@@ -471,9 +507,28 @@ impl Vault {
 
     /// Operator: post NAV for the next epoch. Charges the performance fee, then
     /// burns every pending withdrawal at the post-fee price and opens claims.
-    pub fn post_nav(&mut self, epoch: u64, nav: U128, timestamp_ms: u64, fills_head: String, signature: String) -> PromiseOrValue<Option<NavPost>> {
+    /// `price_quotes`: for vaults with `nav_quotes`, two 1Click-signed quotes
+    /// (base → risky, risky → base); ignored otherwise.
+    pub fn post_nav(
+        &mut self,
+        epoch: u64,
+        nav: U128,
+        timestamp_ms: u64,
+        fills_head: String,
+        signature: String,
+        price_quotes: Option<Vec<SignedQuote>>,
+    ) -> PromiseOrValue<Option<NavPost>> {
         self.only_operator();
         self.check_nav_post(epoch, nav, timestamp_ms, &fills_head, &signature);
+        if self.cfg.nav_quotes.is_some() {
+            let p = self.price_from_quotes(price_quotes.unwrap_or_default());
+            if let Err(why) = self.check_band(nav.0, &p) {
+                env::log_str(&format!("silent-partner.nav_rejected epoch={epoch} nav={} reason={why}", nav.0));
+                return PromiseOrValue::Value(None);
+            }
+            self.last_price = Some(p);
+            return PromiseOrValue::Value(Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature)));
+        }
         let Some(o) = self.cfg.nav_oracle.clone() else {
             return PromiseOrValue::Value(Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature)));
         };
@@ -519,10 +574,13 @@ impl Vault {
         if self.emergency || epoch != self.epoch + 1 || timestamp_ms <= self.last_nav_ms {
             return reject("stale post".into());
         }
-        if let Err(why) = self.check_band(nav.0, &p) {
+        let Some(point) = oracle_point(&p) else {
+            return reject("bad oracle price".into());
+        };
+        if let Err(why) = self.check_band(nav.0, &point) {
             return reject(why);
         }
-        self.last_oracle = Some(p);
+        self.last_price = Some(point);
         Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature))
     }
 
@@ -530,11 +588,39 @@ impl Vault {
         self.maturing.values().cloned().collect()
     }
 
-    /// The band a NAV for the next post must fall in, given an oracle price now:
+    /// The band a NAV for the next post must fall in, given a price now:
     /// (low, high) per-share return in bps since the last post, or None if unbounded.
-    pub fn nav_band(&self, price: OraclePrice) -> Option<(i64, i64)> {
-        let (r, tol) = self.band_inputs(&price).ok()??;
+    pub fn nav_band(&self, point: PricePoint) -> Option<(i64, i64)> {
+        let (r, tol) = self.band_inputs(&point).ok()??;
         Some(((r.min(0) - tol) as i64, (r.max(0) + tol) as i64))
+    }
+
+    /// Verify two signed quotes and return the price point they give (panics if refused).
+    pub fn price_from_quotes(&self, price_quotes: Vec<SignedQuote>) -> PricePoint {
+        let q = self.cfg.nav_quotes.as_ref().unwrap_or_else(|| env::panic_str("vault has no nav_quotes"));
+        let key = quote::decode_ed25519::<32>(&self.cfg.oneclick_key).unwrap();
+        let [a, b] = &price_quotes[..] else {
+            env::panic_str("need exactly two price quotes")
+        };
+        let fa = quote::price_facts(a, &key).unwrap_or_else(|e| env::panic_str(&format!("price quote refused: {e:?}")));
+        let fb = quote::price_facts(b, &key).unwrap_or_else(|e| env::panic_str(&format!("price quote refused: {e:?}")));
+        let (buy, sell) = if fa.origin_asset == q.base_id { (fa, fb) } else { (fb, fa) };
+        require!(buy.origin_asset == q.base_id && buy.destination_asset == q.risk_id, "need a base → risky quote");
+        require!(
+            sell.origin_asset == q.risk_id && sell.destination_asset == q.base_id,
+            "need a risky → base quote"
+        );
+        let now = now_ms();
+        for t in [buy.timestamp_ms, sell.timestamp_ms] {
+            require!(t <= now + 60_000 && now.saturating_sub(t) <= q.max_age_ms, "price quote too old");
+        }
+        let (mid, hs) = math::bracket(buy.amount_in, buy.amount_out, sell.amount_in, sell.amount_out).unwrap_or_else(|| env::panic_str("bad quote amounts"));
+        require!(hs <= q.max_spread_bps as u32, "price quotes too wide");
+        PricePoint {
+            mid: U128(mid),
+            half_spread_bps: hs,
+            source: "1click".into(),
+        }
     }
 
     // ---------- signals ----------
@@ -906,19 +992,27 @@ impl Vault {
 
     /// (risky asset's return since the last post, tolerance), both bps; None when
     /// there's nothing to compare against yet (first post, no oracle price, empty vault).
-    fn band_inputs(&self, p: &OraclePrice) -> Result<Option<(i128, i128)>, String> {
-        let (Some(last), Some(o)) = (&self.last_oracle, &self.cfg.nav_oracle) else {
+    fn band_inputs(&self, p: &PricePoint) -> Result<Option<(i128, i128)>, String> {
+        let tolerance = match (&self.cfg.nav_quotes, &self.cfg.nav_oracle) {
+            (Some(q), _) => q.tolerance_bps,
+            (_, Some(o)) => o.tolerance_bps,
+            _ => return Ok(None),
+        };
+        let Some(last) = &self.last_price else {
             return Ok(None);
         };
         if self.total_shares == 0 || self.navs.is_empty() {
             return Ok(None);
         }
-        let r = math::oracle_return_bps(last.price.0, last.expo, p.price.0, p.expo).ok_or("bad oracle price")?;
-        let tol = self.cfg.max_slippage_bps as i128 + o.tolerance_bps as i128 + math::conf_bps(p.price.0, p.conf.0) + math::conf_bps(last.price.0, last.conf.0);
+        if last.source != p.source {
+            return Ok(None); // a change of price source restarts the band
+        }
+        let r = math::mid_return_bps(last.mid.0, p.mid.0).ok_or("bad price")?;
+        let tol = self.cfg.max_slippage_bps as i128 + tolerance as i128 + p.half_spread_bps as i128 + last.half_spread_bps as i128;
         Ok(Some((r, tol)))
     }
 
-    fn check_band(&self, nav: u128, p: &OraclePrice) -> Result<(), String> {
+    fn check_band(&self, nav: u128, p: &PricePoint) -> Result<(), String> {
         let Some((r, tol)) = self.band_inputs(p)? else {
             return Ok(());
         };
@@ -1121,6 +1215,24 @@ impl Vault {
         require!(self.cfg.allowed_assets.contains(&f.origin_asset), "asset not allowed");
         require!(f.recipient == vault && f.refund_to == vault, "unshield must pay and refund the vault");
     }
+}
+
+/// An oracle price as a price point: mid scaled to 1e30 of its units, confidence as the spread.
+fn oracle_point(p: &OraclePrice) -> Option<PricePoint> {
+    if p.price.0 <= 0 {
+        return None;
+    }
+    let e = 30 + p.expo;
+    if !(0..=36).contains(&e) {
+        return None;
+    }
+    let mid = (p.price.0 as u128).checked_mul(10u128.pow(e as u32))?;
+    let hs = u32::try_from(math::conf_bps(p.price.0, p.conf.0)).ok()?;
+    Some(PricePoint {
+        mid: U128(mid),
+        half_spread_bps: hs,
+        source: "oracle".into(),
+    })
 }
 
 /// What a claim still has open: amount − paid − in flight.

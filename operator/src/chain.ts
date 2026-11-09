@@ -9,7 +9,8 @@ export type VaultView = { vault_account: string | null; total_shares: string; bo
 export type InFlight = { prehash: string; nonce: string; amount: string; deadline_ms: number; signed: boolean };
 export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: InFlight[]; epoch: number; emergency: boolean; opened_ms?: number };
 export type SignedIntent = { standard: "nep413"; payload: Nep413Payload; public_key: string; signature: string };
-export type Config = { base_token: string; base_asset_id: string; allowed_assets: string[]; max_slippage_bps: number; intents_contract: string | null; leader: string };
+export type NavQuotes = { base_id: string; risk_id: string; max_age_ms: number; tolerance_bps: number; max_spread_bps: number };
+export type Config = { base_token: string; base_asset_id: string; allowed_assets: string[]; max_slippage_bps: number; intents_contract: string | null; leader: string; nav_quotes?: NavQuotes | null };
 
 export interface VaultChain {
   readonly contractId: string;
@@ -19,7 +20,8 @@ export interface VaultChain {
   getSignalKey(): Promise<string | null>;
   /** Base units of the base asset held publicly: in the contract + on intents.near for the vault account. */
   publicBase(): Promise<bigint>;
-  postNav(epoch: number, nav: string, timestampMs: number, fillsHead: string, signature: string): Promise<string>;
+  /** `priceQuotes`: two 1Click-signed quotes for vaults with `nav_quotes`. */
+  postNav(epoch: number, nav: string, timestampMs: number, fillsHead: string, signature: string, priceQuotes?: SignedQuote[]): Promise<string>;
   recordSignal(hash: string, leaderSig: string, fillHash: string, executedMs: number): Promise<string>;
   signIntent(kind: SignKind, payload: Nep413Payload, quote: SignedQuote | null): Promise<{ tx: string; signature: string | null }>;
   /** Anyone: settle an in-flight payout against the public verifier's nonce record. Returns "paid" | "released" | "pending" | … */
@@ -81,9 +83,9 @@ export class NearVault implements VaultChain {
     const onIntents = BigInt(await viewCall<string>(this.intentsRpc, cfg.intents_contract, "mt_balance_of", { account_id: v.vault_account, token_id: cfg.base_asset_id }));
     return inContract + onIntents;
   }
-  async postNav(epoch: number, nav: string, timestamp_ms: number, fills_head: string, signature: string) {
+  async postNav(epoch: number, nav: string, timestamp_ms: number, fills_head: string, signature: string, priceQuotes?: SignedQuote[]) {
     // A post burns up to 100 queued withdrawals and may wait for the oracle: give it room.
-    const o = await (await this.acct()).functionCall({ contractId: this.contractId, methodName: "post_nav", args: { epoch, nav, timestamp_ms, fills_head, signature }, gas: 300n * TGAS, attachedDeposit: 0n });
+    const o = await (await this.acct()).functionCall({ contractId: this.contractId, methodName: "post_nav", args: { epoch, nav, timestamp_ms, fills_head, signature, ...(priceQuotes ? { price_quotes: priceQuotes.map((q) => ({ message: q.message, signature: q.signature })) } : {}) }, gas: 300n * TGAS, attachedDeposit: 0n });
     const failure = (o.receipts_outcome as any[]).map((r) => r.outcome.status?.Failure).find(Boolean);
     if (failure) throw new Error(`post_nav: ${JSON.stringify(failure).slice(0, 300)}`);
     // With a NAV oracle the post resolves in a callback that returns null on rejection.

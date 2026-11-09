@@ -96,6 +96,33 @@ pub fn matured_payout(shares: u128, nav: u128, total: u128, priced_at: u128) -> 
     payout_for_shares(shares, nav, total).min(shares * priced_at / PRICE_SCALE)
 }
 
+/// Fixed-point scale for quote prices (base units per risky unit). Big enough for
+/// 6-decimal USDC against 24-decimal wNEAR.
+pub const QUOTE_PRICE_SCALE: u128 = 1_000_000_000_000_000_000_000_000_000_000; // 1e30
+
+/// Bid/ask bracket from two signed quotes: `buy` sells base for risky
+/// (base_in → risky_out), `sell` sells risky for base (risky_in → base_out).
+/// Returns (mid, half-spread in bps, rounded up), prices × QUOTE_PRICE_SCALE.
+pub fn bracket(buy_base_in: u128, buy_risk_out: u128, sell_risk_in: u128, sell_base_out: u128) -> Option<(u128, u32)> {
+    let ask = buy_base_in.checked_mul(QUOTE_PRICE_SCALE)?.checked_div(buy_risk_out)?;
+    let bid = sell_base_out.checked_mul(QUOTE_PRICE_SCALE)?.checked_div(sell_risk_in)?;
+    let (lo, hi) = (bid.min(ask), bid.max(ask));
+    let mid = lo / 2 + hi / 2;
+    if mid == 0 {
+        return None;
+    }
+    let hs = ((hi - lo) * BPS).div_ceil(2 * mid);
+    Some((mid, u32::try_from(hs).ok()?))
+}
+
+/// Return in bps between two mids of the same source.
+pub fn mid_return_bps(m0: u128, m1: u128) -> Option<i128> {
+    if m0 == 0 {
+        return None;
+    }
+    Some((m1 as i128 - m0 as i128) * BPS as i128 / m0 as i128)
+}
+
 /// Does `leader` hold at least `min_bps` of `total`? An empty vault passes.
 pub fn leader_ok(leader: u128, total: u128, min_bps: u128) -> bool {
     total == 0 || leader * BPS >= min_bps * total

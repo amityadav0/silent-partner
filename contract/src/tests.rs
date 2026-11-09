@@ -62,6 +62,7 @@ pub(crate) fn cfg() -> Config {
         min_deposit: U128(1_000_000),
         allowed_assets: vec![USDC.into(), WNEAR.into()],
         nav_oracle: None,
+        nav_quotes: None,
     }
 }
 
@@ -88,7 +89,7 @@ pub(crate) fn post(v: &mut Vault, epoch: u64, nav: u128, ms: u64) -> NavPost {
     let head = "ab".repeat(32);
     ctx("op.testnet", ms);
     let m = v.nav_message(epoch, U128(nav), ms, head.clone());
-    posted(v.post_nav(epoch, U128(nav), ms, head, sig_str(att_key().sign(m.as_bytes()))))
+    posted(v.post_nav(epoch, U128(nav), ms, head, sig_str(att_key().sign(m.as_bytes())), None))
 }
 
 /// The NavPost of a post applied without an oracle (no promise).
@@ -244,11 +245,11 @@ fn nav_post_validation_table() {
     ];
     for (who, e, nav, ms, h, sig, want) in cases {
         ctx(who, t);
-        let got = panics(|| v.post_nav(e, U128(nav), ms, h.clone(), sig.clone()));
+        let got = panics(|| v.post_nav(e, U128(nav), ms, h.clone(), sig.clone(), None));
         assert!(got.contains(want), "{want}: got {got}");
     }
     ctx("op.testnet", t);
-    let p = posted(v.post_nav(1, U128(2_000_000), t, head.clone(), good(&v, 1, 2_000_000, t)));
+    let p = posted(v.post_nav(1, U128(2_000_000), t, head.clone(), good(&v, 1, 2_000_000, t), None));
     assert_eq!((p.epoch, p.fee_shares.0, p.price.0), (1, 0, math::PRICE_SCALE));
     assert_eq!(v.get_navs(0, 10).len(), 1);
 }
@@ -393,7 +394,7 @@ fn emergency_path() {
     assert!(panics(|| v.request_withdraw(U128(1), acc("follower.testnet"))).contains("emergency"));
     ctx("op.testnet", late);
     let m = v.nav_message(1, U128(1), late, "ab".repeat(32));
-    assert!(panics(|| v.post_nav(1, U128(1), late, "ab".repeat(32), sig_str(att_key().sign(m.as_bytes())))).contains("emergency"));
+    assert!(panics(|| v.post_nav(1, U128(1), late, "ab".repeat(32), sig_str(att_key().sign(m.as_bytes())), None)).contains("emergency"));
     // everyone else exits pro rata at last NAV
     ctx("follower.testnet", late);
     let id = v.emergency_exit(acc("follower.testnet"));
@@ -1017,7 +1018,7 @@ pub(crate) fn post_with_price(v: &mut Vault, nav: u128, price: Option<OraclePric
     let m = v.nav_message(epoch, U128(nav), ms, head.clone());
     let sig = sig_str(att_key().sign(m.as_bytes()));
     assert!(matches!(
-        v.post_nav(epoch, U128(nav), ms, head.clone(), sig.clone()),
+        v.post_nav(epoch, U128(nav), ms, head.clone(), sig.clone(), None),
         PromiseOrValue::Promise(_)
     ));
     ctx("vault.testnet", ms);
@@ -1051,7 +1052,7 @@ fn nav_is_bounded_by_the_risky_assets_move() {
         conf: U64(4_400_000),
         ..px(440_000_000)
     }; // 1%
-    let band = v.nav_band(wide.clone()).unwrap();
+    let band = v.nav_band(oracle_point(&wide).unwrap()).unwrap();
     assert_eq!(band, (-(100 + 50 + 100), 100 + 50 + 100)); // slippage + tolerance + conf_now (last conf 0)
 }
 
@@ -1062,12 +1063,12 @@ fn one_oracle_post_at_a_time() {
     let head = "ab".repeat(32);
     ctx("op.testnet", T0_MS + 1);
     let m = v.nav_message(1, U128(2_000_000), T0_MS + 1, head.clone());
-    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())));
-    assert!(panics(|| v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())))).contains("already waiting"));
+    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())), None);
+    assert!(panics(|| v.post_nav(1, U128(2_000_000), T0_MS + 1, head.clone(), sig_str(att_key().sign(m.as_bytes())), None)).contains("already waiting"));
     // a callback that never ran stops blocking after the timeout
     ctx("op.testnet", T0_MS + 1 + 10 * 60_000 + 1);
     let m2 = v.nav_message(1, U128(2_000_000), T0_MS + 2, head.clone());
-    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 2, head, sig_str(att_key().sign(m2.as_bytes())));
+    let _ = v.post_nav(1, U128(2_000_000), T0_MS + 2, head, sig_str(att_key().sign(m2.as_bytes())), None);
 }
 
 #[test]
@@ -1178,4 +1179,169 @@ fn migrates_season_v1_state() {
 
 fn shares_of(v: &Vault, who: &str) -> u128 {
     v.get_shares(acc(who)).0 .0
+}
+
+// ---------------- NAV price from 1Click-signed quotes ----------------
+
+pub(crate) fn quotes_vault() -> Vault {
+    ctx("owner.testnet", T0_MS);
+    near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
+    let mut c = cfg();
+    c.nav_quotes = Some(NavQuotes {
+        base_id: USDC.into(),
+        risk_id: WNEAR.into(),
+        max_age_ms: 5 * 60_000,
+        tolerance_bps: 50,
+        max_spread_bps: 100,
+    });
+    let mut v = Vault::new(c);
+    ctx("vault.testnet", T0_MS);
+    v.on_activate(Ok(pk_str(&mpc_key())));
+    v
+}
+
+/// ISO time for `ms` on 2026-11-09 (T0 is 10:00:00Z).
+pub(crate) fn iso(ms: u64) -> String {
+    let s = (ms - (T0_MS - 10 * 3_600_000)) / 1000;
+    format!("2026-11-09T{:02}:{:02}:{:02}.{:03}Z", s / 3600, (s / 60) % 60, s % 60, ms % 1000)
+}
+
+/// Two quotes like 1Click's around a mid price `usd` (USDC per NEAR, micro-dollars) with
+/// half-spread `hs_bps`: 10 USDC → wNEAR at the ask, 3 wNEAR → USDC at the bid.
+pub(crate) fn price_quotes(usd_micro: u128, hs_bps: u128, at_ms: u64, key: &SigningKey) -> Vec<SignedQuote> {
+    let ask = usd_micro * (10_000 + hs_bps) / 10_000; // micro-USDC per NEAR
+    let bid = usd_micro * (10_000 - hs_bps) / 10_000;
+    let near = 1_000_000_000_000_000_000_000_000u128;
+    let buy_out = 10_000_000u128 * near / ask;
+    let sell_out = 3 * bid;
+    let t = json!(iso(at_ms));
+    vec![
+        sign_like_oneclick(
+            &qmsg(&[
+                ("dry", json!(true)),
+                ("originAsset", json!(USDC)),
+                ("destinationAsset", json!(WNEAR)),
+                ("amount", json!("10000000")),
+                ("amountIn", json!("10000000")),
+                ("amountOut", json!(buy_out.to_string())),
+                ("timestamp", t.clone()),
+            ]),
+            key,
+        ),
+        sign_like_oneclick(
+            &qmsg(&[
+                ("dry", json!(true)),
+                ("originAsset", json!(WNEAR)),
+                ("destinationAsset", json!(USDC)),
+                ("amount", json!((3 * near).to_string())),
+                ("amountIn", json!((3 * near).to_string())),
+                ("amountOut", json!(sell_out.to_string())),
+                ("timestamp", t),
+            ]),
+            key,
+        ),
+    ]
+}
+
+/// Post `nav` with `quotes`; Some(applied?) or the panic message.
+pub(crate) fn post_q(v: &mut Vault, nav: u128, quotes: Vec<SignedQuote>, ms: u64) -> Result<bool, String> {
+    let epoch = v.epoch + 1;
+    let head = "ab".repeat(32);
+    ctx("op.testnet", ms);
+    let m = v.nav_message(epoch, U128(nav), ms, head.clone());
+    let sig = sig_str(att_key().sign(m.as_bytes()));
+    let mut out = None;
+    let got = panics(|| out = Some(v.post_nav(epoch, U128(nav), ms, head, sig, Some(quotes))));
+    match out {
+        Some(PromiseOrValue::Value(r)) => Ok(r.is_some()),
+        Some(PromiseOrValue::Promise(_)) => Err("unexpected promise".into()),
+        None => Err(got),
+    }
+}
+
+#[test]
+fn real_oneclick_quote_gives_price_facts() {
+    let vec: Value = near_sdk::serde_json::from_str(include_str!("../tests/vectors/oneclick_dry_quote.json")).unwrap();
+    let key = quote::decode_ed25519::<32>("ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc").unwrap();
+    let q = SignedQuote {
+        message: vec["message"].as_str().unwrap().into(),
+        signature: vec["signature"].as_str().unwrap().into(),
+    };
+    let f = quote::price_facts(&q, &key).unwrap();
+    assert!(f.amount_in > 0 && f.amount_out > 0 && f.timestamp_ms > 0);
+    let forged = SignedQuote {
+        message: q.message.replace(&f.amount_out.to_string(), &(f.amount_out * 2).to_string()),
+        ..q
+    };
+    assert_eq!(quote::price_facts(&forged, &key), Err(quote::QuoteError::BadSignature));
+}
+
+#[test]
+fn nav_is_bounded_by_signed_quotes() {
+    let k = test_key();
+    let mut v = quotes_vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    // first post records the price
+    assert_eq!(post_q(&mut v, 10_000_000, price_quotes(4_000_000, 20, t, &k), t), Ok(true));
+    // NEAR +10%; tolerance = 100 slippage + 50 + spreads 20 + 20 = 190 bps
+    let t2 = t + 60_000;
+    let book = v.book_nav;
+    assert_eq!(
+        post_q(&mut v, 12_000_000, price_quotes(4_400_000, 20, t2, &k), t2),
+        Ok(false),
+        "+20% with NEAR +10%"
+    );
+    assert_eq!((v.epoch, v.book_nav), (1, book));
+    assert_eq!(post_q(&mut v, 10_500_000, price_quotes(4_400_000, 20, t2, &k), t2 + 1), Ok(true), "+5% honest");
+    // refusals (the transaction fails)
+    let t3 = t2 + 60_000;
+    assert!(post_q(&mut v, 10_500_000, price_quotes(4_400_000, 20, t3 - 6 * 60_000, &k), t3)
+        .unwrap_err()
+        .contains("too old"));
+    assert!(post_q(&mut v, 10_500_000, price_quotes(4_400_000, 20, t3, &att_key()), t3)
+        .unwrap_err()
+        .contains("BadSignature"));
+    assert!(post_q(&mut v, 10_500_000, price_quotes(4_400_000, 150, t3, &k), t3)
+        .unwrap_err()
+        .contains("too wide"));
+    assert!(post_q(&mut v, 10_500_000, vec![], t3).unwrap_err().contains("exactly two"));
+    let q = price_quotes(4_400_000, 20, t3, &k);
+    assert!(post_q(&mut v, 10_500_000, vec![q[0].clone(), q[0].clone()], t3)
+        .unwrap_err()
+        .contains("risky → base"));
+    // the band view
+    let p = v.price_from_quotes(price_quotes(4_400_000, 20, t3, &k));
+    assert_eq!(v.nav_band(p), Some((-190, 190)));
+}
+
+#[test]
+fn bracket_math() {
+    // 10 USDC buys 2.5 NEAR (ask 4.0); 3 NEAR sells for 11.4 USDC (bid 3.8)
+    let near = 1_000_000_000_000_000_000_000_000u128;
+    let (mid, hs) = math::bracket(10_000_000, 25 * near / 10, 3 * near, 11_400_000).unwrap();
+    assert_eq!(mid, 39 * math::QUOTE_PRICE_SCALE / 10 / 1_000_000_000_000_000_000);
+    assert_eq!(hs, 257); // 0.1 / (2 × 3.9) = 2.56% → rounded up
+    assert_eq!(math::bracket(1, 0, 1, 1), None);
+}
+
+#[test]
+fn one_price_source_at_most() {
+    let mut c = cfg();
+    c.nav_quotes = Some(NavQuotes {
+        base_id: USDC.into(),
+        risk_id: WNEAR.into(),
+        max_age_ms: 300_000,
+        tolerance_bps: 50,
+        max_spread_bps: 100,
+    });
+    c.nav_oracle = Some(NavOracle {
+        contract: acc("pyth.testnet"),
+        price_id: FEED.into(),
+        max_age_s: 60,
+        tolerance_bps: 50,
+    });
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| Vault::new(c)).contains("one NAV price source"));
 }

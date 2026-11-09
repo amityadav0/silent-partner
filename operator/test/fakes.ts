@@ -26,8 +26,8 @@ export class FakeChain implements VaultChain {
   publicBal = 0n;
   settleResult = "paid";
   publicBalance = async () => this.publicBal;
-  async postNav(epoch: number, nav: string, ts: number, head: string, sig: string) {
-    this.calls.push({ m: "postNav", args: [epoch, nav, ts, head, sig] });
+  async postNav(epoch: number, nav: string, ts: number, head: string, sig: string, priceQuotes?: unknown[]) {
+    this.calls.push({ m: "postNav", args: priceQuotes ? [epoch, nav, ts, head, sig, priceQuotes] : [epoch, nav, ts, head, sig] });
     this.view = { ...this.view, epoch, last_nav_ms: ts };
     return "tx-nav";
   }

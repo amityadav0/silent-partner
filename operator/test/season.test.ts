@@ -195,3 +195,23 @@ describe("AI allocator", () => {
     expect([weightBucket(0), weightBucket(0.19), weightBucket(0.2), weightBucket(0.73), weightBucket(1), weightBucket(null)]).toEqual(["0–20%", "0–20%", "20–40%", "60–80%", "80–100%", "hold"]);
   });
 });
+
+describe("NAV price from 1Click quotes", () => {
+  it("posts NAV with two signed dry quotes: base → risky, then exactly that much risky → base", async () => {
+    const chain = new FakeChain();
+    chain.public = 40_000_000n;
+    chain.cfg = { ...chain.cfg, nav_quotes: { base_id: USDC, risk_id: WNEAR, max_age_ms: 300_000, tolerance_bps: 50, max_spread_bps: 100 } };
+    const seen: { path: string; body: any }[] = [];
+    const op = new Operator(chain, new Confidential("https://1click.test", "", fixtureFetch({ "/v0/quote": dryQuotes }, seen), undefined, true), new FillLog("vault.testnet", null), KeyPair.fromRandom("ed25519"), "ed25519:x", { dryRun: true, chainWrites: true, slippageBps: 50, minShield: 1_000_000n, assetMap: {}, decimals: {}, signalMaxAgeMs: 300_000, pollMs: 0, pollTries: 1 }, () => NOW, async () => {});
+    await op.epoch();
+    const post = chain.calls.find((c) => c.m === "postNav")!;
+    const quotes = post.args[5] as { message: string; signature: string }[];
+    expect(quotes.length).toBe(2);
+    const [b, s] = quotes.map((q) => JSON.parse(q.message));
+    expect([b.originAsset, b.destinationAsset, s.originAsset, s.destinationAsset]).toEqual([USDC, WNEAR, WNEAR, USDC]);
+    const priced = seen.filter((x) => x.path === "/v0/quote").slice(-2).map((x) => x.body);
+    expect(priced[0].amount).toBe("10000000");
+    expect(priced[1].amount).toBe(b.amountOut); // sells what the buy would get
+    expect(quotes.every((q) => q.signature.startsWith("ed25519:"))).toBe(true);
+  });
+});

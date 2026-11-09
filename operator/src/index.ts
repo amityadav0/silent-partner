@@ -14,7 +14,6 @@ import { Confidential } from "./confidential.js";
 import { FillLog } from "./filllog.js";
 import { Operator } from "./operator.js";
 import { loadEnv } from "./config.js";
-import { PythPush } from "./oracle.js";
 
 export function makeApp(op: Operator | null, chain: VaultChain | null, mode: Record<string, unknown>) {
   const app = new Hono();
@@ -58,12 +57,8 @@ export async function main() {
   const safe = (name: string, f: () => Promise<unknown>) => f().catch((e) => console.error(`${name}: ${(e as Error).message}`));
   setInterval(() => safe("limits", () => op.tickLimits()), 30_000);
   setInterval(() => safe("shield", () => op.shieldPending()), 60_000);
-  // NAV bound: a fresh Pyth price must be on-chain before each post (pull oracle).
-  const pyth = process.env.PYTH_HERMES_KEY && env.operatorKey ? new PythPush(env.rpc, process.env.PYTH_ORACLE ?? "pyth-oracle.near", env.operatorId, env.operatorKey, process.env.PYTH_HERMES_KEY) : null;
-  setInterval(() => safe("epoch", async () => {
-    if (pyth) await pyth.push();
-    console.log("epoch", await op.epoch());
-  }), env.epochMs);
+  // NAV bound (mainnet): op.epoch() attaches two 1Click-signed price quotes to each post.
+  setInterval(() => safe("epoch", async () => console.log("epoch", await op.epoch())), env.epochMs);
 }
 
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) main().catch((e) => { console.error(e); process.exit(1); });

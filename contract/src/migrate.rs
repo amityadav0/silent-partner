@@ -74,6 +74,7 @@ impl Vault {
             min_deposit: c.min_deposit,
             allowed_assets: c.allowed_assets,
             nav_oracle,
+            nav_quotes: None,
         };
         if let Some(o) = &cfg.nav_oracle {
             require!(cfg.allowed_assets.len() == 2 && unhex32(&o.price_id).is_some(), "bad nav_oracle");
@@ -104,7 +105,7 @@ impl Vault {
             used_deposits: LookupSet::new(b"u"),
             signal_hashes,
             maturing: IterableMap::new(b"m"),
-            last_oracle: None,
+            last_price: None,
             posting_since_ms: 0,
         }
     }

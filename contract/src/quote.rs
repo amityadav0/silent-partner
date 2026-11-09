@@ -113,6 +113,39 @@ fn units(v: &Value, k: &'static str) -> Result<u128, QuoteError> {
     t.parse().map_err(|_| QuoteError::Malformed(k))
 }
 
+/// What a price quote says: `amount_in` of `origin` buys `amount_out` of `destination`, at `timestamp_ms`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PriceFacts {
+    pub origin_asset: String,
+    pub destination_asset: String,
+    pub amount_in: u128,
+    pub amount_out: u128,
+    pub timestamp_ms: u64,
+}
+
+/// Verify a 1Click quote under `key` for use as a *price* (dry or not: it moves
+/// nothing). The signed message carries the amounts and 1Click's timestamp.
+pub fn price_facts(q: &SignedQuote, key: &[u8; 32]) -> Result<PriceFacts, QuoteError> {
+    if !signature_ok(&q.message, &q.signature, key) {
+        return Err(QuoteError::BadSignature);
+    }
+    let v: Value = near_sdk::serde_json::from_str(&q.message).map_err(|_| QuoteError::Malformed("json"))?;
+    if s(&v, "swapType")? != "EXACT_INPUT" {
+        return Err(QuoteError::Malformed("swapType"));
+    }
+    let amount_in = units(&v, "amountIn")?;
+    if units(&v, "amount")? != amount_in {
+        return Err(QuoteError::Malformed("amountIn"));
+    }
+    Ok(PriceFacts {
+        origin_asset: s(&v, "originAsset")?.into(),
+        destination_asset: s(&v, "destinationAsset")?.into(),
+        amount_in,
+        amount_out: units(&v, "amountOut")?,
+        timestamp_ms: parse_iso_ms(s(&v, "timestamp")?).ok_or(QuoteError::Malformed("timestamp"))?,
+    })
+}
+
 /// Verify the signature under `key` and extract the facts. Shape checks that
 /// depend on what the quote is for live in lib.rs.
 pub fn verify(q: &SignedQuote, key: &[u8; 32]) -> Result<QuoteFacts, QuoteError> {
