@@ -1,0 +1,101 @@
+{
+ "vault": "sp-manual-92991.testnet",
+ "upto_epoch": 3,
+ "published_at": "2026-11-09T03:19:20.135Z",
+ "entries": [
+  {
+   "seq": 0,
+   "prev": "b0c5c2aaf6dd279c589dab4affddbc938f751038452f299141a020440c4db642",
+   "ts": 1794193454151,
+   "kind": "shield",
+   "data": {
+    "amount": "650000000",
+    "dry": true,
+    "status": "PAPER"
+   },
+   "hash": "16b470d1cd5cc5128219342eb463285f2fff954ca15c4f5ac71d1e12bec53e80"
+  },
+  {
+   "seq": 1,
+   "prev": "16b470d1cd5cc5128219342eb463285f2fff954ca15c4f5ac71d1e12bec53e80",
+   "ts": 1794193458568,
+   "kind": "nav",
+   "data": {
+    "epoch": 1,
+    "nav": "650000000",
+    "timestamp_ms": 1794193457568
+   },
+   "hash": "c0ebd57ccb160e600b64886243aec010b802a662ca64fc5e75e654b2a8fca4a8"
+  },
+  {
+   "seq": 2,
+   "prev": "c0ebd57ccb160e600b64886243aec010b802a662ca64fc5e75e654b2a8fca4a8",
+   "ts": 1794193700569,
+   "kind": "nav",
+   "data": {
+    "epoch": 2,
+    "nav": "650000000",
+    "timestamp_ms": 1794193699569
+   },
+   "hash": "0d75c47cdf9a26e8b25dd1fc228dc96b4d500d25e5ae11d0c65eda226823791b"
+  },
+  {
+   "seq": 3,
+   "prev": "0d75c47cdf9a26e8b25dd1fc228dc96b4d500d25e5ae11d0c65eda226823791b",
+   "ts": 1794194331534,
+   "kind": "signal",
+   "data": {
+    "hash": "8695e55dd6fe18461737b341f1dcb841bff3ac24c9a2675b0e0ba52a3154eef9",
+    "nonce": "3c30ff6bb32958ce",
+    "type": "market"
+   },
+   "hash": "ff90aad67b329558507b05d26f471231ac540adbadf5751459565cac041219eb"
+  },
+  {
+   "seq": 4,
+   "prev": "ff90aad67b329558507b05d26f471231ac540adbadf5751459565cac041219eb",
+   "ts": 1794194332867,
+   "kind": "fill",
+   "data": {
+    "signal": "8695e55dd6fe18461737b341f1dcb841bff3ac24c9a2675b0e0ba52a3154eef9",
+    "from": "nep141:usdc.fakes.testnet",
+    "to": "nep141:wrap.testnet",
+    "amount_in": "325000000",
+    "min_amount_out": "89627596790058428835086762",
+    "quote_signature": "ed25519:5kn8WiJiXTEgFx579FSkhU5xqmysuVMpCBwMBFFPePBAGDoYSX17Y4cxfMPcmcW8emuRn12PD6dfQvQ3M9ZyPpsa",
+    "amount_out": "90077986723676812899584686",
+    "dry": true,
+    "status": "PAPER"
+   },
+   "hash": "02aecf3d474d345f2ad47bc768e44645c44904da972b755ccf617a984aaadeb1"
+  },
+  {
+   "seq": 5,
+   "prev": "02aecf3d474d345f2ad47bc768e44645c44904da972b755ccf617a984aaadeb1",
+   "ts": 1794194337260,
+   "kind": "nav",
+   "data": {
+    "epoch": 3,
+    "nav": "648423254",
+    "timestamp_ms": 1794194336260
+   },
+   "hash": "5d18825075b1a0de65c3e01cb648843925e7deae0bb2441d44ef181bd774231a"
+  }
+ ],
+ "signals": [
+  {
+   "hash": "8695e55dd6fe18461737b341f1dcb841bff3ac24c9a2675b0e0ba52a3154eef9",
+   "signal": {
+    "v": 1,
+    "vault": "sp-manual-92991.testnet",
+    "from": "nep141:usdc.fakes.testnet",
+    "to": "nep141:wrap.testnet",
+    "size_bps": 5000,
+    "type": "market",
+    "nonce": "3c30ff6bb32958ce",
+    "created_ms": 1794194290434
+   },
+   "why": "manual"
+  }
+ ]
+}

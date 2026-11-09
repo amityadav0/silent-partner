@@ -24,7 +24,8 @@ export function Nav() {
         <Link href="/" className="font-bold no-underline" style={{ color: "CanvasText" }}>
           Silent Partner
         </Link>
-        {link("/", "Leaderboard")}
+        {link("/leaderboard/", "Leaderboard")}
+        {link("/chain/", "What the chain sees")}
         {link("/leader/", "Leader console")}
         <span className="ml-auto flex items-center gap-3">
           {NETWORK === "testnet" && <span className="chip chip-warn">testnet</span>}
@@ -87,6 +88,22 @@ export function ModeChip({ id }: { id: string }) {
 export function StatusChip({ s }: { s: string }) {
   const cls = s === "active" ? "chip-ok" : s === "emergency" ? "chip-bad" : "chip-warn";
   return <span className={`chip ${cls}`} data-testid="status">{s}</span>;
+}
+
+/** Tiny return line for table rows: last 96 epochs, colored by the latest sign. */
+export function Sparkline({ points, w = 96, h = 24 }: { points: { t: number; r: number }[]; w?: number; h?: number }) {
+  const p = points.slice(-96);
+  if (p.length < 2) return <span className="muted text-xs">–</span>;
+  const rs = p.map((x) => x.r), lo = Math.min(0, ...rs), hi = Math.max(0, ...rs), span = hi - lo || 1;
+  const y = (r: number) => h - 2 - ((r - lo) / span) * (h - 4);
+  const d = p.map((x, i) => `${i ? "L" : "M"}${((i / (p.length - 1)) * (w - 2) + 1).toFixed(1)},${y(x.r).toFixed(1)}`).join("");
+  const up = rs[rs.length - 1] >= 0;
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`return trend, last ${(rs[rs.length - 1] * 100).toFixed(2)}%`} data-testid="sparkline">
+      <line x1="0" x2={w} y1={y(0)} y2={y(0)} className="zero" />
+      <path d={d} fill="none" strokeWidth="1.5" className={up ? "line-pos" : "line-neg"} />
+    </svg>
+  );
 }
 
 /** Return since inception per NAV epoch: a line with a zero baseline. */

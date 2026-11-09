@@ -15,3 +15,5 @@ export const ASSETS: Record<string, { symbol: string; decimals: number }> = {
   "nep141:usdc.fakes.testnet": { symbol: "USDC", decimals: 6 },
   "nep141:wrap.testnet": { symbol: "wNEAR", decimals: 24 },
 };
+/** Set when the site is served from a sub-path (GitHub Pages). */
+export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";

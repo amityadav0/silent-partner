@@ -66,3 +66,12 @@ test("drill vault: emergency state, pro-rata exit button, the follower's paid em
   await expect(page.getByTestId("my-position")).toContainText("Claim #0 (emergency): 80");
   await expect(page.getByTestId("my-position").locator(".chip-ok")).toHaveText("paid");
 });
+
+test("what the chain sees: three views of one vault; the disclosed log matches every on-chain commitment", async ({ page }) => {
+  await page.goto("/chain/");
+  await expect(page.getByTestId("observer")).toContainText("Book NAV");
+  await expect(page.getByTestId("follower")).toContainText("P&L");
+  await expect(page.getByTestId("leader")).toContainText("Holds wNEAR");
+  await expect(page.getByTestId("disclosure-verdict")).toContainText("Matches the chain");
+  await expect(page.getByTestId("checks")).toContainText("Signal #0");
+});

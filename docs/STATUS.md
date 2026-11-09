@@ -55,7 +55,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 1. Paper season: 4 demo vaults + drill vault on testnet, bots, operator in paper mode at real 1Click dry-quote prices, GitHub Actions cron every 15 min, honest "paper · testnet" labels
 - [x] 2. AI leader on NEAR AI Cloud (rationale kept private, hash only). Waiting on `NEARAI_API_KEY` (NEEDS-AMIT §7); it holds until then
 - [x] 3. Emergency exit drill: drill build, operator stopped, follower exited pro rata via `PublicPayout` on the real testnet verifier and withdrew to their wallet (docs/testnet.md); emergency banner, Exit button and self-service payout in the UI
-- [ ] 4. "What the chain sees" page
+- [x] 4. "What the chain sees" page (`/chain/`): observer, follower and leader views of the manual vault, real testnet data, disclosure verified in the browser
 - [ ] 5. Landing page + GitHub Pages deploy
 - [ ] 6. UX: position P&L, withdrawal states, create-vault wizard, sparklines and sorting, refresh screens
 - [ ] 7. Hardening: property tests, fresh-context review, fixes, threat-model list

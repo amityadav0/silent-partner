@@ -84,3 +84,42 @@ describe("emergency helpers", () => {
     expect(openOfClaim({ id: 0, account: "a", exit_account: "a", amount: "100", paid: "30", in_flight: [{ prehash: "", amount: "20", deadline_ms: 0, signed: true }], epoch: 1, emergency: true })).toBe(50n);
   });
 });
+
+import { checkDisclosure, entryHash, genesis, holdings, signalHashHex, type Disclosure, type Entry } from "../lib/disclosure";
+
+describe("disclosure checks", () => {
+  const V = "v.testnet", USDC = "nep141:usdc", NEAR = "nep141:wnear";
+  const sig: Signal = { v: 1, vault: V, from: USDC, to: NEAR, size_bps: 5000, type: "market", nonce: "00112233445566778899", created_ms: 1 };
+  const sh = signalHashHex(sig);
+  function log(): Entry[] {
+    const es: Entry[] = [];
+    const add = (kind: string, data: Record<string, unknown>) => {
+      const b = { seq: es.length, prev: es.at(-1)?.hash ?? genesis(V), ts: es.length, kind, data };
+      es.push({ ...b, hash: entryHash(b) });
+    };
+    add("shield", { amount: "100", dry: true });
+    add("signal", { hash: sh, nonce: sig.nonce, type: "market" });
+    add("fill", { signal: sh, from: USDC, to: NEAR, amount_in: "50", amount_out: "7" });
+    add("nav", { epoch: 1, nav: "99", timestamp_ms: 5 });
+    return es;
+  }
+  const navs = (es: Entry[], nav = "99") => [{ epoch: 1, nav, timestamp_ms: 5, block_ms: 0, price: "0", total_shares: "0", fee_shares: "0", withdrawn: "0", fills_head: es[3].hash, signature: "" }];
+  const signals = (es: Entry[]) => [{ index: 0, hash: sh, fill_hash: es[2].hash, executed_ms: 3, epoch: 0 }];
+  const D = (es: Entry[], s = [{ hash: sh, signal: sig }]): Disclosure => ({ vault: V, upto_epoch: 1, published_at: "", entries: es, signals: s });
+
+  it("an honest disclosure matches every commitment", () => {
+    const es = log();
+    const c = checkDisclosure(D(es), navs(es), signals(es));
+    expect(c.length).toBe(3);
+    expect(c.every((x) => x.ok)).toBe(true);
+    expect(holdings(es, USDC)).toEqual(new Map([[USDC, 50n], [NEAR, 7n]]));
+  });
+  it("a rewritten entry, a different NAV, or a forged signal are caught", () => {
+    const es = log();
+    const tampered = es.map((e) => (e.seq === 2 ? { ...e, data: { ...e.data, amount_out: "70" } } : e));
+    expect(checkDisclosure(D(tampered), navs(es), signals(es))[0].ok).toBe(false);
+    expect(checkDisclosure(D(es), navs(es, "100"), signals(es))[1].ok).toBe(false);
+    const forged = { ...sig, size_bps: 9000 };
+    expect(checkDisclosure(D(es, [{ hash: sh, signal: forged }]), navs(es), signals(es))[2].ok).toBe(false);
+  });
+});
