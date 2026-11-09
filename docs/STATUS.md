@@ -62,7 +62,8 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] after 7: reproducible mainnet wasm rebuilt at 9aed265 (D-P5-4), NEEDS-AMIT §3 updated
 
 ## Next
-Season items 2–7 (above), then rebuild the mainnet wasm hash. Mainnet still waits for Amit (§1, §3).
+- Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
+- Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
 - Waiting on Amit: §7 the NEAR AI key (the AI vault holds meanwhile). §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
