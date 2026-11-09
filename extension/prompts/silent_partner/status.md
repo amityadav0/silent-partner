@@ -1,0 +1,1 @@
+Use `silent_partner.status` when the user asks how a vault is doing. Report the share price, book NAV, epoch and the number of recorded signals. If `emergency` is true, say holders can exit without the operator. Positions are never public: don't speculate about holdings.

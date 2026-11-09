@@ -25,7 +25,9 @@ export default function LeaderConsole() {
   const [onchainKey, setOnchainKey] = useState<string | null | undefined>(undefined);
   const [secret, setSecret] = useState<string | null>(null);
   const [signals, setSignals] = useState<SignalRec[]>([]);
-  const [form, setForm] = useState({ from: "", to: "", pct: "25", type: "market" as "market" | "limit", limit: "" });
+  const [form, setForm] = useState({ from: "", to: "", pct: "25", type: "market" as "market" | "limit" | "target", limit: "" });
+  // ?target=40: "move the vault to 40% NEAR" (from the IronClaw tool's tap-to-sign link)
+  const targetParam = useQueryParam("target");
   const [out, setOut] = useState<{ ok: boolean; text: string } | null>(null);
   const [preview, setPreview] = useState<string>("");
 
@@ -38,6 +40,12 @@ export default function LeaderConsole() {
   useEffect(() => {
     if (data && !form.from) setForm((f) => ({ ...f, from: data.cfg.allowed_assets[0], to: data.cfg.allowed_assets[1] ?? data.cfg.allowed_assets[0] }));
   }, [data, form.from]);
+
+  useEffect(() => {
+    if (!data || !targetParam) return;
+    const base = data.cfg.base_asset_id, risk = data.cfg.allowed_assets.find((a) => a !== base) ?? base;
+    setForm((f) => ({ ...f, type: "target", from: base, to: risk, pct: targetParam }));
+  }, [data, targetParam]);
 
   if (!id || !data) return <p className="muted">Reading vault…</p>;
   const isLeader = accountId === data.cfg.leader;
@@ -57,8 +65,12 @@ export default function LeaderConsole() {
 
   function build(): Signal | string {
     const bps = Math.round(Number(form.pct) * 100);
-    if (!(bps >= 1 && bps <= 10_000)) return "Size must be between 0.01% and 100% of NAV.";
     if (form.from === form.to) return "Pick two different assets.";
+    if (form.type === "target") {
+      if (!(bps >= 0 && bps <= 10_000)) return "Target weight must be 0–100%.";
+      return { v: 1, vault: id!, from: form.from, to: form.to, size_bps: 10_000, type: "target", target_bps: bps, nonce: randomNonce(), created_ms: Date.now() };
+    }
+    if (!(bps >= 1 && bps <= 10_000)) return "Size must be between 0.01% and 100% of NAV.";
     if (form.type === "limit" && !/^\d+(\.\d+)?$/.test(form.limit)) return "Enter a limit price.";
     return { v: 1, vault: id!, from: form.from, to: form.to, size_bps: bps, type: form.type, ...(form.type === "limit" ? { limit_price: form.limit, expires_ms: Date.now() + 24 * 3600_000 } : {}), nonce: randomNonce(), created_ms: Date.now() };
   }
@@ -108,11 +120,11 @@ export default function LeaderConsole() {
           <label className="flex flex-col gap-1">Buy
             <select value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })}>{data.cfg.allowed_assets.map((a) => <option key={a} value={a}>{sym(a)}</option>)}</select>
           </label>
-          <label className="flex flex-col gap-1">Size, % of NAV
+          <label className="flex flex-col gap-1">{form.type === "target" ? `Target weight of ${sym(form.to)}, %` : "Size, % of NAV"}
             <input aria-label="Size percent of NAV" value={form.pct} onChange={(e) => setForm({ ...form, pct: e.target.value })} inputMode="decimal" />
           </label>
           <label className="flex flex-col gap-1">Order
-            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "market" | "limit" })}><option value="market">Market</option><option value="limit">Limit</option></select>
+            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "market" | "limit" | "target" })} data-testid="order-type"><option value="market">Market</option><option value="limit">Limit</option><option value="target">Target weight</option></select>
           </label>
           <label className="flex flex-col gap-1">Limit ({sym(form.to)} per {sym(form.from)})
             <input aria-label="Limit price" disabled={form.type !== "limit"} value={form.limit} onChange={(e) => setForm({ ...form, limit: e.target.value })} inputMode="decimal" />

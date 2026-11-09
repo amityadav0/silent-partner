@@ -17,6 +17,8 @@ jobs:
       - run: cargo build --release --target wasm32-unknown-unknown
       - name: oracle mock (testnet stand-in for Pyth)
         run: cargo test --manifest-path ../oracle-mock/Cargo.toml
+      - name: IronClaw tool (pure logic)
+        run: cargo test --manifest-path ../extension/wasm-src/Cargo.toml
   operator:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: operator } }

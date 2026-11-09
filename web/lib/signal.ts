@@ -7,7 +7,7 @@ import { bytesToHex } from "@noble/hashes/utils";
 import { base58 } from "@scure/base";
 import { canonicalJson } from "./canonical";
 
-export type Signal = { v: 1; vault: string; from: string; to: string; size_bps: number; type: "market" | "limit"; limit_price?: string; expires_ms?: number; nonce: string; created_ms: number };
+export type Signal = { v: 1; vault: string; from: string; to: string; size_bps: number; type: "market" | "limit" | "target"; target_bps?: number; limit_price?: string; expires_ms?: number; nonce: string; created_ms: number };
 
 export const signalHash = (s: Signal) => sha256(new TextEncoder().encode(canonicalJson(s)));
 

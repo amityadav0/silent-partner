@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Silent Partner target signal",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "vault": { "type": "string", "description": "The vault contract, e.g. sp-convict-8952.testnet" },
+    "target_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Target NEAR weight as % of NAV" }
+  },
+  "required": ["vault", "target_pct"]
+}

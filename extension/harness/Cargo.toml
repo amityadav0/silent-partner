@@ -1,0 +1,18 @@
+[package]
+name = "sp-harness"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Dev-only stand-in for the IronClaw host: runs the Silent Partner WASM component with the manifest's per-tool egress allowlist and IronClaw's test rewrite map, and logs every outbound request."
+
+[workspace]
+
+[dependencies]
+wasmtime = "50"
+wasmtime-wasi = "50"
+ureq = "3"
+toml = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"

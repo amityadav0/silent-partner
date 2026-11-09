@@ -14,7 +14,11 @@ export const SignalSchema = z.object({
   from: z.string().min(3), // public asset id sold
   to: z.string().min(3),   // public asset id bought
   size_bps: z.number().int().min(1).max(10_000), // of NAV
-  type: z.enum(["market", "limit"]),
+  /** market / limit: trade size_bps of NAV from → to. target: move the vault's
+   *  weight in `to` to target_bps of NAV (the operator, which knows the holdings,
+   *  sizes the trade; size_bps caps it). */
+  type: z.enum(["market", "limit", "target"]),
+  target_bps: z.number().int().min(0).max(10_000).optional(),
   /** limit only: minimum human units of `to` per 1 human unit of `from`. */
   limit_price: z.string().regex(/^\d+(\.\d+)?$/).optional(),
   /** limit only: give up after this time. */
@@ -24,7 +28,8 @@ export const SignalSchema = z.object({
   nonce: z.string().regex(/^[0-9a-f]{16,64}$/),
   created_ms: z.number().int(),
 }).refine((s) => s.from !== s.to, "from and to must differ")
-  .refine((s) => (s.type === "limit") === (s.limit_price !== undefined), "limit_price is required for limit signals only");
+  .refine((s) => (s.type === "limit") === (s.limit_price !== undefined), "limit_price is required for limit signals only")
+  .refine((s) => (s.type === "target") === (s.target_bps !== undefined), "target_bps is required for target signals only");
 export type Signal = z.infer<typeof SignalSchema>;
 export type SignedSignal = { signal: Signal; signature: string; public_key: string };
 

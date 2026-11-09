@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Silent Partner vault status",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": { "vault": { "type": "string", "description": "The vault contract" } },
+  "required": ["vault"]
+}

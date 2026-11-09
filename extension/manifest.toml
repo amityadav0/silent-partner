@@ -1,0 +1,47 @@
+schema_version = "reborn.extension_manifest.v3"
+id = "silent_partner"
+name = "Silent Partner"
+version = "0.1.0"
+description = "Lead a private copy-trading vault on NEAR from chat. Tell it a target NEAR weight ('move the vault to 40% NEAR'); it builds a leader signal for the vault's operator. It signs only if you put your vault signal key in the workspace; otherwise it gives you a one-tap link to sign in the leader console. The signal key can't move funds."
+trust = "third_party"
+
+[runtime]
+kind = "wasm"
+module = "wasm/silent_partner_tool.wasm"
+
+# ── silent_partner.signal ───────────────────────────────────────────────────
+# Target-weight signal for one vault. Reads the vault's assets from NEAR RPC;
+# signs with `silent-partner/signal-key/<vault>` from the workspace if present
+# and sends it to the operator; otherwise returns a tap-to-sign link.
+[[tools]]
+origin_gate_matrix = { loop_run = "gated_unless_granted", product = "forbidden", automation = "forbidden" }
+id = "silent_partner.signal"
+description = "Move a Silent Partner vault to a target NEAR weight (0-100% of NAV). The operator executes it once for the whole vault at one 1Click price, and records the signal hash on-chain."
+effects = ["network"]
+default_permission = "ask"
+visibility = "model"
+input_schema_ref = "schemas/silent_partner/signal.input.v1.json"
+prompt_doc_ref = "prompts/silent_partner/signal.md"
+network_targets = [
+  { scheme = "https", host_pattern = "rpc.testnet.fastnear.com" },
+  { scheme = "https", host_pattern = "rpc.mainnet.fastnear.com" },
+  { scheme = "https", host_pattern = "operator.silent-partner.invalid" },
+]
+max_egress_bytes = 131072
+
+# ── silent_partner.status ───────────────────────────────────────────────────
+# Public vault state only: NAV, share price, epoch, signals recorded.
+[[tools]]
+origin_gate_matrix = { loop_run = "gated_unless_granted", product = "forbidden", automation = "forbidden" }
+id = "silent_partner.status"
+description = "Read a Silent Partner vault's public state from NEAR: book NAV, share price, epoch, recorded signals, emergency. Positions are never public."
+effects = ["network"]
+default_permission = "allow"
+visibility = "model"
+input_schema_ref = "schemas/silent_partner/status.input.v1.json"
+prompt_doc_ref = "prompts/silent_partner/status.md"
+network_targets = [
+  { scheme = "https", host_pattern = "rpc.testnet.fastnear.com" },
+  { scheme = "https", host_pattern = "rpc.mainnet.fastnear.com" },
+]
+max_egress_bytes = 65536

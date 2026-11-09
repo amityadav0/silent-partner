@@ -344,3 +344,24 @@ describe("operator, live path (no funds: test-key quotes, fake 1Click)", () => {
     expect(utils.PublicKey.fromString(att.getPublicKey().toString()).verify(new TextEncoder().encode(msg), base58.decode(e.signature.slice(8)))).toBe(true);
   });
 });
+
+describe("target signals", () => {
+  it("the leader names a weight; the operator sizes the trade from its private holdings", async () => {
+    const t = setup();
+    t.chain.public = 40_000_000n;
+    await t.op.shieldPending();
+    const r = await t.op.submitSignal(signSignal(sig({ type: "target", target_bps: 4000, size_bps: 10_000 }), leader));
+    expect(r).toMatchObject({ ok: true, status: "executed" });
+    const fill = t.log.entries.find((e) => e.kind === "fill")!;
+    expect([fill.data.from, fill.data.to]).toEqual([USDC, WNEAR]);
+    // asks 1Click to sell 40% of the 40 USDC NAV (the recorded fixture answers with fixed amounts)
+    const asked = t.seen.filter((x) => x.path === "/v0/quote" && x.body.originAsset === USDC && x.body.destinationAsset === WNEAR).at(-1)!.body;
+    expect(asked.amount).toBe("16000000");
+    expect(t.chain.calls.find((c) => c.m === "recordSignal")).toBeTruthy();
+  });
+  it("target_bps is required for target signals and only for them", () => {
+    const want = { vault: "vault.testnet", signalKey: leader.getPublicKey().toString(), nowMs: NOW, maxAgeMs: 300_000, seenNonces: new Set<string>(), allowedAssets: [USDC, WNEAR] };
+    expect(verifySignal(signSignal(sig({ type: "target" }), leader), want).ok).toBe(false);
+    expect(verifySignal(signSignal(sig({ target_bps: 4000 }), leader), want).ok).toBe(false);
+  });
+});

@@ -212,3 +212,11 @@ Each decision is dated, with its reason.
 - **D-F-4 (2026-11-09) Leader track-record card.**
   - **Metrics.** Return after fees, max drawdown, a Sharpe-like ratio, epochs live, and the leader's share of the vault, all from on-chain NAV posts. The Sharpe-like ratio is the annualised mean over the volatility of per-post returns, with no risk-free rate. It's shown only after a day and 20 posts, because annualising fifteen-minute noise gave values like −91.
   - **Where.** The share page (`/s/?id=`) shows the metrics. The season job renders a 1200×630 PNG per vault every tick (resvg, `operator/src/season/card.ts`) into `season-state/cards/` in the clear, since it holds only public data, so each vault has a stable image URL for X posts. The share page embeds it with "Open the image" and "Post on X".
+- **D-F-5 (2026-11-09) Trade from chat (IronClaw).** `extension/` has the Scope pattern: manifest v3, per-tool egress allowlists, a WASM component and a wasmtime harness. It offers two tools.
+  - **`silent_partner.signal`** turns "move the vault to 40% NEAR" into a new signal type, `target` (`target_bps`). The leader names a weight and the operator, which holds the private positions, sizes the trade.
+  - **Signing.** Two alternatives were weighed.
+    - **Key in the IronClaw workspace** (`silent-partner/signal-key/<vault>`): fully in chat, but a key in the agent's workspace. Opt-in.
+    - **Tap-to-sign link** into the leader console (`/leader/?id=…&target=40`), which signs with the browser-held key. The default when no key is present; it matches Scope's `needs_tap`.
+    - **Rejected:** host-injected credentials, because IronClaw injects bearer tokens into HTTP and can't sign for us, and an ed25519 signature is what `record_signal` verifies on-chain.
+  - **Parity.** The Rust canonical JSON and hash match the shared signal vector used by the web and the operator.
+  - **Proof.** Harness runs: status card; `needs_signature` card; a signed run whose signal the testnet operator executed and the contract recorded (docs/testnet.md).

@@ -122,8 +122,31 @@ export class Operator {
       this.limits.push({ signal: s.signal, hash: chk.hash, signature: s.signature });
       return { ok: true, hash: chk.hash, status: "pending" };
     }
+    if (s.signal.type === "target") {
+      // The leader names a weight; the operator, which holds the private positions, sizes the trade.
+      const trade = await this.targetTrade(s.signal);
+      if (!trade) return { ok: true, hash: chk.hash, status: "executed", fill: this.log.append("note", { signal: chk.hash, msg: "already at target" }, this.now()).hash };
+      const fill = await this.execute(trade, chk.hash, s.signature);
+      return { ok: true, hash: chk.hash, status: "executed", fill };
+    }
     const fill = await this.execute(s.signal, chk.hash, s.signature);
     return { ok: true, hash: chk.hash, status: "executed", fill };
+  }
+
+  /** The trade a target signal implies: from the current weight of `to` to target_bps,
+   *  capped at size_bps of NAV. Null when already within 1 point. */
+  async targetTrade(sig: Signal): Promise<Signal | null> {
+    const { base } = await this.meta();
+    const risk = sig.to === base ? sig.from : sig.to;
+    const n = await this.nav();
+    if (n.nav === 0n) return null;
+    const riskValue = BigInt(n.holdings[risk]?.value ?? "0");
+    const current = Number((riskValue * 10_000n) / n.nav);
+    const target = sig.to === base ? 10_000 - (sig.target_bps ?? 0) : (sig.target_bps ?? 0);
+    const d = target - current;
+    if (Math.abs(d) < 100) return null;
+    const size_bps = Math.min(Math.abs(d), sig.size_bps);
+    return d > 0 ? { ...sig, type: "market", from: base, to: risk, size_bps } : { ...sig, type: "market", from: risk, to: base, size_bps: target === 0 ? 10_000 : size_bps };
   }
 
   /** Size of `from` to sell for a signal: size_bps of NAV, capped at the balance. */

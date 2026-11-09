@@ -305,3 +305,16 @@ The four AI vaults were upgraded in place to the current contract: deploy plus `
 - **Deposit for someone else** (what 1Click's `customRecipientMsg` does when a follower deposits from Base, Arbitrum, Ethereum or Solana). `sp-follower-60270.testnet` sent 25 test USDC to [`sp-convict-8952.testnet`](https://testnet.nearblocks.io/address/sp-convict-8952.testnet) with `msg = sp-fund-61557.testnet`. The follower's shares went 250000000 → 275028069, and the relayer got none ([`3XC6JgvfD9…`](https://testnet.nearblocks.io/txns/3XC6JgvfD9J1d73ocJVcgoqZxtsvxBqwjaMd8MD8quB5)).
 - **Copy stop-loss.** The follower set a 5% stop ([`HXfCxK4V7S…`](https://testnet.nearblocks.io/txns/HXfCxK4V7S7GDzjDdDCspNbPqntuZ2LaUpsUwLTvpSg2)). The contract stored the reference price 0.998878 and the trigger 0.948935, and checks it at every NAV post. The firing path (queued at the post that reaches it, paid at the lower of two prices) is covered by `contract/src/tests.rs` `stop_loss_fires_at_the_post_that_reaches_it` and by the random-sequence property test.
 - **Real cross-chain quotes** (dry, from the browser on the vault page): 100 USDC from Base, Arbitrum, Ethereum or Solana arrives as 99.98–99.99 USDC on NEAR in 20–45 s. On testnet, arrival is simulated as a paper follow, because the vault is a testnet account and 1Click has no testnet.
+
+## Trade from chat: IronClaw tool (2026-11-09)
+
+`extension/` run through the harness (`sp-harness`, which runs the WASM component under the manifest's egress allowlist). "Move the vault to 40% NEAR" on `sp-vault-60270.testnet`, with the leader's signal key in the harness workspace and the operator host mapped to the local testnet operator:
+
+```
+EGRESS POST https://rpc.testnet.fastnear.com -> 200 (2178 bytes)
+EGRESS POST https://operator.silent-partner.invalid/v1/signals via http://127.0.0.1:8788/v1/signals -> 200 (179 bytes)
+{"card":{"error":null,"fill":"fdeb6dc31e00d9b1b1fa355e685a5a208bb2627ee5d9550d701f29a55fb17d5f","hash":"20a143299e668ec532ab32e5fb0bd1e5914dd97a88a26aefdfd898393b775687","kind":"submitted","ok":true,"status":"executed","title":"sp-vault-60270.testnet → 40% NEAR"}}
+egress_calls=2 denied=0
+```
+
+The operator turned the target into one trade for the vault (fill `fdeb6dc3…`), and the contract recorded signal #7 with hash `20a14329…` after re-checking the leader's signature (`get_signals`). Without a key in the workspace, the same call returns a `needs_signature` card with a one-tap link to the leader console (`/leader/?id=…&target=40`).
