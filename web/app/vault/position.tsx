@@ -24,7 +24,7 @@ type Stop = { drawdown_bps: number; ref_price: string; trigger_price: string; ex
 function StopLoss({ id, viewer, vault, cfg, refresh, onDone }: { id: string; viewer: string; vault: VaultView; cfg: Config; refresh: unknown; onDone: () => void }) {
   const { accountId, call } = useWallet();
   const [stop, setStop] = useState<Stop | null | "n/a">(null);
-  const [pct, setPct] = useState("15");
+  const [pct, setPct] = useState("10");
   useEffect(() => {
     view<Stop | null>(id, "get_stop_loss", { account_id: viewer }).then(setStop, () => setStop("n/a"));
   }, [id, viewer, refresh]);

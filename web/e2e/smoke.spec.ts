@@ -4,21 +4,48 @@
 import { expect, test } from "@playwright/test";
 import { VAULT, leaderSeedHex, withLeaderKey } from "./helpers";
 
-test("landing page: hero, three steps, links to the leaderboard and docs, live stats", async ({ page }) => {
+test("landing page: public-vs-sealed ticket, proof strip, six cards, exit band, comparison, live stats", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByTestId("landing")).toContainText("How it works");
-  await expect(page.getByRole("link", { name: "See the leaderboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Not the crowd.");
+  await expect(page.getByTestId("stamp")).toHaveText("SEALED");
+  await expect(page.getByTestId("ticket").getByTestId("redacted").first()).toBeVisible();
+  await page.getByTestId("ticket-public").click();
+  await expect(page.getByTestId("stamp")).toHaveText("EXPOSED");
+  await expect(page.getByTestId("ticket")).toContainText("LONG");
+  await expect(page.getByTestId("proof-strip")).toContainText("0.00%");
+  await expect(page.getByTestId("proof-cards").locator(".card")).toHaveCount(6);
+  await expect(page.getByTestId("drill-line")).toContainText("no operator online");
+  await expect(page.getByTestId("compare")).toContainText("Same trade, same price");
+  await expect(page.getByRole("link", { name: "Meet the leaders" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Docs" })).toHaveAttribute("href", /github\.com\/amityadav0\/silent-partner/);
   await expect(page.getByTestId("live-stats")).toContainText(/\d+ NAV posts/);
+});
+
+test("theme: light by default, the toggle switches and is remembered", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByTestId("theme-toggle").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});
+
+test("theme: a first visit follows the system preference", async ({ browser }) => {
+  const ctx = await browser.newContext({ colorScheme: "dark", baseURL: "http://localhost:3000" });
+  const page = await ctx.newPage();
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await ctx.close();
 });
 
 test("leaderboard lists the vault with attested NAVs and no positions", async ({ page }) => {
   await page.goto("/leaderboard/");
   const row = page.getByTestId(`row-${VAULT}`);
   await expect(row).toBeVisible();
-  await expect(row).toContainText(/\d+\/\d+ ✓/);
+  await expect(row).toContainText(/✓ \d+\/\d+/);
   await expect(row).toContainText(/[+−]\d+\.\d{2}%/);
-  await expect(page.getByTestId("leaderboard")).not.toContainText(/wNEAR|holdings|position/i);
+  await expect(page.getByTestId("leaderboard")).not.toContainText(/wNEAR|USDC/);
+  await expect(row.getByTestId("redacted")).toBeVisible();
   await expect(page.getByTestId("honesty")).toContainText("paper · testnet");
   await expect(page.getByTestId("row-sp-momo-92991.testnet").getByTestId("mode")).toHaveText("paper · testnet");
 });
@@ -27,11 +54,11 @@ test("vault page: chart, every NAV signature verified, deposit and withdraw cont
   await page.goto(`/vault/?id=${VAULT}`);
   await expect(page.getByTestId("returns-chart")).toBeVisible();
   const attested = page.getByTestId("stat-attested");
-  await expect(attested).toContainText(/(\d+)\/\1/);
+  await expect(attested).toContainText(/(\d+) \/ \1/);
   await expect(attested).toContainText("verified in your browser");
   await expect(page.getByTestId("nav-table").locator("tbody tr").first()).toBeVisible();
   await expect(page.getByTestId("nav-table")).not.toContainText("✗");
-  await expect(page.getByRole("button", { name: "Deposit" })).toBeVisible();
+  await expect(page.getByTestId("follow-cta")).toHaveText("Follow privately");
   await expect(page.getByTestId("my-position")).toContainText("Connect a wallet");
 });
 
@@ -98,12 +125,59 @@ test("withdrawal track: the drill follower's claim shows Paid", async ({ page })
   await expect(page.getByTestId("claim-0").getByTestId("track").locator("li.now")).toHaveText("Paid");
 });
 
-test("leaderboard sorts by any column and draws a sparkline per vault", async ({ page }) => {
+test("leaderboard: calmest first by default, among the season leaders; other sorts work", async ({ page }) => {
   await page.goto("/leaderboard/");
-  await expect(page.getByTestId("sparkline").first()).toBeVisible();
-  await page.getByTestId("sort-name").click();
-  const names = await page.locator("tbody tr td:nth-child(2) a").allTextContents();
-  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible();
+  await expect(page.getByTestId("sort-dd")).toHaveAttribute("aria-pressed", "true");
+  const SEASON = 8;
+  const nums = async (id: string) => (await page.getByTestId(id).allTextContents()).slice(0, SEASON).map((t) => Number(t.match(/[+−-]?\d+(\.\d+)?/)![0].replace("−", "-")));
+  const dd = (await nums("dd")).map(Math.abs);
+  expect(dd).toEqual([...dd].sort((a, b) => a - b));
+  await page.getByTestId("sort-stake").click();
+  const stake = await nums("stake");
+  expect(stake).toEqual([...stake].sort((a, b) => b - a));
+  await page.getByTestId("sort-ret").click();
+  const ret = await nums("ret");
+  expect(ret).toEqual([...ret].sort((a, b) => b - a));
+  await expect(page.getByTestId("lead-card")).toContainText("Lead a vault");
+});
+
+test("vault page: risk first, drawdown shaded, who sees what, follow panel order", async ({ page }) => {
+  await page.goto("/vault/?id=sp-convict-8952.testnet&as=sp-follower-60270.testnet");
+  const stats = page.getByTestId("stats").locator(".tile-l");
+  await expect(stats.first()).toHaveText("Worst drawdown");
+  await expect(page.getByTestId("dd-window")).toBeAttached();
+  const who = page.getByTestId("who-sees");
+  await expect(who.getByTestId("redacted")).toHaveCount(2);
+  await expect(page.getByTestId("who-follows")).toHaveText("not shown");
+  await expect(who).toContainText("can be read on chain");
+  await page.getByTestId("who-you").click();
+  await expect(who.getByTestId("redacted")).toHaveCount(2);
+  await expect(page.getByTestId("your-shares")).toBeVisible();
+  await expect(page.getByTestId("your-stop")).toBeVisible();
+  await expect(page.getByTestId("stop-toggle")).toBeVisible();
+  const panel = await page.getByTestId("follow-panel").innerText();
+  const at = (t: string) => panel.indexOf(t);
+  expect(at("Amount")).toBeGreaterThanOrEqual(0);
+  expect(at("Amount")).toBeLessThan(at("Copy stop-loss"));
+  expect(at("Copy stop-loss")).toBeLessThan(at("You enter at"));
+  expect(at("You enter at")).toBeLessThan(at("Follow privately"));
+  expect(at("Follow privately")).toBeLessThan(at("Try it with $1,000 simulated"));
+});
+
+test("leader console reads as a private desk", async ({ page }) => {
+  await page.goto("/leader/?id=sp-convict-8952.testnet");
+  await expect(page.getByTestId("desk-key")).toContainText("Signal key");
+  await expect(page.getByTestId("desk-fee")).toContainText(/\d USDC/);
+  await expect(page.getByTestId("desk-private")).toContainText("visible only to you and the operator");
+});
+
+test("no FOMO patterns on any public page", async ({ page }) => {
+  for (const url of ["/leaderboard/", "/vault/?id=sp-convict-8952.testnet"]) {
+    await page.goto(url);
+    await expect(page.locator("main")).toContainText(/Verified|Leaders/);
+    await expect(page.locator("main")).not.toContainText(/just copied|top gainer|you'd have made|ends in/i);
+  }
 });
 
 test("create-vault wizard: four steps to init args and deploy commands", async ({ page }) => {
@@ -138,13 +212,13 @@ test("leaderboard: every house leader has a badge and a style", async ({ page })
     await expect(page.getByTestId(`row-${id}`).getByTestId("badge")).toBeVisible();
   }
   await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("badge")).toHaveText("AI");
-  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveText("high risk");
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveText("Risk · high");
 });
 
 test("follow from any chain: a real 1Click quote from Base into the vault, then a simulated arrival", async ({ page }) => {
   await page.goto("/vault/?id=sp-convict-8952.testnet");
   await page.getByTestId("cc-chain").selectOption("base");
-  await page.getByTestId("cc-quote").click();
+  await page.getByTestId("follow-cta").click();
   await expect(page.getByTestId("cc-result")).toContainText(/USDC on Base → .* USDC into the vault in ~\d+ s/, { timeout: 30_000 });
   await page.getByTestId("cc-simulate").click();
   await expect(page.getByTestId("paper-value")).toBeVisible();

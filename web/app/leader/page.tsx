@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { ASSETS, OPERATOR_API, TGAS, VAULTS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
-import { view, type SignalRec } from "@/lib/vault";
+import { feeEarned, fmtUnits, priceOf, view, type SignalRec } from "@/lib/vault";
 import { newSignalKey, publicKeyOf, randomNonce, signSignal, type Signal } from "@/lib/signal";
-import { short, useQueryParam, useVault } from "../ui";
+import { Redact, short, useQueryParam, useVault } from "../ui";
+import { metaOf } from "@/lib/vaults";
 
 const KEY_STORE = (vault: string) => `sp.signal-key.${vault}`;
 const sym = (id: string) => ASSETS[id]?.symbol ?? id.replace(/^nep141:/, "");
@@ -50,6 +51,7 @@ export default function LeaderConsole() {
   if (!id || !data) return <p className="muted">Reading vault…</p>;
   const isLeader = accountId === data.cfg.leader;
   const keyMatches = secret && onchainKey && publicKeyOf(secret) === onchainKey;
+  const baseSym = sym(data.cfg.base_asset_id), baseDec = ASSETS[data.cfg.base_asset_id]?.decimals ?? 6;
 
   async function registerKey() {
     const k = newSignalKey();
@@ -92,8 +94,27 @@ export default function LeaderConsole() {
 
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Leader console</h1>
-      <p className="muted mt-1 text-sm">Vault <code>{id}</code> · leader <code>{data.cfg.leader}</code></p>
+      <span className="eyebrow">Private desk</span>
+      <h1 className="mt-2">{metaOf(id).name}</h1>
+      <p className="muted mt-2 break-words text-sm">Leader console · vault <code>{id}</code> · leader <code>{data.cfg.leader}</code></p>
+
+      <div className="stats mt-6" data-testid="desk">
+        <div className="tile" data-testid="desk-key">
+          <div className="tile-l">Signal key</div>
+          <div className="tile-v">{keyMatches ? "Ready" : "Not ready"}</div>
+          <div className="tile-h">{keyMatches ? "Signing in this browser" : onchainKey ? "Registered on the vault, not in this browser" : "Register one to sign"}</div>
+        </div>
+        <div className="tile" data-testid="desk-fee">
+          <div className="tile-l">Fee earned above high-water mark</div>
+          <div className="tile-v">{fmtUnits(feeEarned(data.navs), baseDec)} {baseSym}</div>
+          <div className="tile-h">paid in vault shares · mark {priceOf(data.vault.hwm).toFixed(4)}</div>
+        </div>
+        <div className="tile" data-testid="desk-private">
+          <div className="tile-l">Your book</div>
+          <div className="tile-v"><Redact widths={[72, 40]} h={18} label="Your positions are sealed" /></div>
+          <div className="tile-h">Your positions are visible only to you and the operator that fills them. They never go on chain.</div>
+        </div>
+      </div>
 
       {!accountId && <div className="panel mt-4 text-sm">Connect the leader&apos;s wallet to manage the signal key. <button className="btn ml-2" onClick={signIn}>Connect</button></div>}
       {accountId && !isLeader && <div className="panel mt-4 text-sm">Signed in as <code>{accountId}</code>, who is not this vault&apos;s leader. Signals are only accepted from the leader&apos;s registered key.</div>}
@@ -136,15 +157,15 @@ export default function LeaderConsole() {
         {preview && <details className="mt-2 text-xs"><summary className="muted">Signed envelope</summary><pre className="scroll-x">{preview}</pre></details>}
       </div>
 
-      <h2 className="mt-6 font-semibold">Recorded signals</h2>
+      <h2 className="mt-8">Recorded signals</h2>
       <p className="muted text-xs">Hashes only, recorded after execution. The trades themselves stay private.</p>
       <div className="panel scroll-x mt-2 p-0">
         <table className="t" data-testid="signals-table">
-          <thead><tr><th>#</th><th>Signal hash</th><th>Fill record</th><th>Executed</th><th>Epoch</th></tr></thead>
+          <thead><tr><th>#</th><th>Trade</th><th>Signal hash</th><th>Fill record</th><th>Executed</th><th>Epoch</th></tr></thead>
           <tbody>
-            {signals.length === 0 && <tr><td colSpan={5} className="muted">None yet.</td></tr>}
+            {signals.length === 0 && <tr><td colSpan={6} className="muted">None yet.</td></tr>}
             {[...signals].reverse().map((s) => (
-              <tr key={s.index}><td>{s.index}</td><td><code className="text-xs">{short(s.hash, 8)}</code></td><td><code className="text-xs">{short(s.fill_hash, 8)}</code></td><td>{new Date(s.executed_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{s.epoch}</td></tr>
+              <tr key={s.index}><td>{s.index}</td><td><Redact widths={[56, 28]} h={12} label="Trade sealed" /></td><td><code className="text-xs">{short(s.hash, 8)}</code></td><td><code className="text-xs">{short(s.fill_hash, 8)}</code></td><td>{new Date(s.executed_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{s.epoch}</td></tr>
             ))}
           </tbody>
         </table>

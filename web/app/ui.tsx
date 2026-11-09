@@ -7,40 +7,86 @@ import { NETWORK } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { loadVault, pct, type VaultData } from "@/lib/vault";
 
+const REPO = "https://github.com/amityadav0/silent-partner";
+
+/** Redaction bar: where a position, trade, size or follower list would be. */
+export function Redact({ widths, h = 15, label = "Redacted" }: { widths: number[]; h?: number; label?: string }) {
+  return (
+    <span className="redacted" role="img" aria-label={label} data-testid="redacted">
+      {widths.map((w, i) => <span key={i} className="redact" style={{ width: w, height: h }} />)}
+    </span>
+  );
+}
+
+export function Logo() {
+  return <span className="logo" aria-hidden="true"><i /><i /></span>;
+}
+
+function ThemeToggle() {
+  const flip = () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("sp.theme", next);
+    } catch {
+      /* private mode: the choice lasts for this page */
+    }
+  };
+  return (
+    <button className="theme-btn" onClick={flip} aria-label="Switch between light and dark" data-testid="theme-toggle">
+      <svg className="ic-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+      <svg className="ic-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+    </button>
+  );
+}
+
 export function Nav() {
   const { accountId, ready, signIn, signOut } = useWallet();
   const path = usePathname();
-  const link = (href: string, label: string) => {
-    const on = href === "/" ? path === "/" : path?.startsWith(href);
-    return (
-      <Link href={href} className={`no-underline ${on ? "font-semibold" : "muted"}`} style={{ color: on ? "CanvasText" : undefined }}>
-        {label}
-      </Link>
-    );
-  };
+  const link = (href: string, label: string) => (
+    <Link href={href} aria-current={path?.startsWith(href) ? "page" : undefined}>{label}</Link>
+  );
   return (
-    <header className="rule border-b">
-      <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
-        <Link href="/" className="font-bold no-underline" style={{ color: "CanvasText" }}>
-          Silent Partner
-        </Link>
-        {link("/leaderboard/", "Leaderboard")}
+    <header className="wrap site-head">
+      <Link href="/" className="brand"><Logo />Silent Partner</Link>
+      <nav className="site-links" aria-label="Main">
+        {link("/leaderboard/", "Leaders")}
+        <Link href="/#why">Why private</Link>
         {link("/chain/", "What the chain sees")}
         {link("/leader/", "Leader console")}
         {link("/create/", "Create")}
-        <span className="ml-auto flex items-center gap-3">
-          {NETWORK === "testnet" && <span className="chip chip-warn">testnet</span>}
-          {accountId ? (
-            <>
-              <span className="muted max-w-[14rem] truncate" data-testid="account">{accountId}</span>
-              <button className="btn" onClick={() => signOut()}>Sign out</button>
-            </>
-          ) : (
-            <button className="btn" disabled={!ready} onClick={signIn}>Connect wallet</button>
-          )}
-        </span>
       </nav>
+      <div className="site-tools">
+        {NETWORK === "testnet" && <span className="chip">testnet</span>}
+        <ThemeToggle />
+        {accountId ? (
+          <>
+            <span className="muted max-w-[9rem] truncate text-sm" data-testid="account">{accountId}</span>
+            <button className="btn" onClick={() => signOut()}>Sign out</button>
+          </>
+        ) : (
+          <button className="btn" disabled={!ready} onClick={signIn}>Connect wallet</button>
+        )}
+      </div>
     </header>
+  );
+}
+
+export function Footer() {
+  return (
+    <footer className="site-foot">
+      <div className="wrap">
+        <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
+        <span className="flex flex-wrap gap-4">
+          <a href={`${REPO}#readme`}>Docs</a>
+          <a href={`${REPO}/blob/master/docs/architecture.md`}>Architecture</a>
+          <a href={`${REPO}/blob/master/docs/threat-model.md`}>Threat model</a>
+          <a href={`${REPO}/blob/master/docs/testnet.md`}>Testnet record</a>
+          <Link href="/track/">Bring your track record</Link>
+        </span>
+        <span className="num">Testnet paper season · not investment advice</span>
+      </div>
+    </footer>
   );
 }
 
@@ -66,18 +112,19 @@ export function useVault(id: string | null | undefined) {
   return { data, error, reload: () => setTick((t) => t + 1) };
 }
 
-export function Stat({ label, value, hint, testid }: { label: string; value: ReactNode; hint?: string; testid?: string }) {
+export function Stat({ label, value, hint, testid, risk }: { label: string; value: ReactNode; hint?: string; testid?: string; risk?: boolean }) {
   return (
-    <div className="panel min-w-0" data-testid={testid}>
-      <div className="muted text-xs uppercase tracking-wide">{label}</div>
-      <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-      {hint && <div className="muted mt-0.5 text-xs">{hint}</div>}
+    <div className={`tile ${risk ? "tile-risk" : ""}`} data-testid={testid}>
+      <div className="tile-l">{label}</div>
+      <div className="tile-v">{value}</div>
+      {hint && <div className="tile-h">{hint}</div>}
     </div>
   );
 }
 
+/** Returns stay ink unless negative: no green and red scoreboard. */
 export function Ret({ r }: { r: number }) {
-  return <span className={r >= 0 ? "pos" : "neg"}>{pct(r)}</span>;
+  return <span className={r < 0 ? "neg" : undefined}>{pct(r)}</span>;
 }
 
 /** Honest provenance label: "paper · testnet" or "live · mainnet". */
@@ -86,13 +133,15 @@ export function ModeChip({ id }: { id: string }) {
   return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds"}>{modeLabel(m)}</span>;
 }
 
+const RISK_WORD = { low: "low", med: "medium", high: "high" } as const;
+
 /** Who leads (AI / Bot / Human) and the leader's risk level. */
 export function LeaderChips({ id }: { id: string }) {
   const m = metaOf(id);
   return (
     <>
       <span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.leaderKind === "ai" ? "Decides on NEAR AI Cloud; its reasoning stays private (hash only)" : undefined}>{badgeOf(m)}</span>
-      {m.risk && <span className={`chip chip-risk-${m.risk}`} data-testid="risk">{m.risk} risk</span>}
+      {m.risk && <span className={`chip chip-risk-${m.risk}`} data-testid="risk">Risk · {RISK_WORD[m.risk]}</span>}
     </>
   );
 }
@@ -102,24 +151,8 @@ export function StatusChip({ s }: { s: string }) {
   return <span className={`chip ${cls}`} data-testid="status">{s}</span>;
 }
 
-/** Tiny return line for table rows: last 96 epochs, colored by the latest sign. */
-export function Sparkline({ points, w = 96, h = 24 }: { points: { t: number; r: number }[]; w?: number; h?: number }) {
-  const p = points.slice(-96);
-  if (p.length < 2) return <span className="muted text-xs">–</span>;
-  const rs = p.map((x) => x.r), lo = Math.min(0, ...rs), hi = Math.max(0, ...rs), span = hi - lo || 1;
-  const y = (r: number) => h - 2 - ((r - lo) / span) * (h - 4);
-  const d = p.map((x, i) => `${i ? "L" : "M"}${((i / (p.length - 1)) * (w - 2) + 1).toFixed(1)},${y(x.r).toFixed(1)}`).join("");
-  const up = rs[rs.length - 1] >= 0;
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`return trend, last ${(rs[rs.length - 1] * 100).toFixed(2)}%`} data-testid="sparkline">
-      <line x1="0" x2={w} y1={y(0)} y2={y(0)} className="zero" />
-      <path d={d} fill="none" strokeWidth="1.5" className={up ? "line-pos" : "line-neg"} />
-    </svg>
-  );
-}
-
-/** Return since inception per NAV epoch: a line with a zero baseline. */
-export function ReturnsChart({ points, height = 180, copy }: { points: { t: number; r: number }[]; height?: number; copy?: { fromIndex: number; r: number[] } }) {
+/** Return since inception per NAV epoch, with the worst drawdown shaded. */
+export function ReturnsChart({ points, height = 220, copy, drawdown, title, note }: { points: { t: number; r: number }[]; height?: number; copy?: { fromIndex: number; r: number[] }; drawdown?: { peak: number; trough: number; dd: number } | null; title?: ReactNode; note?: ReactNode }) {
   // Draw at the container's real width so axis text stays 11px on phones.
   const box = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(640);
@@ -129,7 +162,7 @@ export function ReturnsChart({ points, height = 180, copy }: { points: { t: numb
     const ro = new ResizeObserver(([e]) => setW(Math.max(260, Math.round(e.contentRect.width))));
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [points.length]);
   const H = height, L = 48, R = 12, T = 12, B = 26;
   if (points.length === 0) return <div className="panel muted text-sm">No NAV posted yet.</div>;
   const all = [{ t: points[0].t, r: 0 }, ...points];
@@ -144,10 +177,20 @@ export function ReturnsChart({ points, height = 180, copy }: { points: { t: numb
   const ticks = [hi - pad, (hi + lo) / 2, lo + pad];
   const last = all[all.length - 1];
   const fmtDate = (t: number) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const label = drawdown ? `worst drawdown −${(drawdown.dd * 100).toFixed(2)}%` : "";
+  // Keep the label inside the plot when the window is near the right edge.
+  const labelAnchor = drawdown && x(drawdown.peak) + label.length * 7.5 > W - R ? "end" : "start";
   return (
     <figure className="panel" data-testid="returns-chart">
+      {title}
       <div ref={box}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={`Return since inception: ${pct(last.r)} over ${points.length} epochs`}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={`Return since inception: ${pct(last.r)} over ${points.length} epochs${drawdown ? `, ${label}` : ""}`}>
+        {drawdown && (
+          <g data-testid="dd-window">
+            <rect x={x(drawdown.peak)} y={0} width={Math.max(2, x(drawdown.trough) - x(drawdown.peak))} height={H - B} className="dd-window" />
+            <text x={labelAnchor === "end" ? W - R - 4 : x(drawdown.peak) + 6} y={16} textAnchor={labelAnchor} className="dd-label">{label}</text>
+          </g>
+        )}
         {ticks.map((v, i) => (
           <g key={i}>
             <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="grid" />
@@ -155,7 +198,7 @@ export function ReturnsChart({ points, height = 180, copy }: { points: { t: numb
           </g>
         ))}
         <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} className="zero" />
-        <path d={path} className={last.r >= 0 ? "line-pos" : "line-neg"} fill="none" strokeWidth={2} strokeLinejoin="round" />
+        <path d={path} className="line-main" fill="none" strokeWidth={2.5} strokeLinejoin="round" />
         {copy && copy.r.length > 0 && (
           <path
             data-testid="copy-line"
@@ -166,16 +209,12 @@ export function ReturnsChart({ points, height = 180, copy }: { points: { t: numb
             strokeDasharray="5 4"
           />
         )}
-        {all.map((p, i) => (
-          <circle key={i} cx={x(i)} cy={y(p.r)} r={i === all.length - 1 ? 4 : 2.5} className={last.r >= 0 ? "dot-pos" : "dot-neg"}>
-            <title>{i === 0 ? "inception" : `epoch ${i}: ${pct(p.r)}`}</title>
-          </circle>
-        ))}
+        <circle cx={x(all.length - 1)} cy={y(last.r)} r={4} className="dot-main"><title>{`latest: ${pct(last.r)}`}</title></circle>
         <text x={L} y={H - 6} className="axis">{fmtDate(all[0].t)}</text>
         <text x={W - R} y={H - 6} textAnchor="end" className="axis">{fmtDate(last.t)}</text>
       </svg>
       </div>
-      <figcaption className="muted mt-1 text-xs">Return since inception, from the post-fee share price in each operator-attested NAV post.{copy ? " Dashed: your paper copy since you joined." : ""}</figcaption>
+      <figcaption className="muted mt-2 text-xs">Return since inception, from the post-fee share price in each signed NAV post.{copy ? " Dashed: your simulated copy since you joined." : ""}{note}</figcaption>
     </figure>
   );
 }

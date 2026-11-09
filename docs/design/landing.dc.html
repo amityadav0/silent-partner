@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Silent Partner — landing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.sp[data-theme=light]{--bg:#F5F0E6;--surface:#FFFDF8;--row:#F0E9DC;--line:#E3D9C6;--line-strong:#CFC3AC;--ink:#17140F;--ink-2:#3B352C;--muted:#655D50;--accent:#2F3FD8;--accent-ink:#FFFFFF;--mark:#FFD45C;--warn:#B9401F;--warn-bg:#FBE3DA;--redact:#17140F;--band:#2F3FD8;--band-ink:#F5F0E6;--band-muted:#D3D8FF}
+.sp[data-theme=dark]{--bg:#0F1533;--surface:#161D42;--row:#1C2550;--line:#29336A;--line-strong:#3A4685;--ink:#F4EFE5;--ink-2:#D6D3DF;--muted:#A9B0CE;--accent:#93A2FF;--accent-ink:#0F1533;--mark:#C99A1E;--warn:#FF9B7D;--warn-bg:#3A2233;--redact:#E8E2D6;--band:#93A2FF;--band-ink:#0F1533;--band-muted:#25306B}
+a{color:var(--accent)}a:hover{opacity:.85}
+</style>
+</helmet>
+<div class="sp" data-theme="{{ theme }}" style="background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; min-height: 100vh;">
+
+<header style="max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="display: inline-flex; gap: 3px; align-items: center;" aria-hidden="true"><span style="display: block; width: 18px; height: 10px; border-radius: 2px; background: var(--redact);"></span><span style="display: block; width: 8px; height: 10px; border-radius: 2px; background: var(--accent);"></span></span>
+<span style="font-family: 'Instrument Serif', serif; font-size: 27px;">Silent Partner</span>
+</div>
+<nav style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; font-size: 15px;">
+<a href="Leaders.dc.html" style="color: var(--muted); text-decoration: none;">Leaders</a>
+<a href="#why" style="color: var(--muted); text-decoration: none;">Why private</a>
+<a href="#exit" style="color: var(--muted); text-decoration: none;">Your exit</a>
+<button onClick="{{ toggleTheme }}" aria-label="{{ themeLabel }}" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+<sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></sc-if>
+<sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+</button>
+<a href="Leaders.dc.html" style="color: var(--accent-ink); background: var(--accent); text-decoration: none; padding: 12px 20px; border-radius: 999px; font-weight: 600;">Choose a leader</a>
+</nav>
+</header>
+
+<!-- hero -->
+<section style="max-width: 1200px; margin: 0 auto; padding: 56px 24px 72px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center;">
+<div style="flex: 1 1 500px; min-width: 0; display: flex; flex-direction: column; gap: 26px;">
+<span style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-2);">Confidential copy trading · NEAR Intents</span>
+<h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 84px; line-height: 0.98; letter-spacing: -1.5px;">Copy the trader.<br><span style="font-style: italic; background: linear-gradient(transparent 62%, var(--mark) 62%); padding: 0 6px;">Not the crowd.</span></h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.6; color: var(--ink-2); max-width: 520px;">Everywhere else, a copied trade is a public trade — bots see it first, you fill last. Here you and the trader share one sealed vault: one trade, one price, and nothing for anyone to front-run.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+<a href="Leaders.dc.html" style="color: var(--accent-ink); background: var(--accent); text-decoration: none; padding: 17px 28px; border-radius: 999px; font-weight: 600; font-size: 16px;">Follow a leader privately</a>
+<a href="#why" style="color: var(--ink); text-decoration: none; padding: 17px 22px; border-radius: 999px; border: 1px solid var(--line-strong); font-size: 16px;">See what others expose</a>
+</div>
+</div>
+
+<!-- the trade ticket -->
+<div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; gap: 6px; background: var(--row); border-radius: 999px; padding: 5px; align-self: flex-start;">
+<button onClick="{{ setPublic }}" style="{{ publicBtn }}">On a public platform</button>
+<button onClick="{{ setSealed }}" style="{{ sealedBtn }}">On Silent Partner</button>
+</div>
+<div style="position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 30px 60px -30px rgba(23,20,15,0.25);">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); padding-bottom: 14px; border-bottom: 1px dashed var(--line-strong);"><span>Trade ticket</span><span>#0418 · leader + followers</span></div>
+
+<sc-if value="{{ isPublic }}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column;">
+<span style="position: absolute; top: 58px; right: 24px; transform: rotate(-8deg); border: 2px solid var(--warn); color: var(--warn); font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 3px; padding: 6px 12px; border-radius: 6px; font-size: 15px;">EXPOSED</span>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Side</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px;">LONG</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Asset</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px;">NEAR</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Size</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px;">42,000</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Leader's price</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px;">2.410</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;"><span style="color: var(--muted); font-size: 14px;">Your copy's price</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--warn);">2.470 · filled after bots</span></div>
+<p style="margin: 8px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--warn-bg); color: var(--ink-2); font-size: 14px; line-height: 1.55;">Every field is public. Bots read it, trade first, and the leader can sell into the copiers who follow.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSealed }}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column;">
+<span style="position: absolute; top: 58px; right: 24px; transform: rotate(-8deg); border: 2px solid var(--accent); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 3px; padding: 6px 12px; border-radius: 6px; font-size: 15px;">SEALED</span>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Side</span><span style="display: block; width: 64px; height: 16px; border-radius: 2px; background: var(--redact);"></span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Asset</span><span style="display: block; width: 72px; height: 16px; border-radius: 2px; background: var(--redact);"></span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Size</span><span style="display: block; width: 104px; height: 16px; border-radius: 2px; background: var(--redact);"></span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line);"><span style="color: var(--muted); font-size: 14px;">Leader's price</span><span style="display: block; width: 80px; height: 16px; border-radius: 2px; background: var(--redact);"></span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;"><span style="color: var(--muted); font-size: 14px;">Your price</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--accent); font-weight: 500;">the same one</span></div>
+<p style="margin: 8px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--row); color: var(--ink-2); font-size: 14px; line-height: 1.55;">One vault, one trade, one fill for everyone in it. You get verified returns. Nobody — bots, rivals, even you — sees the position.</p>
+</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<!-- proof strip -->
+<section style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; color: var(--accent);">0.00%</span><span style="font-size: 14px; color: var(--muted);">copy slippage, by construction</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; color: var(--accent);">≥ 10%</span><span style="font-size: 14px; color: var(--muted);">leader's own money, enforced</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; color: var(--accent);">24 h</span><span style="font-size: 14px; color: var(--muted);">to an exit that doesn't need us</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; color: var(--accent);">0</span><span style="font-size: 14px; color: var(--muted);">positions shown to anyone</span></div>
+</div>
+</section>
+
+<!-- why -->
+<section id="why" style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; display: flex; flex-direction: column; gap: 44px;">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent);">The problem with copy trading</span>
+<h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 56px; line-height: 1.04;">If you can see the trade, so can everyone faster than you.</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">01</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">Same fill as the leader</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">There's no copy order to arrive late. The vault trades once and your share is inside that trade.</p>
+</div>
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">02</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">Nothing to front-run</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">The vault lives on NEAR's confidential shard. No wallet tracker or bot can read what it holds or when it moves.</p>
+</div>
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">03</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">The leader can't dump on you</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">One shared book, and at least 10% of it is the leader's own money. Their losses are your losses, and theirs.</p>
+</div>
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">04</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">Verified, not screenshotted</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">Every share price is bound to signed market quotes, checked on chain, and re-checked by your browser.</p>
+</div>
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">05</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">Paid only for new highs</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">Performance fees only above the high-water mark. Climbing back from a loss earns the leader nothing.</p>
+</div>
+<div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">06</span>
+<h3 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px;">Good traders keep their edge</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted);">Leaders get paid for followers without publishing their book. That's why the best ones will lead here.</p>
+</div>
+</div>
+</section>
+
+<!-- exit band -->
+<section id="exit" style="background: var(--band); color: var(--band-ink);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 80px 24px; display: flex; flex-wrap: wrap; gap: 48px; align-items: center;">
+<div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; opacity: 0.8;">The promise most platforms can't make</span>
+<h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 56px; line-height: 1.04;">Your exit doesn't need our permission.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; max-width: 560px;">If the operator goes quiet for 24 hours, the contract opens an emergency exit and pays every follower their share. The vault key is held by the contract itself — nobody, including us, can sign anything else.</p>
+</div>
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 15px;">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 12px; background: var(--band-muted);"><span>Operator silent</span><span>24 h</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 12px; background: var(--band-muted);"><span>Emergency mode</span><span>on</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 12px; background: var(--band-muted);"><span>Your payout</span><span>pro-rata ✓</span></div>
+<span style="font-family: Inter, sans-serif; font-size: 13px; opacity: 0.85; padding-top: 4px;">Drilled on testnet: a follower withdrew with no operator online.</span>
+</div>
+</div>
+</section>
+
+<!-- comparison -->
+<section style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; display: flex; flex-direction: column; gap: 32px;">
+<h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.08;">Side by side</h2>
+<div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface);">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 15px;">
+<thead>
+<tr style="text-align: left;">
+<th style="padding: 20px 22px; font-weight: 500; color: var(--muted);"></th>
+<th style="padding: 20px 22px; font-weight: 500; color: var(--muted);">Exchange copy trading</th>
+<th style="padding: 20px 22px; font-weight: 500; color: var(--muted);">Public on-chain vaults</th>
+<th style="padding: 20px 22px; font-weight: 500; color: var(--muted);">Wallet trackers</th>
+<th style="padding: 20px 22px; font-weight: 600; color: var(--accent-ink); background: var(--accent);">Silent Partner</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-top: 1px solid var(--line);"><td style="padding: 18px 22px; font-weight: 500;">Positions visible to others</td><td style="padding: 18px 22px; color: var(--muted);">Yes</td><td style="padding: 18px 22px; color: var(--muted);">Yes</td><td style="padding: 18px 22px; color: var(--muted);">That's the product</td><td style="padding: 18px 22px; font-weight: 600;">Never</td></tr>
+<tr style="border-top: 1px solid var(--line);"><td style="padding: 18px 22px; font-weight: 500;">Your price vs the leader's</td><td style="padding: 18px 22px; color: var(--muted);">Later, usually worse</td><td style="padding: 18px 22px; color: var(--muted);">Same</td><td style="padding: 18px 22px; color: var(--muted);">Later, often much worse</td><td style="padding: 18px 22px; font-weight: 600;">Same trade, same price</td></tr>
+<tr style="border-top: 1px solid var(--line);"><td style="padding: 18px 22px; font-weight: 500;">Leader's money at stake</td><td style="padding: 18px 22px; color: var(--muted);">Not required</td><td style="padding: 18px 22px; color: var(--muted);">Sometimes</td><td style="padding: 18px 22px; color: var(--muted);">Not required</td><td style="padding: 18px 22px; font-weight: 600;">≥ 10%, enforced</td></tr>
+<tr style="border-top: 1px solid var(--line);"><td style="padding: 18px 22px; font-weight: 500;">If the platform stops</td><td style="padding: 18px 22px; color: var(--muted);">Platform decides</td><td style="padding: 18px 22px; color: var(--muted);">Contract</td><td style="padding: 18px 22px; color: var(--muted);">You're on your own</td><td style="padding: 18px 22px; font-weight: 600;">Contract exit, 24 h</td></tr>
+<tr style="border-top: 1px solid var(--line);"><td style="padding: 18px 22px; font-weight: 500;">Leader's edge</td><td style="padding: 18px 22px; color: var(--muted);">Copied for free</td><td style="padding: 18px 22px; color: var(--muted);">Copied for free</td><td style="padding: 18px 22px; color: var(--muted);">Copied for free</td><td style="padding: 18px 22px; font-weight: 600;">Stays private, gets paid</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- anti-FOMO -->
+<section style="max-width: 1200px; margin: 0 auto; padding: 0 24px 96px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-end; justify-content: space-between;">
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.06;">No countdowns. No "214 people just copied". <span style="font-style: italic; color: var(--accent);">Just the numbers that protect you.</span></h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: var(--ink-2); max-width: 620px;">Every leader opens with worst drawdown and how much of their own money is in, then returns. Pick someone you'd trust with money, not someone who's trending.</p>
+</div>
+<a href="Leaders.dc.html" style="color: var(--accent-ink); background: var(--accent); text-decoration: none; padding: 17px 28px; border-radius: 999px; font-weight: 600; font-size: 16px;">Meet the leaders</a>
+</section>
+
+<footer style="border-top: 1px solid var(--line);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 40px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; font-size: 14px; color: var(--muted);">
+<span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
+<span style="font-family: 'JetBrains Mono', monospace;">Testnet paper season · not investment advice</span>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":3600}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mode: 'sealed', theme: null }; }
+  renderVals() {
+    var theme = this.state.theme || this.props.theme || 'light';
+    var base = 'border: 0; cursor: pointer; padding: 10px 18px; border-radius: 999px; font: 500 14px Inter, sans-serif; min-height: 44px; ';
+    var on = base + 'background: var(--ink); color: var(--bg);';
+    var off = base + 'background: transparent; color: var(--muted);';
+    var pub = this.state.mode === 'public';
+    return {
+      theme: theme,
+      isLight: theme === 'light', isDark: theme === 'dark',
+      themeLabel: theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode',
+      toggleTheme: () => this.setState({ theme: theme === 'light' ? 'dark' : 'light' }),
+      isPublic: pub, isSealed: !pub,
+      publicBtn: pub ? on : off, sealedBtn: pub ? off : on,
+      setPublic: () => this.setState({ mode: 'public' }),
+      setSealed: () => this.setState({ mode: 'sealed' })
+    };
+  }
+}
+</script>
+</body>
+</html>

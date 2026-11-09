@@ -2,9 +2,9 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ASSETS } from "@/lib/config";
-import { aumBucket, cardUrl, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
+import { aumBucket, cardUrl, drawdownWindow, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
 import { useState } from "react";
-import { Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { Redact, Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
 
 /** Public share card for one vault: returns and proof, nothing else. */
@@ -35,25 +35,26 @@ export default function Share() {
           <ModeChip id={data.id} />
           <StatusChip s={status(data.vault)} />
         </div>
-        <h1 className="mt-1 text-xl font-semibold">{metaOf(data.id).name}</h1>
+        <h1 className="mt-2">{metaOf(data.id).name}</h1>
         <p className="muted text-xs">{short(data.id, 16)}</p>
         <p className="muted text-sm">Led by {short(data.cfg.leader, 12)}</p>
-        <div className="mt-4 text-5xl font-bold tabular-nums" data-testid="share-return"><Ret r={m.ret} /></div>
+        <div className="mt-4 text-5xl tabular-nums" data-testid="share-return"><Ret r={m.ret} /></div>
         <p className="muted text-sm">
           since {m.since ? new Date(m.since).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "inception"}, after fees
           {" · "}max drawdown {m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}
           {" · "}AUM {aumBucket(data.vault.book_nav, ASSETS[data.cfg.base_asset_id]?.decimals ?? 6)}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm tabular-nums sm:grid-cols-4" data-testid="track-record">
-          <div><div className="muted text-xs">Max drawdown</div>{m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}</div>
+          <div><div className="muted text-xs">Worst drawdown</div>{m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}</div>
           <div><div className="muted text-xs">Sharpe-like</div>{m.sharpe === null ? <span className="muted">after 24h</span> : m.sharpe.toFixed(2)}</div>
           <div><div className="muted text-xs">Epochs live</div>{data.navs.length}</div>
           <div><div className="muted text-xs">Leader holds</div>{(m.leaderPct * 100).toFixed(1)}%</div>
         </div>
-        <div className="mt-4"><ReturnsChart points={returns(data.navs)} height={150} /></div>
+        <div className="mt-4"><ReturnsChart points={returns(data.navs)} height={170} drawdown={drawdownWindow(data.navs)} /></div>
         <p className={`mt-3 text-sm ${allOk ? "pos" : "neg"}`} data-testid="share-proof">
           {allOk ? "✓" : "✗"} {m.v.ok} of {data.navs.length} NAV posts verified in your browser against the operator&apos;s key {short(data.cfg.attestation_key, 6)}
         </p>
+        <div className="row-kv mt-2"><span>Holdings</span><span><Redact widths={[72, 40]} label="Holdings sealed" /></span></div>
         <p className="muted mt-1 text-xs">Positions are private. The vault trades through NEAR Confidential Intents, and only NAV is published.</p>
       </div>
       <ShareImage id={data.id} name={metaOf(data.id).name} ret={m.ret} />

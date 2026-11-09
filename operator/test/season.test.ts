@@ -251,6 +251,8 @@ describe("track-record card", () => {
   it("renders a PNG with only public numbers", () => {
     const svg = cardSvg({ name: "X <y>", badge: "AI", style: "s", vault: "v.testnet", navs: [nav(0, 1.01)], leaderShares: "1", totalShares: "10", asOf: new Date(0) });
     expect(svg).toContain("X &lt;y&gt;");
+    expect(svg).toContain("SEALED");
+    expect(svg).toContain("#F5F0E6"); // paper, the light theme
     expect(cardPng(svg).subarray(0, 4).toString("hex")).toBe("89504e47");
   });
 });

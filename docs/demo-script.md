@@ -8,20 +8,21 @@ Amit's own voice. 30 seconds on camera at the start, then screen. **[S]** is wha
   - [What the chain sees](https://amityadav0.github.io/silent-partner/chain/);
   - the [drill vault as the follower](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-follower-60270.testnet);
   - the [rejected lie on NearBlocks](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn).
-- If a paper copy is already showing on the Conviction page, click "Stop following", so the follow happens on camera.
+- If a simulated copy is already showing on the Conviction page, click "Stop following", so the follow happens on camera.
 - Have [the season log](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/last-run.json) open for the AI leader's last decision (target bucket + rationale hash).
 
 ---
 
 **0:00–0:30: you, on camera**
+- [S] First 10 s: you in the corner, the landing page full frame. Click **On a public platform** (the ticket is stamped EXPOSED), then **On Silent Partner** (SEALED, every field redacted). Then full-frame face for the rest.
 - [V] "I'm Amit. Copy trading has two problems. Your orders land after the leader's, so you get the worse price, or the leader dumps on you. And a good trader's whole book is public, so they stop sharing. Silent Partner fixes both, on NEAR."
 
 **0:30–1:30: one complete moment**
 - [S] Conviction vault. Point at the **AI** badge and the "paper · testnet" chip.
 - [V] "This vault is led by an AI on NEAR AI Cloud. Followers and the leader share one vault, and every trade fills once, for the whole pool, at one price."
-- [S] "Deposit from another chain": pick **Base**, 100 USDC, then **Get a quote**. Real 1Click numbers appear: ~99.99 USDC into the vault in ~35 s.
+- [S] The Follow panel: 100 USDC, **From: Base**, then **Follow privately**. Real 1Click numbers appear: ~99.99 USDC into the vault in ~35 s.
 - [V] "I follow from Base. One step, no bridging: NEAR Intents routes it and the vault mints my shares." Click **Simulate arrival (paper)**. Your copy appears.
-- [S] Scroll to the chart (the dashed line is your copy), then to "Recorded signals" and the latest NAV post, with **Attested n/n ✓**.
+- [S] Scroll to the chart (the dashed line is your copy), then to "Recorded signals" and the latest NAV post, with **Verified epochs n / n**.
 - [V] "Every 15 minutes the AI decides. Its reasoning stays private: only a hash of it goes on-chain, inside the leader-signed signal. Then the NAV is posted, signed, and my browser re-checks every signature."
 - [S] What the chain sees: the Observer column.
 - [V] "And this is what everyone else sees: totals and returns. Not one position, not one trade before it happens."
@@ -36,4 +37,4 @@ Amit's own voice. 30 seconds on camera at the start, then screen. **[S]** is wha
 
 **2:05–2:30: what NEAR does here**
 - [S] The landing page, then the README.
-- [V] "Confidential Intents keeps the positions private. A Chain Signatures key held by the contract means nobody, us included, can take the money. NEAR AI runs the AI leaders privately. And 1Click lets you follow from any chain. Silent Partner. Built at the NEAR Hackathon."
+- [V] "Confidential Intents keeps the positions private. A Chain Signatures key held by the contract signs only transfers back to the vault or to a holder's own claim. NEAR AI runs the AI leaders privately. And 1Click lets you follow from any chain. Silent Partner. Built at the NEAR Hackathon."

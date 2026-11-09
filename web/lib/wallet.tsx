@@ -42,7 +42,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           : { networkId: "testnet", nodeUrl: RPC, helperUrl: "https://helper.testnet.near.org", explorerUrl: "https://testnet.nearblocks.io", indexerUrl: "https://testnet-api.kitwallet.app" };
       const s = await setupWalletSelector({ network, modules: [setupMyNearWallet(), setupMeteorWallet()] });
       setSelector(s);
-      setModal(setupModal(s, { description: "Silent Partner signs nothing for you. Your wallet confirms every deposit and withdrawal." }));
+      setModal(setupModal(s, { theme: document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light", description: "Silent Partner signs nothing for you. Your wallet confirms every deposit and withdrawal." }));
       const sub = s.store.observable.subscribe((st) => setAccountId(st.accounts.find((a) => a.active)?.accountId ?? null));
       unsub = () => sub.unsubscribe();
     })().catch((e) => console.error("wallet selector", e));

@@ -236,3 +236,28 @@ describe("bring your track record", () => {
     expect(recoverAddress(m, "0x1234")).toBeNull();
   });
 });
+
+import { drawdownWindow, feeEarned, leaderStake } from "../lib/vault";
+
+describe("risk metrics", () => {
+  const E18 = 10n ** 18n;
+  const px = (x: number) => ({ price: (BigInt(Math.round(x * 1e6)) * 10n ** 12n).toString() });
+  it("finds the worst drawdown window, indexed from inception", () => {
+    expect(drawdownWindow([1.1, 0.99, 1.05, 1.2, 1.1].map(px))).toMatchObject({ peak: 1, trough: 2 });
+    expect(drawdownWindow([1.1, 0.99, 1.05, 1.2, 1.1].map(px))!.dd).toBeCloseTo(0.1);
+  });
+  it("counts a fall from the starting price", () => {
+    expect(drawdownWindow([0.9, 0.8].map(px))).toMatchObject({ peak: 0, trough: 2 });
+  });
+  it("is null when the price never fell", () => {
+    expect(drawdownWindow([1.01, 1.02].map(px))).toBeNull();
+    expect(drawdownWindow([])).toBeNull();
+  });
+  it("leader stake is a fraction and safe on an empty vault", () => {
+    expect(leaderStake({ leader_shares: "25", total_shares: "100" })).toBe(0.25);
+    expect(leaderStake({ leader_shares: "0", total_shares: "0" })).toBe(0);
+  });
+  it("values each fee at the price of its own post", () => {
+    expect(feeEarned([{ fee_shares: "100", price: (2n * E18).toString() }, { fee_shares: "0", price: E18.toString() }, { fee_shares: "50", price: E18.toString() }])).toBe(250n);
+  });
+});

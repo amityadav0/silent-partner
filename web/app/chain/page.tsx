@@ -9,7 +9,7 @@ import { ASSETS, BASE_PATH, NEAR_EXPLORER } from "@/lib/config";
 import { checkDisclosure, holdings, type Check, type Disclosure } from "@/lib/disclosure";
 import { fmtUnits, priceOf, view, type Claim, type SignalRec } from "@/lib/vault";
 import { metaOf } from "@/lib/vaults";
-import { ModeChip, short, useQueryParam, useVault } from "../ui";
+import { ModeChip, Redact, short, useQueryParam, useVault } from "../ui";
 
 const DEFAULT = "sp-manual-92991.testnet";
 const DEFAULT_FOLLOWER = "sp-follower-60270.testnet";
@@ -63,14 +63,14 @@ export default function ChainPage() {
 
   return (
     <section data-testid="chain">
-      <h1 className="text-2xl font-semibold">What the chain sees</h1>
-      <p className="muted mt-1 max-w-3xl text-sm">
+      <h1>What the chain sees</h1>
+      <p className="muted mt-3 max-w-3xl text-sm">
         One vault, three viewers: <b>{metaOf(data.id).name}</b> <ModeChip id={data.id} /> <code className="text-xs">{data.id}</code>. The first two columns are live NEAR
         RPC reads. The third is private to the operator and leader. For this demo we published the vault&apos;s fill log, and your browser checks it against what the vault committed to on-chain.
       </p>
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
         <div className="panel" data-testid="observer">
-          <h2 className="font-semibold">Observer</h2>
+          <h2>Observer</h2>
           <p className="muted text-xs">Anyone with an RPC endpoint.</p>
           <div className="mt-2">
             <Row k="Share price" v={price.toFixed(6)} />
@@ -80,6 +80,8 @@ export default function ChainPage() {
             <Row k="NAV posts (signed)" v={navs.length} />
             <Row k="Signals (hash only)" v={extra?.signals.length ?? "…"} />
             <Row k="Claims" v={extra ? `${extra.claims.length} (amounts and exit accounts public)` : "…"} />
+            <Row k="Holdings" v={<Redact widths={[60, 32]} h={13} label="Holdings sealed" />} />
+            <Row k="Trades" v={<Redact widths={[92]} h={13} label="Trades sealed" />} />
             <Row k="Allowed assets" v={cfg.allowed_assets.map(sym).join(", ")} />
             <Row k="Public intents balance" v={extra?.publicBal == null ? "–" : `${fmtUnits(extra.publicBal, d)} ${sym(b)}`} hint="mt_balance_of on the verifier for the vault's MPC account" />
           </div>
@@ -97,7 +99,7 @@ export default function ChainPage() {
         </div>
 
         <div className="panel" data-testid="follower">
-          <h2 className="font-semibold">Follower</h2>
+          <h2>Follower</h2>
           <p className="muted text-xs">
             <code>{short(follower, 14)}</code>: their own position.{" "}
             <Link href={`/vault/?id=${data.id}&as=${follower}`}>open as this follower</Link>
@@ -108,6 +110,7 @@ export default function ChainPage() {
               <Row k="Value at book price" v={`${fmtUnits(value, d)} ${sym(b)}`} />
               <Row k="Deposited" v={`${fmtUnits(pos.deposited, d)} ${sym(b)}`} />
               <Row k="Withdrawn (claims)" v={`${fmtUnits(pos.claimed, d)} ${sym(b)}`} />
+              <Row k="Vault holdings" v={<Redact widths={[60, 32]} h={13} label="Holdings sealed" />} />
               <Row k="P&L" v={<span className={pnl >= 0n ? "pos" : "neg"}>{pnl >= 0n ? "+" : "−"}{fmtUnits(pnl >= 0n ? pnl : -pnl, d)} {sym(b)}</span>} />
             </div>
           ) : (
@@ -122,7 +125,7 @@ export default function ChainPage() {
         </div>
 
         <div className="panel" data-testid="leader">
-          <h2 className="font-semibold">Leader &amp; operator</h2>
+          <h2>Leader &amp; operator</h2>
           <p className="muted text-xs">Private. Published here up to epoch {disc && disc !== "none" ? disc.upto_epoch : "–"} for the demo.</p>
           {disc === null && <p className="muted mt-2 text-sm">Loading disclosure…</p>}
           {disc === "none" && <p className="muted mt-2 text-sm">No disclosure published for this vault: only the operator has this view.</p>}

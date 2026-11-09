@@ -1,33 +1,30 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ASSETS, VAULTS } from "@/lib/config";
-import { aumBucket, loadVault, maxDrawdown, priceOf, returns, status, verifyNavs, type VaultData } from "@/lib/vault";
-import { metaOf, modeLabel } from "@/lib/vaults";
-import { LeaderChips, ModeChip, Ret, Sparkline, StatusChip, short } from "../ui";
+import { VAULTS } from "@/lib/config";
+import { leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, type VaultData } from "@/lib/vault";
+import { metaOf } from "@/lib/vaults";
+import { LeaderChips, ModeChip, Redact, Ret, StatusChip } from "../ui";
 
-type Row = { d: VaultData; ret: number; dd: number; verified: string; aum: number };
-type Key = "ret" | "dd" | "aum" | "epochs" | "name";
-const SORTS: Record<Key, (a: Row, b: Row) => number> = {
-  ret: (a, b) => b.ret - a.ret,
-  dd: (a, b) => a.dd - b.dd,
-  aum: (a, b) => b.aum - a.aum,
-  epochs: (a, b) => b.d.navs.length - a.d.navs.length,
-  name: (a, b) => metaOf(a.d.id).name.localeCompare(metaOf(b.d.id).name),
+type Row = { d: VaultData; ret: number; dd: number; stake: number; ok: number; bad: number };
+type Key = "dd" | "stake" | "ret";
+const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
+  dd: { label: "Calmest first", by: (a, b) => a.dd - b.dd },
+  stake: { label: "Most skin in the game", by: (a, b) => b.stake - a.stake },
+  ret: { label: "Return", by: (a, b) => b.ret - a.ret },
 };
+
+// The drill and first test vaults barely traded, so they can't rank above real leaders.
+const rank = (r: Row) => (metaOf(r.d.id).season ? 0 : 1);
+
+const TINTS = ["#2F3FD8", "#B9401F", "#7A5C00", "#2E7D6B"];
+const tint = (name: string) => TINTS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % TINTS.length];
 
 export default function Leaderboard() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [sort, setSort] = useState<Key>("ret");
-  const sorted = useMemo(() => (rows ? [...rows].sort(SORTS[sort]) : null), [rows, sort]);
-  const th = (k: Key, label: string, title?: string) => (
-    <th>
-      <button className={`sort ${sort === k ? "on" : ""}`} onClick={() => setSort(k)} title={title ?? `Sort by ${label.toLowerCase()}`} data-testid={`sort-${k}`} aria-pressed={sort === k}>
-        {label}{sort === k ? " ↓" : ""}
-      </button>
-    </th>
-  );
+  const [sort, setSort] = useState<Key>("dd");
+  const sorted = useMemo(() => (rows ? [...rows].sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
   useEffect(() => {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then((rs) => {
       const ok: Row[] = [];
@@ -37,7 +34,7 @@ export default function Leaderboard() {
         const d = r.value;
         const last = d.navs.at(-1);
         const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
-        ok.push({ d, ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), verified: `${v.ok}/${d.navs.length}`, aum: Number(BigInt(d.vault.book_nav)) });
+        ok.push({ d, ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), stake: leaderStake(d.vault), ok: v.ok, bad: v.bad.length });
       });
       setRows(ok);
       setErrors(errs);
@@ -45,53 +42,74 @@ export default function Leaderboard() {
   }, []);
 
   return (
-    <section>
-      <h1 className="text-2xl font-semibold">Leaderboard</h1>
-      <p className="muted mt-1 max-w-2xl text-sm">
-        Private copy-trading vaults on NEAR Confidential Intents. Followers and their leader share one confidential account. Every trade fills once, at one price, for the whole pool.
-        You see attested NAV and returns. Positions are never published.
-      </p>
-      <div className="panel scroll-x mt-5 p-0">
-        <table className="t" data-testid="leaderboard">
+    <section className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex max-w-2xl flex-col gap-3">
+          <h1>Leaders</h1>
+          <p className="text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>Calmest first. Every number comes from a signed price post your browser re-checks. <span className="mark">Nobody&apos;s positions are published, including theirs.</span></p>
+        </div>
+        <div className="seg flex-wrap" role="group" aria-label="Sort leaders" style={{ borderRadius: 24 }}>
+          {(Object.keys(SORTS) as Key[]).map((k) => (
+            <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)} data-testid={`sort-${k}`}>{SORTS[k].label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel p-0">
+        <table className="lb" data-testid="leaderboard">
           <thead>
-            <tr>
-              <th>#</th>{th("name", "Vault")}{th("ret", "Return")}<th>Trend</th>{th("dd", "Max drawdown", "Sort by smallest drawdown")}{th("aum", "AUM")}{th("epochs", "Epochs")}<th>Attested</th><th>Status</th>
-            </tr>
+            <tr><th>Leader</th><th>Worst drawdown</th><th>Return</th><th>Own money in</th><th>Holdings</th><th>Verified</th><th><span className="sr-only">Open</span></th></tr>
           </thead>
           <tbody>
-            {rows === null && (
-              <tr><td colSpan={9} className="muted">Reading vaults from NEAR…</td></tr>
-            )}
-            {rows?.length === 0 && (
-              <tr><td colSpan={9} className="muted">No vaults yet.</td></tr>
-            )}
-            {sorted?.map((r, i) => (
-              <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
-                <td>{i + 1}</td>
-                <td>
-                  <Link href={`/vault/?id=${r.d.id}`} className="font-semibold">{metaOf(r.d.id).name}</Link> <LeaderChips id={r.d.id} /> <ModeChip id={r.d.id} />
-                  <div className="muted text-xs" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{metaOf(r.d.id).style}</div>
-                </td>
-                <td className="font-semibold"><Ret r={r.ret} /></td>
-                <td><Sparkline points={returns(r.d.navs)} /></td>
-                <td className="neg">{r.dd === 0 ? <span className="muted">0%</span> : `−${(r.dd * 100).toFixed(2)}%`}</td>
-                <td>{aumBucket(r.d.vault.book_nav, ASSETS[r.d.cfg.base_asset_id]?.decimals ?? 6)}</td>
-                <td>{r.d.navs.length}</td>
-                <td title="NAV signatures verified in your browser against the operator's attestation key">{r.verified} ✓</td>
-                <td><StatusChip s={status(r.d.vault)} /></td>
-              </tr>
-            ))}
+            {rows === null && <tr><td colSpan={7} className="muted">Reading vaults from NEAR…</td></tr>}
+            {rows?.length === 0 && <tr><td colSpan={7} className="muted">No vaults yet.</td></tr>}
+            {sorted?.map((r) => {
+              const m = metaOf(r.d.id), st = status(r.d.vault);
+              return (
+                <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
+                  <td className="lb-who">
+                    <div className="who">
+                      <span className="tile-initial" style={{ background: tint(m.name) }} aria-hidden="true">{m.name.charAt(0)}</span>
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
+                        <span className="muted text-sm">{m.style}</span>
+                        <div className="who-chips"><LeaderChips id={r.d.id} /><ModeChip id={r.d.id} />{st !== "active" && <StatusChip s={st} />}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`num text-[17px] ${r.dd > 0 ? "neg" : ""}`} data-label="Worst drawdown" data-testid="dd">{r.dd === 0 ? "0%" : `−${(r.dd * 100).toFixed(2)}%`}</td>
+                  <td className="num text-[17px]" data-label="Return" data-testid="ret"><Ret r={r.ret} /></td>
+                  <td className="num" data-label="Own money in" data-testid="stake">
+                    <span className="pos">{(r.stake * 100).toFixed(1)}%</span>
+                    <span className="stake-bar"><i style={{ width: `${Math.min(100, r.stake * 100)}%` }} /></span>
+                  </td>
+                  <td data-label="Holdings"><Redact widths={[52, 28]} h={13} label="Holdings sealed" /></td>
+                  <td className="num text-sm" data-label="Verified" title="NAV signatures verified in your browser against the operator's attestation key" style={{ color: "var(--ink-2)" }}>
+                    {r.bad > 0 ? <span className="neg">✗ {r.ok}/{r.d.navs.length}</span> : <>✓ {r.ok}/{r.d.navs.length}</>}
+                  </td>
+                  <td className="lb-view"><Link href={`/vault/?id=${r.d.id}`} className="pill-view" aria-label={`View ${m.name}`}>View</Link></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      <p className="muted mt-2 text-xs" data-testid="honesty">
+      <p className="muted -mt-5 text-xs" data-testid="honesty">
         Numbers marked <b>paper · testnet</b> are paper trades: fills are priced by real 1Click dry quotes, but no real funds move and the vaults hold testnet tokens. NAVs and signals are real testnet transactions.
       </p>
-      {errors.map((e) => <p key={e} className="neg mt-2 text-sm">{e}</p>)}
-      <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
-        <div><div className="font-semibold">One fill, one price</div><p className="muted mt-1">The operator executes each leader signal once, for the whole vault, through a 1Click confidential quote. Nobody gets in ahead of the followers.</p></div>
-        <div><div className="font-semibold">The key can&apos;t be misused</div><p className="muted mt-1">The vault&apos;s intents key is an MPC key derived for the contract. The contract only signs transfers that go back to the vault or to a holder&apos;s own withdrawal.</p></div>
-        <div><div className="font-semibold">Attested, not trusted</div><p className="muted mt-1">Each NAV post is signed by the operator and pinned to a hash-chained fill log. Your browser checks every signature.</p></div>
+      {errors.map((e) => <p key={e} className="neg text-sm">{e}</p>)}
+
+      <div className="flex flex-wrap gap-4">
+        <div className="panel lead-card flex min-w-0 flex-[1_1_320px] flex-col items-start gap-3" data-testid="lead-card">
+          <h2 className="text-[32px]">Trade well? Lead a vault.</h2>
+          <p className="text-[15px] leading-relaxed">Keep your edge private and get paid for followers without publishing your book. Put in at least 10% yourself; earn only on new highs.</p>
+          <Link href="/create/" className="underline underline-offset-4">Create a vault</Link>
+        </div>
+        <div className="panel flex min-w-0 flex-[1_1_320px] flex-col items-start gap-3">
+          <h2 className="text-[32px]">Bring your track record</h2>
+          <p className="muted text-[15px] leading-relaxed">Sign once to prove an address is yours and we show its history on your vault. We never list a trader who hasn&apos;t signed.</p>
+          <Link href="/track/" className="underline underline-offset-4">Prove an address</Link>
+        </div>
       </div>
     </section>
   );

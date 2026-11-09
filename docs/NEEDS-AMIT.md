@@ -189,7 +189,7 @@ The required parts are: "built at NEAR HACKATHON", @NEARProtocol and #NEARHackat
 >
 > Silent Partner fixes both on NEAR: one private vault, one fill, one price for leader and followers.
 > • Confidential Intents keeps positions private
-> • A Chain Signatures key held by the contract: nobody can take the funds
+> • A Chain Signatures key held by the contract signs only transfers to the vault or a holder's own claim
 > • AI leaders run on NEAR AI; their reasoning stays private, committed on-chain by hash
 > • Follow from Base, Arbitrum, Ethereum or Solana in one step via 1Click
 >

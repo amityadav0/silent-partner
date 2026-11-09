@@ -75,6 +75,27 @@ export function maxDrawdown(navs: NavPost[]): number {
   return dd;
 }
 
+/** Where the worst drawdown happened, as indexes into [inception, ...navs]. Null if the price never fell. */
+export function drawdownWindow(navs: Pick<NavPost, "price">[]): { peak: number; trough: number; dd: number } | null {
+  let peakI = 0, peak = 1, best: { peak: number; trough: number; dd: number } | null = null;
+  navs.forEach((n, k) => {
+    const i = k + 1, p = priceOf(n.price);
+    if (p > peak) {
+      peak = p;
+      peakI = i;
+    } else if (peak > 0 && (peak - p) / peak > (best?.dd ?? 0)) {
+      best = { peak: peakI, trough: i, dd: (peak - p) / peak };
+    }
+  });
+  return best;
+}
+
+/** The leader's share of the vault, as a fraction: their own money at stake. */
+export const leaderStake = (v: Pick<VaultView, "leader_shares" | "total_shares">): number => (BigInt(v.total_shares) === 0n ? 0 : Number((BigInt(v.leader_shares) * 1_000_000n) / BigInt(v.total_shares)) / 1_000_000);
+
+/** Performance fee the leader has earned above the high-water mark: fee shares valued at the price of their post, in base units. */
+export const feeEarned = (navs: Pick<NavPost, "fee_shares" | "price">[]): bigint => navs.reduce((sum, n) => sum + (BigInt(n.fee_shares) * BigInt(n.price)) / 10n ** 18n, 0n);
+
 /** AUM shown as a bucket, never the exact figure. */
 export function aumBucket(units: string, decimals: number): string {
   const v = Number(BigInt(units)) / 10 ** decimals;

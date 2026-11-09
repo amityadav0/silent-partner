@@ -46,7 +46,7 @@ export default function Track() {
 
   return (
     <section className="max-w-2xl" data-testid="track">
-      <h1 className="text-2xl font-semibold">Bring your track record</h1>
+      <h1>Bring your track record</h1>
       <p className="muted mt-1 text-sm">
         Already trading in public? Prove you own the address by signing one message. Your vault&apos;s page can then show that address&apos;s Hyperliquid record, while your new trades stay private. Nobody is listed without signing.
       </p>

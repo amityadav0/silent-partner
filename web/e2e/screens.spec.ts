@@ -11,10 +11,12 @@ test("screens", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("live-stats")).toBeVisible();
   await shot(page, "landing");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await shot(page, "landing-dark");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
 
   await page.goto("/leaderboard/");
   await expect(page.getByTestId(`row-${SEASON}`)).toBeVisible();
-  await expect(page.getByTestId("sparkline").first()).toBeVisible();
   await shot(page, "leaderboard");
 
   await page.goto(`/vault/?id=${SEASON}&as=sp-follower-60270.testnet`);
@@ -51,11 +53,14 @@ test("screens", async ({ page }) => {
   await expect(page.getByTestId("share-proof")).toContainText("✓");
   await shot(page, "share");
 
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(`/vault/?id=${SEASON}`);
   await expect(page.getByTestId("returns-chart")).toBeVisible();
   await shot(page, "vault-mobile");
   await page.goto("/leaderboard/");
   await expect(page.getByTestId(`row-${SEASON}`)).toBeVisible();
   await shot(page, "leaderboard-mobile");
+  await page.goto("/");
+  await expect(page.getByTestId("live-stats")).toBeVisible();
+  await shot(page, "landing-mobile");
 });

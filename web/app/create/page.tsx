@@ -36,7 +36,7 @@ export default function CreateVault() {
 
   return (
     <section className="max-w-2xl" data-testid="create">
-      <h1 className="text-2xl font-semibold">Create a vault</h1>
+      <h1>Create a vault</h1>
       <p className="muted mt-1 text-sm">You lead; followers copy you at your fill. This builds the contract&apos;s init arguments and the commands to deploy them. Nothing is deployed from this page.</p>
 
       <ol className="track mt-4" aria-label="wizard steps">

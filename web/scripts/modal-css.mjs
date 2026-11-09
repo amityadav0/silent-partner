@@ -1,5 +1,5 @@
 // Copy wallet-selector's modal CSS without its Google Fonts @import, so the
-// site stays on one (system) font and makes no third-party font request.
+// site uses its own bundled fonts and makes no third-party font request.
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);

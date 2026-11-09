@@ -1,19 +1,17 @@
 "use client";
-// Landing page. Live numbers come from the listed vaults over NEAR RPC.
+// Landing: why a copied trade should be private, and the enforced facts behind it.
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { VAULTS } from "@/lib/config";
-import { loadVault, priceOf, verifyNavs } from "@/lib/vault";
-
-const REPO = "https://github.com/amityadav0/silent-partner";
+import { loadVault, verifyNavs } from "@/lib/vault";
+import { Redact } from "./ui";
 
 function useLive() {
-  const [s, setS] = useState<{ vaults: number; navs: number; verified: number; signals: number } | null>(null);
+  const [s, setS] = useState<{ navs: number; verified: number; signals: number } | null>(null);
   useEffect(() => {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then((rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       setS({
-        vaults: ok.length,
         navs: ok.reduce((a, d) => a + d.navs.length, 0),
         verified: ok.reduce((a, d) => a + verifyNavs(d.id, d.cfg.attestation_key, d.navs).ok, 0),
         signals: ok.reduce((a, d) => a + d.vault.signals, 0),
@@ -23,74 +21,151 @@ function useLive() {
   return s;
 }
 
-const STEPS: [string, string][] = [
-  ["Deposit", "Followers send USDC to a leader's vault. The contract mints shares at the last attested NAV and forwards the funds to the vault's account on NEAR Intents, which belongs to an MPC key derived for the contract. Nobody holds that key."],
-  ["Copy", "The leader signs a trade signal. The operator executes it once, for the whole pool, through one 1Click confidential quote. Everyone gets the same price, and there is no follower order left to front-run."],
-  ["Exit", "Withdrawals burn at the next NAV. The contract signs a payout only to your own exit account. If the operator disappears, emergency mode after 24h lets every holder exit pro rata without it."],
+function Ticket() {
+  const [sealed, setSealed] = useState(true);
+  const row = (k: string, v: string, bar: number) => (
+    <div className="row-kv">
+      <span>{k}</span>
+      {sealed ? <span><Redact widths={[bar]} h={16} /></span> : <span>{v}</span>}
+    </div>
+  );
+  return (
+    <div className="hero-side" data-testid="ticket">
+      <div className="seg self-start" role="group" aria-label="Compare where the trade is copied">
+        <button aria-pressed={!sealed} onClick={() => setSealed(false)} data-testid="ticket-public">On a public platform</button>
+        <button aria-pressed={sealed} onClick={() => setSealed(true)} data-testid="ticket-sealed">On Silent Partner</button>
+      </div>
+      <div className="ticket">
+        <div className="ticket-head"><span>Trade ticket</span><span>Illustration</span></div>
+        {sealed ? (
+          <span className="stamp" style={{ color: "var(--accent)" }} data-testid="stamp">SEALED</span>
+        ) : (
+          <span className="stamp" style={{ color: "var(--warn)" }} data-testid="stamp">EXPOSED</span>
+        )}
+        {row("Side", "LONG", 64)}
+        {row("Asset", "NEAR", 72)}
+        {row("Size", "42,000", 104)}
+        {row("Leader's price", "2.410", 80)}
+        {sealed ? (
+          <>
+            <div className="row-kv"><span>Your price</span><span className="pos">the same one</span></div>
+            <p className="ticket-note">Bots see nothing to trade against. One vault, one trade, one price for everyone in it, and with one shared book the leader has no copiers to sell into.</p>
+          </>
+        ) : (
+          <>
+            <div className="row-kv"><span>Your copy&apos;s price</span><span className="neg">2.470 · after bots</span></div>
+            <p className="ticket-note warn">The leader&apos;s LONG is visible. Bots front-run it, your copy fills worse, and the leader can sell into the copiers who follow.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const CARDS: [string, string, string][] = [
+  ["Same fill as the leader", "0.00% copy slippage vs the leader", "There's no copy order to arrive late. The vault trades once, and your share is inside that trade."],
+  ["Positions sealed", "Nothing to front-run", "The vault trades through NEAR Confidential Intents. Wallet trackers and bots can't read what it holds or when it moves."],
+  ["The leader's money is in it", "≥ 10%, enforced by the contract", "One shared book, and at least 10% of it is the leader's own. Their losses are your losses, and theirs."],
+  ["An exit that doesn't need us", "24 h without the operator", "If no price is posted for 24 hours, anyone can switch the vault to emergency and each holder can exit pro rata."],
+  ["Verified, not screenshotted", "Signed and re-checked", "Every share price is signed and bounded by public prices, checked on chain. Your browser re-checks the signature."],
+  ["Paid only for new highs", "Fee above high-water mark", "Performance fees apply only above the high-water mark. Climbing back from a loss earns the leader nothing."],
+];
+
+const COMPARE: [string, string, string, string, string][] = [
+  ["Positions visible to others", "Yes", "Yes", "That's the product", "Not public (operator only)"],
+  ["Your price vs the leader's", "Later, usually worse", "Same", "Later, often much worse", "Same trade, same price"],
+  ["Leader's money at stake", "Not required", "Sometimes", "Not required", "≥ 10%, enforced"],
+  ["If the platform stops", "Platform decides", "Contract", "You're on your own", "Contract exit, 24 h"],
+  ["Leader's edge", "Copied for free", "Copied for free", "Copied for free", "Stays private, gets paid"],
 ];
 
 export default function Landing() {
   const live = useLive();
   return (
-    <section data-testid="landing">
-      <div className="py-6 sm:py-10">
-        <p className="muted text-xs uppercase tracking-wide">NEAR Confidential Intents · copy trading</p>
-        <h1 className="mt-2 max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">Follow a trader without anyone following you.</h1>
-        <p className="mt-4 max-w-2xl text-base sm:text-lg">
-          Silent Partner vaults pool a leader and their followers in one confidential account. Trades fill once, at one price, for everyone. The world sees attested returns.
-          Nobody sees the positions.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/leaderboard/" className="btn btn-primary no-underline">See the leaderboard</Link>
-          <Link href="/chain/" className="btn no-underline">What the chain sees</Link>
-          <a href={`${REPO}#readme`} className="btn no-underline">Docs</a>
+    <div className="bleed" data-testid="landing">
+      <section className="wrap hero">
+        <div className="hero-copy">
+          <span className="hero-tag">Confidential copy trading · NEAR Intents</span>
+          <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
+          <p className="lede">Everywhere else, a copied trade is a public trade: bots see it first and you fill last. Here you and the trader share one sealed vault. One trade, one price, and nothing for anyone to front-run.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/leaderboard/" className="btn btn-primary btn-lg">Follow a leader privately</Link>
+            <a href="#why" className="btn btn-lg">See what others expose</a>
+          </div>
         </div>
-        {live && (
-          <p className="muted mt-4 text-sm tabular-nums" data-testid="live-stats">
-            Live on testnet now: {live.vaults} vaults · {live.navs} NAV posts ({live.verified} signatures checked in your browser just now) · {live.signals} leader signals recorded on-chain. Paper trading at real 1Click prices.
-          </p>
-        )}
-      </div>
+        <Ticket />
+      </section>
 
-      <h2 className="mt-4 text-xl font-semibold">How it works</h2>
-      <ol className="mt-3 grid gap-4 sm:grid-cols-3">
-        {STEPS.map(([t, d], i) => (
-          <li key={t} className="panel">
-            <div className="muted text-xs">Step {i + 1}</div>
-            <div className="font-semibold">{t}</div>
-            <p className="muted mt-1 text-sm">{d}</p>
-          </li>
-        ))}
-      </ol>
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <div className="panel">
-          <h2 className="font-semibold">For leaders</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            <li>Your book stays private. Followers can't copy your trades outside the vault, and nobody can trade ahead of you on your size.</li>
-            <li>Earn a 20% performance fee above a high-water mark, paid in vault shares on-chain.</li>
-            <li>Keep at least 10% of the vault: skin in the game that followers can verify.</li>
-            <li>Sign signals from the <Link href="/leader/">leader console</Link>, a script, or a bot. The paper season includes an AI leader that decides on NEAR AI Cloud.</li>
-          </ul>
-          <Link href="/create/" className="btn mt-3 inline-block no-underline">Create a vault</Link> <Link href="/track/" className="btn mt-3 ml-2 inline-block no-underline">Bring your track record</Link>
+      <section className="proof-strip" data-testid="proof-strip">
+        <div className="wrap">
+          <div><b>0.00%</b><span>copy slippage vs the leader&apos;s fill</span></div>
+          <div><b>≥ 10%</b><span>leader&apos;s own money, enforced</span></div>
+          <div><b>24 h</b><span>to an exit that doesn&apos;t need us</span></div>
+          <div><b>0</b><span>positions on the public chain</span></div>
         </div>
-        <div className="panel">
-          <h2 className="font-semibold">For followers</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            <li>The same fill as the leader, never a worse one. There's one order for the whole pool.</li>
-            <li>Every NAV is signed and pinned to a hash-chained fill log. Your browser checks each signature.</li>
-            <li>The operator can choose trades but can&apos;t take the money: the vault key only signs transfers back into the vault or out to your own claim.</li>
-            <li>If the operator stops, emergency mode lets you exit at the last NAV with no one&apos;s permission. <Link href="/vault/?id=sp-drill-92991.testnet">See the drill</Link>.</li>
-          </ul>
-          <Link href="/leaderboard/" className="btn mt-3 inline-block no-underline">Pick a leader</Link>
-        </div>
-      </div>
+      </section>
 
-      <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
-        <a className="panel no-underline" href={`${REPO}/blob/master/docs/architecture.md`}><div className="font-semibold">Architecture →</div><p className="muted mt-1">Contract, operator and web; the vault key and what it signs.</p></a>
-        <a className="panel no-underline" href={`${REPO}/blob/master/docs/threat-model.md`}><div className="font-semibold">Threat model →</div><p className="muted mt-1">What you still trust the operator for, and the mitigations.</p></a>
-        <a className="panel no-underline" href={`${REPO}/blob/master/docs/testnet.md`}><div className="font-semibold">Testnet record →</div><p className="muted mt-1">Every transaction behind the claims on this page.</p></a>
-      </div>
-    </section>
+      <section id="why" className="wrap sect">
+        <div className="flex max-w-3xl flex-col gap-3">
+          <span className="eyebrow">The problem with copy trading</span>
+          <h2>If you can see the trade, so can everyone faster than you.</h2>
+        </div>
+        <div className="cards" data-testid="proof-cards">
+          {CARDS.map(([t, fact, d], i) => (
+            <div className="card" key={t}>
+              <span className="card-n">0{i + 1}</span>
+              <h3>{t}</h3>
+              <span className="card-fact">{fact}</span>
+              <p>{d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="exit" className="band">
+        <div className="wrap">
+          <div className="band-copy">
+            <span className="eyebrow" style={{ color: "inherit" }}>The promise most platforms can&apos;t make</span>
+            <h2>Your exit doesn&apos;t need our permission.</h2>
+            <p className="max-w-xl text-lg leading-relaxed">If the operator goes quiet for 24 hours, anyone can open the contract&apos;s emergency exit and each holder can pay themselves their share. The vault key signs only transfers back to the vault or to a holder&apos;s own claim.</p>
+          </div>
+          <div className="band-side">
+            <div className="band-row"><span>Operator silent</span><span>24 h</span></div>
+            <div className="band-row"><span>Emergency mode</span><span>on</span></div>
+            <div className="band-row"><span>Your payout</span><span>pro-rata ✓</span></div>
+            <span className="pt-1 text-[13px]" style={{ fontFamily: "var(--sans)" }} data-testid="drill-line">Drilled on testnet with a 5-minute timeout: a follower paid themselves out with no operator online. <Link href="/vault/?id=sp-drill-92991.testnet&as=sp-follower-60270.testnet">See the drill</Link></span>
+          </div>
+        </div>
+      </section>
+
+      <section className="wrap sect">
+        <h2>Side by side</h2>
+        <div className="panel scroll-x p-0">
+          <table className="compare" data-testid="compare">
+            <thead>
+              <tr><th aria-label="Question" /><th>Exchange copy trading</th><th>Public on-chain vaults</th><th>Wallet trackers</th><th className="us">Silent Partner</th></tr>
+            </thead>
+            <tbody>
+              {COMPARE.map(([q, a, b, c, us]) => (
+                <tr key={q}><td>{q}</td><td>{a}</td><td>{b}</td><td>{c}</td><td className="us">{us}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="wrap close">
+        <div className="close-copy">
+          <h2>No countdowns. No &quot;214 people just copied&quot;. <em style={{ color: "var(--accent)" }}>Just the numbers that protect you.</em></h2>
+          <p className="max-w-2xl text-[17px] leading-relaxed" style={{ color: "var(--ink-2)" }}>Every leader opens with worst drawdown and how much of their own money is in, then returns. Pick someone you&apos;d trust with money, not someone who&apos;s trending.</p>
+          {live && (
+            <p className="muted text-sm tabular-nums" data-testid="live-stats">
+              Live on testnet: {live.navs} NAV posts, {live.verified} signatures checked in your browser just now, {live.signals} leader signals recorded. Paper trades at real 1Click prices.
+            </p>
+          )}
+        </div>
+        <Link href="/leaderboard/" className="btn btn-primary btn-lg">Meet the leaders</Link>
+      </section>
+    </div>
   );
 }
