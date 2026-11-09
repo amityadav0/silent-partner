@@ -54,3 +54,15 @@ test("leader console signs a signal in the browser; the operator executes and re
   await page.reload();
   await expect.poll(async () => page.getByTestId("signals-table").locator("tbody tr").count(), { timeout: 30_000 }).toBeGreaterThan(before);
 });
+
+test("drill vault: emergency state, pro-rata exit button, the follower's paid emergency claim", async ({ page }) => {
+  const DRILL = "sp-drill-92991.testnet";
+  await page.goto(`/vault/?id=${DRILL}&as=sp-leader-60270.testnet`);
+  await expect(page.getByTestId("emergency")).toContainText("Emergency mode");
+  await expect(page.getByTestId("status")).toHaveText("emergency");
+  await expect(page.getByTestId("emergency-exit")).toBeVisible();
+  await expect(page.getByTestId("emergency")).toContainText("claim of about 20");
+  await page.goto(`/vault/?id=${DRILL}&as=sp-follower-60270.testnet`);
+  await expect(page.getByTestId("my-position")).toContainText("Claim #0 (emergency): 80");
+  await expect(page.getByTestId("my-position").locator(".chip-ok")).toHaveText("paid");
+});

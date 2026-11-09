@@ -30,8 +30,9 @@ The vault's confidential balance lives on `intents.far`, a permissioned chain wi
 - **1Click or the bridge is down.** No shield, trade or payout can complete. Funds stay in the vault's confidential account, and nobody can move them out without a 1Click quote. That is a liveness dependency on Defuse.
   - **Mitigation:** the contract could also accept `ft_withdraw`-style intents on FAR if Defuse exposes a direct exit.
   - **Status:** open. It's the main reason the mainnet demo uses $7.
-- **Public leg.** Deposits waiting on `intents.near` don't depend on FAR. `intents.near` is a public NEAR contract, so the vault could add a direct `ft_withdraw` intent for emergency exits of public funds. That is listed as future work.
-- **Emergency payouts.** These still need 1Click unshield quotes. In emergency mode anyone may submit them, so the holders themselves can, but 1Click must be up.
+- **Public leg (closed, D-S-1).** Deposits waiting on `intents.near` don't depend on FAR. `sign_intent(PublicPayout{claim})` signs a plain transfer of the base asset from the vault's public intents balance to the claim's exit account, with no quote. That's the operator any time, and anyone for emergency claims. The emergency drill (docs/testnet.md) exits a follower this way, through the real defuse verifier, with no operator and no 1Click.
+- **Emergency payouts of shielded funds.** These still need 1Click unshield quotes. In emergency mode anyone may submit them, so the holders themselves can, but 1Click must be up.
+- **Claimant confirmation.** In emergency the claimant may mark their own in-flight payout executed (`settle_payout(executed = true)`), so the record is complete without the operator. Only the operator may release one.
 - **In-flight payouts in emergency** stay counted as paid. If one was signed but never executed, its claimant is short. That is the safe side for the other holders, because a released payout could otherwise be paid twice.
 
 ## 3. Leader manipulation

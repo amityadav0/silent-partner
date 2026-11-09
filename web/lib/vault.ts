@@ -7,7 +7,7 @@ import { RPC } from "./config";
 export type NavPost = { epoch: number; nav: string; timestamp_ms: number; block_ms: number; price: string; total_shares: string; fee_shares: string; withdrawn: string; fills_head: string; signature: string };
 export type VaultView = { vault_account: string | null; total_shares: string; book_nav: string; price: string; hwm: string; epoch: number; last_nav_ms: number; stale: boolean; emergency: boolean; leader_shares: string; pending_withdrawals: number; signals: number };
 export type Config = { owner: string; operator: string; leader: string; base_token: string; base_asset_id: string; attestation_key: string; oneclick_key: string; perf_fee_bps: number; min_leader_bps: number; max_slippage_bps: number; min_deposit: string; allowed_assets: string[]; intents_contract: string | null };
-export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: { amount: string }[]; epoch: number; emergency: boolean };
+export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: { prehash: string; amount: string; deadline_ms: number; signed: boolean }[]; epoch: number; emergency: boolean };
 export type SignalRec = { index: number; hash: string; fill_hash: string; executed_ms: number; epoch: number };
 
 export async function view<T>(contract: string, method: string, args: object = {}, fetchImpl: typeof fetch = fetch): Promise<T> {
@@ -102,3 +102,33 @@ export function toUnits(human: string, decimals: number): bigint | null {
   if (!m || (m[2]?.length ?? 0) > decimals) return null;
   return BigInt(m[1]) * 10n ** BigInt(decimals) + BigInt((m[2] ?? "").padEnd(decimals, "0") || "0");
 }
+
+/** Logs and final return value of a transaction (RPC `tx`), waiting until it's final. */
+export async function txOutcome(hash: string, sender: string, fetchImpl: typeof fetch = fetch): Promise<{ logs: string[]; value: unknown; failed: boolean }> {
+  const r = await fetchImpl(RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "FINAL" } }),
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(`tx ${hash}: ${JSON.stringify(j.error.data ?? j.error).slice(0, 200)}`);
+  const outs = (j.result.receipts_outcome as { outcome: { logs: string[]; status: Record<string, string> } }[]).map((x) => x.outcome);
+  const sv = j.result.status?.SuccessValue as string | undefined;
+  let value: unknown = null;
+  if (sv) try { value = JSON.parse(atob(sv)); } catch { value = null; }
+  return { logs: outs.flatMap((o) => o.logs), value, failed: outs.some((o) => "Failure" in o.status) };
+}
+
+/** The vault key's signature from a sign_intent transaction (on_signed logs it). */
+export const signatureFromLogs = (logs: string[]): string | null => logs.map((l) => l.match(/^silent-partner\.signed prehash=[0-9a-f]{64} signature=(ed25519:[1-9A-HJ-NP-Za-km-z]+)$/)?.[1]).find(Boolean) ?? null;
+
+/** NEP-413 payload for an emergency payout from the vault's public intents balance. */
+export function publicPayoutPayload(vaultAccount: string, to: string, token: string, amount: string, verifier: string, nowMs: number, nonce: Uint8Array) {
+  const message = JSON.stringify({ deadline: new Date(nowMs + 20 * 60_000).toISOString(), intents: [{ intent: "transfer", receiver_id: to, tokens: { [token]: amount } }], signer_id: vaultAccount });
+  return { message, nonce: btoa(String.fromCharCode(...nonce)), recipient: verifier };
+}
+
+/** Holder's exit at the last NAV in emergency: shares × book NAV / total shares (rounded down, as the contract does). */
+export const emergencyExitValue = (shares: bigint, bookNav: string, totalShares: string) => (BigInt(totalShares) === 0n ? 0n : (shares * BigInt(bookNav)) / BigInt(totalShares));
+
+export const openOfClaim = (c: Claim) => BigInt(c.amount) - BigInt(c.paid) - c.in_flight.reduce((s, f) => s + BigInt(f.amount), 0n);

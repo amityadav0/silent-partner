@@ -86,3 +86,8 @@ Each decision is dated, with its reason.
   - **Model.** The default is `deepseek-ai/DeepSeek-V4.1-Flash-1017`, which is served from NEAR AI's attested TEE infrastructure, so even the inference host doesn't see the rationale in the clear. It's cheap (about $0.05/day at 96 epochs).
   - **Without `NEARAI_API_KEY`,** the AI vault holds and still posts NAV (NEEDS-AMIT §7).
   - **Tracks.** The AI is a leader, not the operator, so by the original rule the hackathon tracks stay privacy + defi. Mentioning the AI leader in the agents track is Amit's call.
+- **D-E-1 (2026-11-09) Emergency drill and UI.**
+  - **The drill.** It runs against a vault built with `--features drill`, because a 24h wait doesn't fit a demo. Every other code path is the release code.
+  - **Payout path.** The follower is paid by `PublicPayout` from the public balance. In paper mode nothing was ever shielded, so that's where the funds are. On mainnet, shielded funds would first need a 1Click unshield (Trade/Payout quotes, which anyone may submit in emergency).
+  - **Vault page.** It shows the state: a stale-NAV notice with "Trigger emergency", then the emergency banner with "Exit at last NAV" and the exit value (shares × book NAV / total). Each emergency claim gets four wallet steps: the vault signs, execute on the verifier, withdraw to wallet, mark paid. The signature is read from the `on_signed` log of the sign transaction, and the payload is kept in localStorage across wallet redirects.
+  - **View as.** `?as=<account>` shows any account's position read-only. Share balances and claims are public on-chain anyway, and every action still needs the wallet. It makes the screens and the drill reviewable without a wallet.

@@ -166,3 +166,29 @@ Followers: `sp-follower-60270.testnet`, `sp-fund-61557.testnet`. Fill logs and b
 | sp-follower-60270.testnet → usdc.fakes.testnet.ft_transfer_call | [`65gxuA6EFh…`](https://testnet.nearblocks.io/txns/65gxuA6EFhbAzcqHmsdy3MfnhEjqHKnwvnseRAL7Lq6P) |
 
 </details>
+
+## Emergency exit drill (item 3, 2026-11-09)
+
+Vault [`sp-drill-92991.testnet`](https://testnet.nearblocks.io/address/sp-drill-92991.testnet), built with `--features drill` (NAV goes stale after 5 minutes instead of 24h; the build refuses non-`.testnet` accounts). Script: `operator/scripts/drill.ts`. The follower got their money out with no operator and no 1Click.
+
+1. **Operator alive.** It posted NAV epoch 1: 100 USDC, 100 shares (leader 20, follower `sp-follower-60270.testnet` 80).
+2. **Operator stopped.** Nothing posted. The NAV went stale after 308 s.
+3. **Emergency.** `sp-fund-61557.testnet` (any account) called `trigger_emergency`. Its 5 USDC deposit afterwards was refunded in the same transaction: True.
+4. **Exit, pro rata.** The follower called `emergency_exit`: 80000000 of 100000000 shares × book NAV 100000000 → claim **80000000** USDC units (pro rata exact: True).
+5. **Payout signed by the vault key.** The follower called `sign_intent(PublicPayout{claim})`. The contract checked that the payload is one transfer of the base asset, from the vault's public intents balance, to the claim's exit account, for no more than the claim. Then MPC (`v1.signer-prod.testnet`) signed it: `ed25519:4MnV4JmQaXa7VPKe28xUG7Pz9UHcqvP5…`.
+6. **Executed and withdrawn.** The follower submitted it to the real defuse verifier (`execute_intents`). The vault's public balance went 100000000 → 20000000, and the follower's intents balance was credited 80000000. `ft_withdraw` then moved it to their wallet: 50000000 → 130000000 (**+80000000**).
+7. **Recorded.** The follower confirmed with `settle_payout(executed = true)`, which is allowed for the claimant in emergency. Claim: amount 80000000, paid 80000000, in flight 0.
+
+The leader's 20 shares are still in the vault (book NAV 20000000, emergency True), so the UI shows the **Exit at last NAV** button: [vault page as the leader](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-leader-60270.testnet).
+
+| Step | Account | Tx | Contract log |
+|---|---|---|---|
+| operator posts NAV epoch 1 (100.000000 USDC) | `sp-sop-92991.testnet` | [`BHLB2tGJZK…`](https://testnet.nearblocks.io/txns/BHLB2tGJZKCJmWPUsvNZP1f5oxjBfQ48MviKhLYpe5oT) |  |
+| anyone: trigger_emergency | `sp-fund-61557.testnet` | [`ASYiiR6RVk…`](https://testnet.nearblocks.io/txns/ASYiiR6RVkKpD6pehBGpQM4q4Lty2yjbaj1BMkicb7MQ) | silent-partner.emergency |
+| anyone: mint 5 test USDC | `sp-fund-61557.testnet` | [`5fGJ2Paz8x…`](https://testnet.nearblocks.io/txns/5fGJ2Paz8x9cwRSspvHBc6hCtU3Xgoj4PW8xP3eeTd4x) |  |
+| anyone: deposit 5 USDC (refunded) | `sp-fund-61557.testnet` | [`BAEq3PZLSN…`](https://testnet.nearblocks.io/txns/BAEq3PZLSNyrnk6SzsJnVjkowDV9LiomWX6iDGM2YW94) | silent-partner.deposit_refused account=sp-fund-61557.testnet reason=deposits frozen: NAV stale or emergency |
+| follower: emergency_exit | `sp-follower-60270.testnet` | [`3qMe9dxa5Q…`](https://testnet.nearblocks.io/txns/3qMe9dxa5QA8LNGkYkc5iWCr8qbKTRR7iCviBJsGz3FN) | silent-partner.claim id=0 account=sp-follower-60270.testnet amount=80000000 emergency=true |
+| follower: sign_intent(PublicPayout) | `sp-follower-60270.testnet` | [`4Stows1SiF…`](https://testnet.nearblocks.io/txns/4Stows1SiFQ5XgTf2f3QKuNFpBXayicX5hgUiXZgTaG4) | silent-partner.signed prehash=ad6c582aecce5a782a6e3dcaaf9924cbf1ca7cfe042e7a91d09bbe5f019f567b signature=ed25519:4MnV4Jm |
+| follower: execute_intents on the verifier | `sp-follower-60270.testnet` | [`DhphuPPKd2…`](https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ) |  |
+| follower: ft_withdraw to wallet | `sp-follower-60270.testnet` | [`J6Gvruurzp…`](https://testnet.nearblocks.io/txns/J6GvruurzpVxVsmuCYDrZkbCC5t16oLN7ogbdk2atiV9) |  |
+| follower: settle_payout(executed) | `sp-follower-60270.testnet` | [`EUZvm6KBEG…`](https://testnet.nearblocks.io/txns/EUZvm6KBEG6UtTUYx8cquBKQEWZazTYp8By23NaqZNWJ) |  |

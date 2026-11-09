@@ -6,22 +6,26 @@ import { useWallet } from "@/lib/wallet";
 import { aumBucket, fmtUnits, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
 import { Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
+import { EmergencyBanner, EmergencyPayout } from "./emergency";
 
 export default function VaultPage() {
   const id = useQueryParam("id");
   const { data, error, reload } = useVault(id);
   const { accountId, call } = useWallet();
+  // Read-only "view as" any account: positions are public on-chain data; actions still need the wallet.
+  const asParam = useQueryParam("as");
+  const viewer = accountId ?? asParam;
   const [mine, setMine] = useState<{ shares: bigint; locked: bigint; claims: Claim[] } | null>(null);
   const [amount, setAmount] = useState("10");
   const [wShares, setWShares] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || !accountId) return setMine(null);
-    Promise.all([view<[string, string]>(id, "get_shares", { account_id: accountId }), view<Claim[]>(id, "get_claims", { from: 0, limit: 500 })]).then(([[s, l], cs]) =>
-      setMine({ shares: BigInt(s), locked: BigInt(l), claims: cs.filter((c) => c.account === accountId) }),
+    if (!id || !viewer) return setMine(null);
+    Promise.all([view<[string, string]>(id, "get_shares", { account_id: viewer }), view<Claim[]>(id, "get_claims", { from: 0, limit: 500 })]).then(([[s, l], cs]) =>
+      setMine({ shares: BigInt(s), locked: BigInt(l), claims: cs.filter((c) => c.account === viewer) }),
     );
-  }, [id, accountId, data]);
+  }, [id, viewer, data]);
 
   const m = useMemo(() => {
     if (!data) return null;
@@ -30,7 +34,7 @@ export default function VaultPage() {
     return { dec, sym: ASSETS[data.cfg.base_asset_id]?.symbol ?? "base", ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(data.navs), v: verifyNavs(data.id, data.cfg.attestation_key, data.navs), price: priceOf(data.vault.price) };
   }, [data]);
 
-  if (id === null) return <p>Missing <code>?id=</code>. Pick a vault on the <Link href="/">leaderboard</Link>.</p>;
+  if (id === null) return <p>Missing <code>?id=</code>. Pick a vault on the <Link href="/leaderboard/">leaderboard</Link>.</p>;
   if (error) return <p className="neg">{error}</p>;
   if (!data || !m) return <p className="muted">Reading vault from NEAR…</p>;
   const { vault, cfg, navs } = data;
@@ -72,6 +76,7 @@ export default function VaultPage() {
         <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
       </div>
       {metaOf(data.id).blurb && <p className="mt-1 text-sm">{metaOf(data.id).blurb}</p>}
+      <EmergencyBanner id={data.id} vault={vault} cfg={cfg} shares={mine?.shares ?? 0n} dec={m.dec} sym={m.sym} onDone={reload} />
       <p className="muted mt-1 text-sm">
         Led by <code>{cfg.leader}</code> · performance fee {cfg.perf_fee_bps / 100}% above the high-water mark · leader stake ≥ {cfg.min_leader_bps / 100}%
       </p>
@@ -99,7 +104,8 @@ export default function VaultPage() {
         </div>
         <div className="panel" data-testid="my-position">
           <h2 className="font-semibold">Your position</h2>
-          {!accountId ? (
+          {!accountId && asParam && <p className="muted text-xs">Viewing <code>{asParam}</code> read-only.</p>}
+          {!viewer ? (
             <p className="muted mt-1 text-sm">Connect a wallet to see your shares.</p>
           ) : !mine ? (
             <p className="muted mt-1 text-sm">Reading…</p>
@@ -116,7 +122,10 @@ export default function VaultPage() {
               {mine.claims.length > 0 && (
                 <ul className="muted mt-3 text-xs">
                   {mine.claims.map((c) => (
-                    <li key={c.id}>Claim #{c.id}: {fmtUnits(c.amount, m.dec)} {m.sym}, paid {fmtUnits(c.paid, m.dec)}{c.in_flight.length ? `, ${c.in_flight.length} payout in flight` : ""}</li>
+                    <li key={c.id}>
+                      Claim #{c.id}{c.emergency ? " (emergency)" : ""}: {fmtUnits(c.amount, m.dec)} {m.sym}, paid {fmtUnits(c.paid, m.dec)}{c.in_flight.length ? `, ${c.in_flight.length} payout in flight` : ""}
+                      {c.emergency && <EmergencyPayout id={data.id} vault={vault} cfg={cfg} claim={c} dec={m.dec} sym={m.sym} onDone={reload} />}
+                    </li>
                   ))}
                 </ul>
               )}

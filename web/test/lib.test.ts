@@ -57,3 +57,30 @@ describe("signals", () => {
     expect(ed25519.verify(base58.decode(env.signature.slice(8)), signalHash(s), base58.decode(k.publicKey.slice(8)))).toBe(true);
   });
 });
+
+import { emergencyExitValue, openOfClaim, publicPayoutPayload, signatureFromLogs } from "../lib/vault";
+
+describe("emergency helpers", () => {
+  it("exit value rounds down like the contract", () => {
+    expect(emergencyExitValue(80_000_000n, "100000000", "100000000")).toBe(80_000_000n);
+    expect(emergencyExitValue(1n, "10", "3")).toBe(3n);
+    expect(emergencyExitValue(5n, "10", "0")).toBe(0n);
+  });
+  it("public payout payload has exactly the shape the contract parses", () => {
+    const p = publicPayoutPayload("ab".repeat(32), "alice.testnet", "nep141:usdc.fakes.testnet", "80000000", "sp-intents-61557.testnet", Date.UTC(2026, 10, 9), new Uint8Array(32));
+    const m = JSON.parse(p.message);
+    expect(Object.keys(m)).toEqual(["deadline", "intents", "signer_id"]);
+    expect(m.intents).toEqual([{ intent: "transfer", receiver_id: "alice.testnet", tokens: { "nep141:usdc.fakes.testnet": "80000000" } }]);
+    expect(m.deadline).toBe("2026-11-09T00:20:00.000Z");
+    expect(atob(p.nonce).length).toBe(32);
+    expect(p.recipient).toBe("sp-intents-61557.testnet");
+  });
+  it("finds the vault signature in on_signed logs", () => {
+    const sig = "ed25519:3BSe9g3iXHTpR6AAt3dTYWVkqcLk8ShRUyfSUjkouYTmryStVdnr2MFL7eHCgHpaCMm6tT8mjkzU6GifYMqHVnX6";
+    expect(signatureFromLogs(["silent-partner.claim id=0", `silent-partner.signed prehash=${"0f".repeat(32)} signature=${sig}`])).toBe(sig);
+    expect(signatureFromLogs([`silent-partner.sign_failed prehash=${"0f".repeat(32)}`])).toBeNull();
+  });
+  it("open amount subtracts paid and in-flight", () => {
+    expect(openOfClaim({ id: 0, account: "a", exit_account: "a", amount: "100", paid: "30", in_flight: [{ prehash: "", amount: "20", deadline_ms: 0, signed: true }], epoch: 1, emergency: true })).toBe(50n);
+  });
+});

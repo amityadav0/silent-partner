@@ -82,3 +82,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 table.t th { text-align: left; font-weight: 500; color: GrayText; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.4rem 0.5rem; }
 table.t td { white-space: nowrap; padding: 0.5rem; border-top: 1px solid color-mix(in srgb, CanvasText 12%, transparent); font-variant-numeric: tabular-nums; }
 .scroll-x { overflow-x: auto; }
+.panel-warn { border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 8%, Canvas); }
+.panel-bad { border-color: #dc2626; background: color-mix(in srgb, #dc2626 8%, Canvas); }
+button.sort { background: none; border: 0; padding: 0; font: inherit; font-weight: inherit; color: inherit; cursor: pointer; }
+button.sort.on { text-decoration: underline; text-underline-offset: 3px; }
