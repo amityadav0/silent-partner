@@ -62,6 +62,11 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
               </div>
               <Track at={st} testid="track" />
               {st === "burned" && !c.emergency && <p className="muted">The operator pays open claims right after each NAV post.</p>}
+              {st !== "paid" && !vault.emergency && c.opened_ms && Date.now() > c.opened_ms + 24 * 3600_000 && (
+                <button className="btn mt-1 text-xs" data-testid={`overdue-${c.id}`} disabled={!accountId} onClick={() => call({ receiverId: id, method: "trigger_emergency", args: { overdue_claim: c.id }, gas: 50n * TGAS }).then(onDone)}>
+                  Unpaid for 24h: trigger emergency
+                </button>
+              )}
               {st === "paying" && <p className="muted">{c.in_flight.length} payout{c.in_flight.length > 1 ? "s" : ""} signed by the vault and in flight; settles when 1Click confirms or the intent deadline passes.</p>}
               {c.emergency && <EmergencyPayout id={id} vault={vault} cfg={cfg} claim={c} dec={dec} sym={sym} onDone={onDone} />}
             </li>

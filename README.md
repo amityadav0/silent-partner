@@ -32,13 +32,16 @@ Pooling the funds fixes the first problem: there is one order, so there's no one
 
 **Live proof.**
 - **[docs/testnet.md](docs/testnet.md):** the full loop on testnet with real testnet MPC signatures. The real NEAR Intents verifier executes a vault transfer signed by the MPC key, and a payout to the wrong account is refused on-chain.
+- **Paper season (testnet):** four leader vaults: a momentum bot, a mean-reversion bot, an AI leader on NEAR AI Cloud and a manual leader. A GitHub Actions cron runs them every 15 minutes ([season.yml](.github/workflows/season.yml)), with paper fills at real 1Click dry-quote prices and signed NAV posts on testnet. Fill logs and the AI leader's rationales are sealed (AES-GCM) on the `season-state` branch, and signals commit to rationales by hash.
+- **Emergency drill:** with the operator stopped, a follower exited pro rata and paid themselves out from the vault's public intents balance through the real verifier, with no operator and no 1Click ([docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09)).
+- **[What the chain sees](https://amityadav0.github.io/silent-partner/chain/):** observer, follower and leader views of one vault. A disclosed fill log is checked in your browser against every on-chain commitment.
 - **[docs/probes/](docs/probes/):** mainnet `intents.near` accepts an MPC-FROST-signed intent (a read-only simulation).
 - **[docs/mainnet.md](docs/mainnet.md):** mainnet transactions, once run.
 - **[docs/screens/](docs/screens/):** screenshots.
 
 **Run it.**
 ```sh
-make test                                   # contract (30) + operator (25) + web (8) unit tests
+make test                                   # contract (38, incl. property tests) + operator (39) + web (20) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
 cd web && npm run build && npm run serve    # http://localhost:3000, reads the testnet vault live
@@ -88,7 +91,8 @@ flowchart LR
 ## Trust model in one paragraph
 
 What the operator can't do:
-- **It holds no vault key.** The vault key is MPC-derived for the contract, which signs only quote-bound transfers back into the vault or out to a holder's own claim. A malicious operator therefore **cannot steal funds**.
+- **It holds no vault key.** The vault key is MPC-derived for the contract, which signs only quote-bound transfers back into the vault, or payouts of a holder's own claim. Each payout is settled against the verifier's on-chain nonce record, so a claim can't be paid twice. The operator **cannot move funds anywhere else**.
+- **One caveat.** The operator signs NAV. If it lies about NAV in the same epoch that its own follower account withdraws, that withdrawal is mispriced, which is a real way to extract value (see the threat model). NAV is attested, not proven.
 
 What you still have to trust it for:
 - **NAV honesty.** NAV is attested, not proven. A lying operator could misprice deposits and withdrawals between posts. The hash-chained fill log pinned on-chain makes that detectable after the fact, not impossible.
@@ -114,7 +118,11 @@ The full analysis is in [docs/threat-model.md](docs/threat-model.md).
 | `operator/src/filllog.ts` | Append-only, hash-chained fill log |
 | `operator/src/confidential.ts` | 1Click confidential client (quote, generate-intent, submit-intent, status) |
 | `operator/scripts/` | Probes, testnet runs, `op.ts` step CLI for the mainnet runbook |
-| `web/app/` | Leaderboard `/`, vault `/vault/?id=`, leader console `/leader/`, share card `/s/?id=` |
+| `contract/src/prop_tests.rs` | Property tests: random operation sequences conserve shares and value |
+| `operator/src/leaders/` | Bot leaders (momentum, mean reversion) and the AI leader (NEAR AI Cloud) |
+| `operator/scripts/season.ts` | The 15-minute paper-season tick (sealed state, redacted output) |
+| `operator/scripts/drill.ts` | The emergency-exit drill |
+| `web/app/` | Landing `/`, leaderboard `/leaderboard/`, vault `/vault/?id=`, what the chain sees `/chain/`, leader console `/leader/`, create `/create/`, share card `/s/?id=` |
 
 Carried over from Scope (copied, not imported): the 1Click client, canonical hashing and signing, quote-signature verification, the copy-vault probes, and the wallet-selector setup. Scope's first commit is dated 2026-11-05, inside the hackathon window. Everything else was written for Silent Partner from 2026-11-07.
 

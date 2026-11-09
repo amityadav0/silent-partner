@@ -6,7 +6,9 @@ Assets at risk: depositors' funds in the vault's intents accounts, the fairness 
 
 **What the operator cannot do**
 
-- **Steal funds.** It holds no vault key. The contract signs only quote-bound transfers that pay the vault (shield, trade) or a claim's own exit account (payout). A payout to any other account is refused on-chain (docs/testnet.md, "thief payout refused").
+- **Send funds anywhere but the vault or a claimant.** It holds no vault key. The contract signs only quote-bound transfers that pay the vault (shield, trade, unshield) or `PublicPayout`s of a claim to its own exit account. A payout to any other account is refused on-chain (docs/testnet.md, "thief payout refused").
+- **Pay a claim twice.** A payout's status is read from the verifier (`is_nonce_used`), not from the operator. The review's critical finding (release an executed payout, then pay again) is closed. See §7 and docs/testnet.md, "settlement check".
+- **What it still can do with a false NAV.** It can misprice the withdrawals burned in that post, including those of an account it controls. That is a way to extract value. See the table below and §7, finding 6.
 - **Forge quotes.** `oneclick_key` is fixed at init. On mainnet it is 1Click's key, and anyone can check it with `get_config`.
 - **Attach side effects.** The payload parser rejects `memo`, `msg`/notifications, extra intents and extra tokens.
 - **Mint shares.** Shares are minted only by `ft_on_transfer` from the base token, and by the HWM fee to the leader.
@@ -32,7 +34,7 @@ The vault's confidential balance lives on `intents.far`, a permissioned chain wi
   - **Status:** open. It's the main reason the mainnet demo uses $7.
 - **Public leg (closed, D-S-1).** Deposits waiting on `intents.near` don't depend on FAR. `sign_intent(PublicPayout{claim})` signs a plain transfer of the base asset from the vault's public intents balance to the claim's exit account, with no quote. That's the operator any time, and anyone for emergency claims. The emergency drill (docs/testnet.md) exits a follower this way, through the real defuse verifier, with no operator and no 1Click.
 - **Emergency payouts of shielded funds.** These still need 1Click unshield quotes. In emergency mode anyone may submit them, so the holders themselves can, but 1Click must be up.
-- **Claimant confirmation.** In emergency the claimant may mark their own in-flight payout executed (`settle_payout(executed = true)`), so the record is complete without the operator. Only the operator may release one.
+- **Settlement without the operator.** Anyone can settle an in-flight payout; the verifier's nonce record decides (paid, or released after its deadline).
 - **In-flight payouts in emergency** stay counted as paid. If one was signed but never executed, its claimant is short. That is the safe side for the other holders, because a released payout could otherwise be paid twice.
 
 ## 3. Leader manipulation
@@ -65,3 +67,27 @@ The vault's confidential balance lives on `intents.far`, a permissioned chain wi
 - **Public:** NAV, share price, total shares, the leader's shares, the AUM bucket, claim amounts and exit accounts, signal hashes, the fill-log head, deposit amounts (NEP-141 transfers are public), and the vault's public intents balance before shielding.
 - **Private:** holdings, trades and fills. Signals stay private until they are executed and hashed. The 1Click history is invite-only.
 - **Inference.** NAV moves reveal returns, by design, and with them a hint of exposure. Posting NAV less often (`EPOCH_MS`) reduces it.
+
+## 7. Independent review (2026-11-09)
+
+A fresh-context review of `contract/` and `operator/` (a separate agent given only the code and docs), plus property and fuzz tests. Status after the fixes in D-H-2:
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | `settle_payout(executed = false)` let the operator release a payout that had executed, then pay the claim again | critical | **Fixed.** Payouts leave only as `PublicPayout` on the public verifier. Settlement is permissionless and decided by `is_nonce_used`. Direct confidential→exit `Payout` was removed; funds are unshielded into the vault's own public balance first. Checked on testnet against the real verifier. |
+| 2 | Claims opened before an emergency could only ever be paid by the operator, so they could be censored forever | high | **Fixed.** A claim unpaid for 24h lets anyone trigger emergency (`trigger_emergency(overdue_claim)`). In emergency every claimant can pay their own claim. |
+| 3 | Anyone could freeze an emergency claim with a reservation that can never execute | high | **Fixed.** Only the claimant may sign their payout in emergency. Payout deadlines must be ≥ 5 min ahead. Dead reservations are released by anyone after the deadline. |
+| 4 | Withdrawal-queue DoS and unbounded dust claims; the operator read only 1000 claims and stopped at the first failing one | high | **Fixed.** One pending request per account, and a minimum request of `min_deposit` (unless withdrawing everything). The operator paginates claims and isolates failures per claim. |
+| 5 | Duplicate token keys in a payload were accepted (last value wins) | medium | **Fixed.** The parser rejects repeated keys. Fuzz test `duplicate_token_keys_are_rejected` (found independently by the fuzzer). |
+| 6 | False NAV lets the operator misprice withdrawals, including its own accounts' | high (documented) | **Open, by design for now.** NAV is attested, not proven. Mitigations to build: a cap on NAV change per epoch, paying claims at min(NAV at burn, next NAV), NAV from a TEE or a ZK proof of balances. |
+| 7 | Emergency claims are fixed amounts at the last NAV, so whoever exits last bears the losses (a bank run) | medium | **Open.** Fix: pro-rata claims on realised proceeds, paid in rounds. |
+| 8 | A failed sign removed every reservation with the same prehash, including a signed one | medium | **Fixed.** The same payload can't be reserved twice, and a failure removes only its own unsigned entry. |
+| 9 | Settlement trusted the operator both ways (`executed = true` could short a claimant) | medium | **Fixed** with finding 1: no party's word is used. |
+| 10 | The quote check ignored routing fields (`customRecipientMsg`, `virtualChain*`, `depositMemo`, `referral`, `appFees`) | medium | **Fixed for signed fields.** Each must be absent. Fields 1Click doesn't sign (e.g. `appFees` in the request) remain a trust in 1Click. Open: bound `minAmountOut` against an independent price. |
+| 11 | No limit on trade churn; quote reuse | medium | **Partly fixed.** Each quote's deposit address can be paid only once. Open: tie each Trade to a recorded leader signal; churn is bounded only by `max_slippage_bps` per trade. |
+| 12 | Login signatures were public and replayable for 1Click sessions (balance reads) | medium | **Mitigated.** Login deadlines are ≤ 5 min and login signatures aren't logged, though the return value is still on-chain. Open: bind sessions to an operator key if 1Click supports it. |
+| 13 | NAV measured before a deposit lands misprices it, and forwarded funds can be in transit | medium | **Open.** Bounded by one epoch's deposits. Fix: sign a deposit counter with the NAV and adjust for deposits since. |
+| 14 | The operator's ledger could drift from reality and halt NAV posting | medium | **Partly fixed.** Drift is reported and no longer throws. Open: reconcile against the real 1Click balances each epoch. |
+| 15 | Lows: unlogged submit failures; the NAV message fetched from RPC; limit price not rechecked on the live quote; payable `sign_intent`; duplicate signal hashes; view range overflow; `post_nav` gas; 18/24-decimal base overflow; re-seeding an empty vault with value; unused `owner` | low | **Fixed:** submit failures logged, NAV message built locally, live limit recheck, `sign_intent` not payable, duplicate signals refused, saturating view ranges, 300 TGas for `post_nav`. **Open:** base asset decimals are not enforced (use 6-decimal USDC), the re-seed edge case, `owner` unused (config is immutable). |
+
+Also open, from the fix itself: payouts need the public verifier to accept plain (non-versioned) nonces, because versioned nonces can be cleaned up after expiry. Our testnet verifier (defuse 0.2.10) accepts them. Check this on mainnet `intents.near` before relying on payouts there (NEEDS-AMIT §3).

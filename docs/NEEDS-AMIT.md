@@ -174,6 +174,9 @@ The epoch call:
 - **No NAV for 24 h:** anyone can trigger emergency mode, and holders exit at the last NAV.
 - **Keys to delete afterwards:** the vault account's full-access key is kept for the demo (D-P5-1).
 
+
+> **Before any real payout on mainnet (added 2026-11-09, D-H-2):** payouts now go through `PublicPayout` on `intents.near` with a *plain* (non-versioned) NEP-413 nonce, settled via `is_nonce_used`. First run a read-only `simulate_intents` of a plain-nonce transfer signed by the vault key (no funds move) to confirm that mainnet `intents.near` still accepts legacy nonces. If it doesn't, the contract needs a different settlement proof before mainnet payouts.
+
 ## 4. Demo video (P6): you record it
 
 Follow the script in [demo-script.md](demo-script.md): 3:00, a screen recording with a voiceover. The setup commands are at the top of the script. Every screen it uses works today on testnet. If the mainnet run (§3) is done first, end on docs/mainnet.md.

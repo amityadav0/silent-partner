@@ -158,7 +158,7 @@ describe("operator, dry mode", () => {
     await t.op.shieldPending();
     t.chain.claims = [
       { id: 0, account: "f", exit_account: "f.near", amount: "5000000", paid: "0", in_flight: [], epoch: 1, emergency: false },
-      { id: 1, account: "g", exit_account: "g.near", amount: "2000000", paid: "0", in_flight: [{ prehash: "x", amount: "2000000", deadline_ms: 0, signed: true }], epoch: 1, emergency: false },
+      { id: 1, account: "g", exit_account: "g.near", amount: "2000000", paid: "0", in_flight: [{ prehash: "x", nonce: "n", amount: "2000000", deadline_ms: 0, signed: true }], epoch: 1, emergency: false },
     ];
     const before = await t.op.nav();
     expect([before.gross, before.liabilities, before.nav]).toEqual([40_000_000n, 7_000_000n, 33_000_000n]);
@@ -174,20 +174,20 @@ describe("operator, dry mode", () => {
     expect(u.chain.calls).toEqual([]);
   });
 
-  it("pays open claims once (paper), skips emergency and paid claims", async () => {
+  it("pays open claims once (paper), including emergency ones; skips paid claims", async () => {
     await t.op.shieldPending();
     t.chain.claims = [
       { id: 0, account: "f", exit_account: "f.near", amount: "5000000", paid: "0", in_flight: [], epoch: 1, emergency: false },
       { id: 1, account: "g", exit_account: "g.near", amount: "3000000", paid: "3000000", in_flight: [], epoch: 1, emergency: false },
       { id: 2, account: "h", exit_account: "h.near", amount: "2000000", paid: "0", in_flight: [], epoch: 1, emergency: true },
-      { id: 3, account: "i", exit_account: "i.near", amount: "4000000", paid: "1000000", in_flight: [{ prehash: "x", amount: "1000000", deadline_ms: 0, signed: true }], epoch: 1, emergency: false },
+      { id: 3, account: "i", exit_account: "i.near", amount: "4000000", paid: "1000000", in_flight: [{ prehash: "x", nonce: "n", amount: "1000000", deadline_ms: 0, signed: true }], epoch: 1, emergency: false },
     ];
     const out = await t.op.payClaims();
-    expect(out.length).toBe(2);
+    expect(out.length).toBe(3);
     const pays = t.log.entries.filter((e) => e.kind === "payout").map((e) => [e.data.claim_id, e.data.amount]);
-    expect(pays).toEqual([[0, "5000000"], [3, "2000000"]]);
+    expect(pays).toEqual([[0, "5000000"], [2, "2000000"], [3, "2000000"]]);
     expect(await t.op.payClaims()).toEqual([]);
-    expect(fold(t.log.entries, USDC).confidential.get(USDC)).toBe(33_000_000n);
+    expect(fold(t.log.entries, USDC).confidential.get(USDC)).toBe(31_000_000n);
   });
 
   it("limit signals wait for the price and expire", async () => {
@@ -269,16 +269,78 @@ describe("operator, live path (no funds: test-key quotes, fake 1Click)", () => {
     await expect(oc.quote({ leg: "trade", from: USDC, to: WNEAR, amount: "1", slippageBps: 50, vault: VAULT_ACCT, deadlineMs: NOW, dry: false })).rejects.toThrow(/does not verify/);
   });
 
-  it("releases only expired payouts it submitted and 1Click reports as failed", async () => {
-    const statuses: Record<string, string> = { dep1: "REFUNDED", dep2: "SUCCESS", dep3: "REFUNDED" };
-    const routes = { "/v0/status": (_b: any, url: string) => ({ text: JSON.stringify({ status: statuses[new URL(url).searchParams.get("depositAddress")!] }) }) };
+  it("live payout: unshield what's missing into the vault, pay the claim from the public balance, settle on-chain", async () => {
+    const qKey = KeyPair.fromRandom("ed25519");
+    const vaultKey = KeyPair.fromRandom("ed25519");
+    const dep = randomBytes(32).toString("hex");
+    const unshieldPayload = { message: "{}", nonce: randomBytes(32).toString("base64"), recipient: "intents.far" };
+    const seen: { path: string; body: any }[] = [];
+    const routes = {
+      "/v0/quote": (b: any) => (b.dry ? dryQuotes(b, "") : { status: 201, text: liveQuote("unshield-usdc", qKey, dep) }),
+      "/v0/generate-intent": () => ({ text: JSON.stringify({ intent: { payload: unshieldPayload } }) }),
+      "/v0/submit-intent": () => ({ text: JSON.stringify({ intentHash: "ih" }) }),
+      "/v0/status": () => ({ text: JSON.stringify({ status: "SUCCESS" }) }),
+    };
     const chain = new FakeChain();
+    chain.signWith = vaultKey;
+    chain.publicBal = 2_000_000n;
+    chain.claims = [{ id: 0, account: "f", exit_account: "f.near", amount: "5000000", paid: "0", in_flight: [], epoch: 1, emergency: false }];
     const log = new FillLog("vault.testnet", null);
-    const op = new Operator(chain, new Confidential("https://1click.test", "jwt", fixtureFetch(routes)), log, att, "ed25519:x", { ...CFG, dryRun: false }, () => NOW, async () => {});
-    const fl = (prehash: string, deadline_ms: number) => ({ prehash, amount: "1", deadline_ms, signed: true });
-    const claims = [{ id: 0, account: "f", exit_account: "f.near", amount: "10", paid: "0", in_flight: [fl("p1", NOW - 1), fl("p2", NOW - 1), fl("p3", NOW + 1), fl("p4", NOW - 1)], epoch: 1, emergency: false }];
-    for (const [p, d] of [["p1", "dep1"], ["p2", "dep2"], ["p3", "dep3"]]) log.append("note", { claim_id: 0, prehash: p, deposit_address: d }, NOW);
-    expect(await op.releaseExpired(claims)).toBe(1); // p1 only: p2 succeeded, p3 not expired, p4 unknown
-    expect(chain.calls.filter((c) => c.m === "settlePayout").map((c) => c.args)).toEqual([[0, "p1", false]]);
+    log.append("shield", { amount: "40000000", dry: false }, NOW);
+    const op = new Operator(chain, new Confidential("https://1click.test", "jwt", fixtureFetch(routes, seen), qKey.getPublicKey().toString()), log, att, vaultKey.getPublicKey().toString(), { ...CFG, dryRun: false }, () => NOW, async () => {});
+    const out = await op.payClaims();
+    expect(out.length).toBe(1);
+    expect(chain.calls.map((c) => c.m)).toEqual(["signIntent", "signIntent", "executeIntents", "settlePayout"]);
+    // 1. unshield of exactly what's missing, back to the vault itself
+    const uq = seen.find((x) => x.path === "/v0/quote" && x.body.dry === false)!.body;
+    expect([uq.depositType, uq.recipientType, uq.recipient, uq.refundTo, uq.amount]).toEqual(["CONFIDENTIAL_INTENTS", "INTENTS", VAULT_ACCT, VAULT_ACCT, "3000000"]);
+    expect(chain.calls[0].args[0]).toBe("Unshield");
+    // 2. public payout: one transfer of the open amount to the exit account, plain nonce, public verifier
+    const [kind, payload] = chain.calls[1].args as [unknown, { message: string; nonce: string; recipient: string }];
+    expect(kind).toEqual({ PublicPayout: { claim_id: 0 } });
+    expect(JSON.parse(payload.message).intents).toEqual([{ intent: "transfer", receiver_id: "f.near", tokens: { [USDC]: "5000000" } }]);
+    expect(payload.recipient).toBe("intents.near");
+    expect(Buffer.from(payload.nonce, "base64").subarray(0, 4).toString("hex")).not.toBe("5628f6c6");
+    // 3. executed by us on the verifier, then settled by the verifier's record
+    expect((chain.calls[2].args as [string])[0]).toBe("intents.near");
+    expect(chain.calls[3].args).toEqual([0, nep413Prehash(payload).toString("hex")]);
+    const l = fold(log.entries, USDC);
+    expect(l.confidential.get(USDC)).toBe(37_000_000n); // only the unshield left the confidential balance
+    expect(log.entries.find((e) => e.kind === "payout")!.data).toMatchObject({ status: "paid", dry: false, amount: "5000000" });
+  });
+
+  it("settles in-flight payouts by the verifier's record, never by its own say-so; one failing claim doesn't stop the rest", async () => {
+    const chain = new FakeChain();
+    chain.claims = [
+      { id: 0, account: "f", exit_account: "f.near", amount: "10", paid: "0", in_flight: [{ prehash: "p1", nonce: "n", amount: "10", deadline_ms: NOW - 1, signed: true }], epoch: 1, emergency: false },
+    ];
+    const op = new Operator(chain, new Confidential("https://1click.test", "jwt", fixtureFetch({})), new FillLog("vault.testnet", null), att, "ed25519:x", { ...CFG, dryRun: false }, () => NOW, async () => {});
+    chain.settleResult = "pending";
+    expect(await op.settleInFlight(chain.claims)).toBe(0);
+    chain.settleResult = "paid";
+    expect(await op.settleInFlight(chain.claims)).toBe(1);
+    expect(chain.calls.filter((c) => c.m === "settlePayout").map((c) => c.args)).toEqual([[0, "p1"], [0, "p1"]]);
+    // a claim whose payout throws is noted and skipped
+    chain.claims = [{ id: 1, account: "g", exit_account: "g.near", amount: "5", paid: "0", in_flight: [], epoch: 1, emergency: false }];
+    expect(await op.payClaims()).toEqual([]);
+    expect(op.log.entries.at(-1)!.data).toMatchObject({ msg: "payout failed", claim_id: 1 });
+  });
+
+  it("ledger drift is reported, not thrown", () => {
+    const log = new FillLog("vault.testnet", null);
+    log.append("shield", { amount: "5", dry: false }, NOW);
+    log.append("fill", { from: USDC, to: WNEAR, amount_in: "9", amount_out: "1" }, NOW);
+    const l = fold(log.entries, USDC);
+    expect(l.confidential.get(USDC)).toBe(0n);
+    expect(l.drift[0]).toMatch(/would go negative/);
+  });
+
+  it("the attestation key signs a locally built NAV message, exactly the contract's format", async () => {
+    const u = setup();
+    u.chain.public = 40_000_000n;
+    const e = await u.op.epoch();
+    const posted = u.chain.calls.find((c) => c.m === "postNav")!.args as [number, string, number, string, string];
+    const msg = `silent-partner/nav/v1|vault.testnet|${posted[0]}|${posted[1]}|${posted[2]}|${posted[3]}`;
+    expect(utils.PublicKey.fromString(att.getPublicKey().toString()).verify(new TextEncoder().encode(msg), base58.decode(e.signature.slice(8)))).toBe(true);
   });
 });

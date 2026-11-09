@@ -44,7 +44,10 @@ What `sign_intent` accepts:
 | `Login` | none. Payload: empty intents for the public verifier, used for a 1Click session to read balances | operator |
 | `Shield` | `INTENTS → CONFIDENTIAL_INTENTS`, same asset, recipient = refundTo = vault | operator; anyone in emergency |
 | `Trade` | `CONFIDENTIAL_INTENTS` on all three types, allowed assets, recipient = refundTo = vault, slippage ≤ max | operator; anyone in emergency, to the base asset only |
-| `Payout{claim}` | base asset `CONFIDENTIAL_INTENTS → INTENTS`, recipient = the claim's exit account, refundTo = vault, amount ≤ what the claim still has open | operator; anyone for emergency claims |
+| `Unshield` | `CONFIDENTIAL_INTENTS → INTENTS`, same asset, recipient = refundTo = vault (into the vault's own public balance) | operator; anyone in emergency |
+| `PublicPayout{claim}` | no quote. One transfer of the base asset on the public verifier to the claim's exit account, ≤ what is open, plain nonce, deadline 5–60 min ahead, not already in flight | operator; the claimant in emergency |
+
+Funds leave the vault only through `PublicPayout`. Each one is reserved on the claim (`in_flight`, with its nonce) and settled by anyone with `settle_payout`, which asks the public verifier `is_nonce_used`: a used nonce → paid; unused and past its deadline → released. No party's word decides whether a payout happened. A claim left unpaid for 24h lets anyone trigger emergency.
 
 Every transfer must meet four conditions:
 - it is exactly one `transfer` of one token from the vault;

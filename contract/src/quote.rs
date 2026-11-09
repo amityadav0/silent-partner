@@ -132,6 +132,19 @@ pub fn parse(message: &str) -> Result<QuoteFacts, QuoteError> {
     if s(&v, "swapType")? != "EXACT_INPUT" {
         return Err(QuoteError::Malformed("swapType"));
     }
+    // Fields that would redirect funds or attach side effects must be absent.
+    for k in [
+        "customRecipientMsg",
+        "virtualChainRecipient",
+        "virtualChainRefundRecipient",
+        "depositMemo",
+        "referral",
+        "appFees",
+    ] {
+        if !v.get(k).is_none_or(Value::is_null) {
+            return Err(QuoteError::Malformed(k));
+        }
+    }
     let amount = units(&v, "amount")?;
     let amount_in = units(&v, "amountIn")?;
     if amount != amount_in {

@@ -306,8 +306,8 @@ fn leader_withdraw_table() {
     // (leader deposit, follower deposit, leader request, ok?)
     let cases = [
         (1_000_000u128, 9_000_000u128, 1u128, false), // already at exactly 10%
-        (2_000_000, 9_000_000, 900_000, true),        // 1.1M of 10.1M ≥ 10%
-        (2_000_000, 9_000_000, 1_000_000, true),      // 1.0M of 10M = exactly 10%: ok
+        (20_000_000, 90_000_000, 9_000_000, true),    // 11M of 101M ≥ 10%
+        (20_000_000, 90_000_000, 10_000_000, true),   // 10M of 100M = exactly 10%: ok
         (5_000_000, 0, 5_000_000, true),              // leader alone may leave entirely
     ];
     for (i, (l, f, req, ok)) in cases.iter().enumerate() {
@@ -355,10 +355,10 @@ fn emergency_path() {
     ctx("follower.testnet", T0_MS);
     v.request_withdraw(U128(4_000_000), acc("follower-exit.testnet"));
     ctx("anyone.testnet", T0_MS + 1000);
-    assert!(panics(|| v.trigger_emergency()).contains("NAV is fresh"));
+    assert!(panics(|| v.trigger_emergency(None)).contains("NAV is fresh and no claim is overdue"));
     let late = T0_MS + NAV_STALE_MS + 1;
     ctx("anyone.testnet", late);
-    v.trigger_emergency();
+    v.trigger_emergency(None);
     assert!(v.get_vault().emergency);
     // pending request became an emergency claim at last NAV (price 1)
     let c0 = v.get_claims(0, 10)[0].clone();
@@ -392,7 +392,7 @@ fn payload(receiver: &str, token: &str, amount: u128, recipient: &str, deadline:
         message: format!(
             r#"{{"deadline":"{deadline}","intents":[{{"intent":"transfer","receiver_id":"{receiver}","tokens":{{"{token}":"{amount}"}}}}],"signer_id":"{signer}"}}"#
         ),
-        nonce: "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=".into(),
+        nonce: N1.into(),
         recipient: recipient.into(),
     }
 }
@@ -547,7 +547,7 @@ fn sign_shield_and_login() {
     assert!(sign(&mut v, "op.testnet", SignKind::Trade, p.clone(), Some(shield_q(&[]))).contains("not a confidential trade"));
     // login
     let login = Nep413Payload {
-        message: format!(r#"{{"deadline":"{DL}","intents":[],"signer_id":"{va}"}}"#),
+        message: format!(r#"{{"deadline":"2026-11-09T10:04:00.000Z","intents":[],"signer_id":"{va}"}}"#),
         nonce: p.nonce.clone(),
         recipient: "intents.near".into(),
     };
@@ -578,123 +578,61 @@ fn vault_with_claim(amount: u128, emergency: bool) -> Vault {
         // fake staleness by moving last_nav back
         v.last_nav_ms = T0_MS - NAV_STALE_MS - 10;
         ctx("anyone.testnet", T0_MS);
-        v.trigger_emergency();
+        v.trigger_emergency(None);
     } else {
         post(&mut v, 1, 10_000_000, T0_MS + 1);
     }
     v
 }
 
-fn payout_q(over: &[(&str, Value)]) -> SignedQuote {
-    let va = vault_acct();
-    let mut b: Vec<(&str, Value)> = vec![
-        ("recipient", json!("exit.testnet")),
-        ("refundTo", json!(va)),
-        ("deadline", json!(QDL)),
-        ("depositType", json!("CONFIDENTIAL_INTENTS")),
-        ("recipientType", json!("INTENTS")),
-        ("refundType", json!("CONFIDENTIAL_INTENTS")),
-        ("originAsset", json!(USDC)),
-        ("destinationAsset", json!(USDC)),
-    ];
-    b.extend(over.iter().cloned());
-    sign_like_oneclick(&qmsg(&b), &test_key())
-}
-
 #[test]
-fn sign_payout_table() {
+fn sign_unshield_table() {
     let p = |amt: u128| payload(DEP, &imt(USDC), amt, "intents.far", DL, &vault_acct());
-    let amt = |a: u128| vec![("amount", json!(a.to_string())), ("amountIn", json!(a.to_string()))];
-    type Case = (bool, &'static str, u128, Vec<(&'static str, Value)>, &'static str);
+    let va = vault_acct();
+    let q = |over: &[(&str, Value)]| {
+        let mut b: Vec<(&str, Value)> = vec![
+            ("recipient", json!(va)),
+            ("refundTo", json!(va)),
+            ("deadline", json!(QDL)),
+            ("depositType", json!("CONFIDENTIAL_INTENTS")),
+            ("recipientType", json!("INTENTS")),
+            ("refundType", json!("CONFIDENTIAL_INTENTS")),
+            ("originAsset", json!(USDC)),
+            ("destinationAsset", json!(USDC)),
+        ];
+        b.extend(over.iter().cloned());
+        sign_like_oneclick(&qmsg(&b), &test_key())
+    };
+    type Case = (bool, &'static str, Vec<(&'static str, Value)>, &'static str);
     let cases: Vec<Case> = vec![
-        (false, "op.testnet", 1_000_000, vec![], "<no panic>"),
-        (false, "anyone.testnet", 1_000_000, vec![], "only the operator"),
-        (true, "anyone.testnet", 1_000_000, vec![], "<no panic>"), // emergency: permissionless
-        (false, "op.testnet", 1_000_000, vec![("recipient", json!("thief.near"))], "exit account"),
-        (false, "op.testnet", 1_000_000, vec![("refundTo", json!("thief.near"))], "refund the vault"),
-        (false, "op.testnet", 1_000_000, vec![("destinationAsset", json!(WNEAR))], "base asset"),
+        (false, "op.testnet", vec![], "<no panic>"),
+        (false, "anyone.testnet", vec![], "only the operator"),
+        (true, "anyone.testnet", vec![], "<no panic>"), // emergency: back into the vault, so anyone
+        (false, "op.testnet", vec![("recipient", json!("exit.testnet"))], "pay and refund the vault"),
+        (false, "op.testnet", vec![("refundTo", json!("thief.near"))], "pay and refund the vault"),
+        (false, "op.testnet", vec![("destinationAsset", json!(WNEAR))], "keep the asset"),
         (
             false,
             "op.testnet",
-            1_000_000,
             vec![("recipientType", json!("CONFIDENTIAL_INTENTS"))],
-            "unshield",
+            "not an unshield quote",
         ),
-        (false, "op.testnet", 4_000_001, amt(4_000_001), "exceeds the claim"),
-        (false, "op.testnet", 4_000_000, amt(4_000_000), "<no panic>"),
+        (false, "op.testnet", vec![("customRecipientMsg", json!("x"))], "customRecipientMsg"),
+        (false, "op.testnet", vec![("appFees", json!([{"recipient": "x", "fee": 100}]))], "appFees"),
     ];
-    for (i, (emergency, who, a, over, want)) in cases.into_iter().enumerate() {
+    for (i, (emergency, who, over, want)) in cases.into_iter().enumerate() {
         let mut v = vault_with_claim(4_000_000, emergency);
-        let mut o = amt(a);
-        o.extend(over);
-        let got = sign(&mut v, who, SignKind::Payout { claim_id: 0 }, p(a), Some(payout_q(&o)));
+        let got = sign(&mut v, who, SignKind::Unshield, p(1_000_000), Some(q(&over)));
         assert!(got.contains(want), "case {i} {want}: got {got}");
     }
-}
-
-#[test]
-fn payout_reservation_signing_and_settlement() {
+    // one quote pays one transfer
     let mut v = vault_with_claim(4_000_000, false);
-    let p = |amt: u128, nonce: &str| Nep413Payload {
-        nonce: nonce.into(),
-        ..payload(DEP, &imt(USDC), amt, "intents.far", DL, &vault_acct())
+    assert_eq!(sign(&mut v, "op.testnet", SignKind::Unshield, p(1_000_000), Some(q(&[]))), "<no panic>");
+    let p2 = Nep413Payload {
+        nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".into(),
+        ..p(1_000_000)
     };
-    let q = |a: u128| payout_q(&[("amount", json!(a.to_string())), ("amountIn", json!(a.to_string()))]);
-    let n1 = "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=";
-    let n2 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-    ctx("op.testnet", T0_MS);
-    let _ = v.sign_intent(SignKind::Payout { claim_id: 0 }, p(3_000_000, n1), Some(q(3_000_000)));
-    // reservation blocks overspending while in flight
-    assert!(panics(|| v.sign_intent(SignKind::Payout { claim_id: 0 }, p(1_000_001, n2), Some(q(1_000_001)))).contains("exceeds the claim"));
-    let c = v.get_claims(0, 1)[0].clone();
-    let pre1 = c.in_flight[0].prehash.clone();
-    // MPC returns a valid signature from the vault key
-    let h = unhex32(&pre1).unwrap();
-    let sig = mpc_key().sign(&h).to_bytes().to_vec();
-    ctx("vault.testnet", T0_MS);
-    let out = v.on_signed(
-        pre1.clone(),
-        Some((0, U128(3_000_000), U64(0))),
-        Ok(json!({"scheme": "Ed25519", "signature": sig})),
-    );
-    assert!(out.unwrap().starts_with("ed25519:"));
-    assert!(v.get_claims(0, 1)[0].in_flight[0].signed);
-    // a second payout: MPC returns a wrong signature → released, returns None
-    ctx("op.testnet", T0_MS);
-    let _ = v.sign_intent(SignKind::Payout { claim_id: 0 }, p(1_000_000, n2), Some(q(1_000_000)));
-    let pre2 = v.get_claims(0, 1)[0].in_flight[1].prehash.clone();
-    ctx("vault.testnet", T0_MS);
-    let bad = att_key().sign(&unhex32(&pre2).unwrap()).to_bytes().to_vec();
-    assert_eq!(
-        v.on_signed(
-            pre2.clone(),
-            Some((0, U128(1_000_000), U64(0))),
-            Ok(json!({"scheme": "Ed25519", "signature": bad}))
-        ),
-        None
-    );
-    assert_eq!(v.get_claims(0, 1)[0].in_flight.len(), 1);
-    // MPC failure also releases
-    ctx("op.testnet", T0_MS);
-    let _ = v.sign_intent(SignKind::Payout { claim_id: 0 }, p(1_000_000, n2), Some(q(1_000_000)));
-    ctx("vault.testnet", T0_MS);
-    assert_eq!(v.on_signed(pre2.clone(), Some((0, U128(1_000_000), U64(0))), Err(PromiseError::Failed)), None);
-    assert_eq!(v.get_claims(0, 1)[0].in_flight.len(), 1);
-    // settlement: can't release before the deadline, can confirm anytime
-    ctx("op.testnet", T0_MS);
-    assert!(panics(|| v.settle_payout(0, pre1.clone(), false)).contains("deadline not passed"));
-    ctx("anyone.testnet", T0_MS);
-    assert!(panics(|| v.settle_payout(0, pre1.clone(), true)).contains("only the operator"));
-    ctx("op.testnet", T0_MS);
-    v.settle_payout(0, pre1.clone(), true);
-    let c = v.get_claims(0, 1)[0].clone();
-    assert_eq!((c.paid.0, c.in_flight.len()), (3_000_000, 0));
-    // released after deadline frees the amount again
-    let _ = v.sign_intent(SignKind::Payout { claim_id: 0 }, p(1_000_000, n2), Some(q(1_000_000)));
-    let pre3 = v.get_claims(0, 1)[0].in_flight[0].prehash.clone();
-    ctx("op.testnet", T0_MS + 11 * 60_000);
-    v.settle_payout(0, pre3, false);
-    assert_eq!(v.get_claims(0, 1)[0].in_flight.len(), 0);
+    assert!(sign(&mut v, "op.testnet", SignKind::Unshield, p2, Some(q(&[]))).contains("quote already used"));
 }
 
 #[test]
@@ -744,7 +682,7 @@ fn public_verifier_follows_intents_contract() {
     let wrong = payload(DEP, USDC, 1_000_000, "intents.near", DL, &va);
     assert!(sign(&mut v, "op.testnet", SignKind::Shield, wrong, Some(q)).contains("does not match depositType"));
     let login = Nep413Payload {
-        message: format!(r#"{{"deadline":"{DL}","intents":[],"signer_id":"{va}"}}"#),
+        message: format!(r#"{{"deadline":"2026-11-09T10:04:00.000Z","intents":[],"signer_id":"{va}"}}"#),
         nonce: "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=".into(),
         recipient: "defuse.testnet".into(),
     };
@@ -753,56 +691,103 @@ fn public_verifier_follows_intents_contract() {
 
 // ---------------- public-leg payouts and cost basis ----------------
 
+fn ppl(amt: u128, nonce: &str) -> Nep413Payload {
+    Nep413Payload {
+        nonce: nonce.into(),
+        ..payload("exit.testnet", USDC, amt, "intents.near", DL, &vault_acct())
+    }
+}
+// Plain (legacy) nonces. (The defuse test-vector nonce happens to be a versioned one.)
+const N1: &str = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=";
+const N2: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
 #[test]
 fn public_payout_table() {
     let va = vault_acct();
     let p = |to: &str, token: &str, amt: u128, recipient: &str| payload(to, token, amt, recipient, DL, &va);
+    // a versioned nonce: magic prefix 56 28 f6 c6
+    let versioned = {
+        use near_sdk::base64::Engine;
+        let mut n = [0u8; 32];
+        n[..4].copy_from_slice(&VERSIONED_NONCE_PREFIX);
+        near_sdk::base64::engine::general_purpose::STANDARD.encode(n)
+    };
     type Case = (bool, &'static str, Nep413Payload, Option<SignedQuote>, &'static str);
     let cases: Vec<Case> = vec![
         (false, "op.testnet", p("exit.testnet", USDC, 4_000_000, "intents.near"), None, "<no panic>"),
         (
             false,
-            "anyone.testnet",
+            "follower.testnet",
             p("exit.testnet", USDC, 1_000_000, "intents.near"),
             None,
             "only the operator",
         ),
-        (true, "anyone.testnet", p("exit.testnet", USDC, 1_000_000, "intents.near"), None, "<no panic>"),
+        (true, "follower.testnet", p("exit.testnet", USDC, 1_000_000, "intents.near"), None, "<no panic>"), // claimant, in emergency
         (
             true,
             "anyone.testnet",
+            p("exit.testnet", USDC, 1_000_000, "intents.near"),
+            None,
+            "only the operator",
+        ), // not the claimant
+        (
+            true,
+            "follower.testnet",
             p("thief.testnet", USDC, 1_000_000, "intents.near"),
             None,
             "exit account",
         ),
-        (true, "anyone.testnet", p("exit.testnet", WNEAR, 1_000_000, "intents.near"), None, "base asset"),
         (
             true,
-            "anyone.testnet",
+            "follower.testnet",
+            p("exit.testnet", WNEAR, 1_000_000, "intents.near"),
+            None,
+            "base asset",
+        ),
+        (
+            true,
+            "follower.testnet",
             p("exit.testnet", &imt(USDC), 1_000_000, "intents.near"),
             None,
             "base asset",
         ),
         (
             true,
-            "anyone.testnet",
+            "follower.testnet",
             p("exit.testnet", USDC, 1_000_000, "intents.far"),
             None,
             "public intents contract",
         ),
         (
             true,
-            "anyone.testnet",
+            "follower.testnet",
             p("exit.testnet", USDC, 4_000_001, "intents.near"),
             None,
             "exceeds the claim",
         ),
         (
             true,
-            "anyone.testnet",
+            "follower.testnet",
             p("exit.testnet", USDC, 1, "intents.near"),
-            Some(payout_q(&[])),
+            Some(trade_quote(&[])),
             "takes no quote",
+        ),
+        (
+            false,
+            "op.testnet",
+            payload("exit.testnet", USDC, 1, "intents.near", "2026-11-09T10:04:00.000Z", &va),
+            None,
+            "deadline too soon",
+        ),
+        (
+            false,
+            "op.testnet",
+            Nep413Payload {
+                nonce: versioned,
+                ..p("exit.testnet", USDC, 1, "intents.near")
+            },
+            None,
+            "plain nonce",
         ),
     ];
     for (i, (emergency, who, pl, q, want)) in cases.into_iter().enumerate() {
@@ -812,23 +797,118 @@ fn public_payout_table() {
     }
 }
 
+/// Settlement is decided by the verifier's nonce record, never by anyone's word:
+/// an executed payout can't be released and paid again (the review's critical finding).
 #[test]
-fn public_payout_reserves_and_claimant_confirms_in_emergency() {
-    let mut v = vault_with_claim(4_000_000, true);
-    let pl = payload("exit.testnet", USDC, 4_000_000, "intents.near", DL, &vault_acct());
+fn payout_settles_against_the_verifier_nonce_record() {
+    let mut v = vault_with_claim(4_000_000, false);
+    ctx("op.testnet", T0_MS);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(3_000_000, N1), None);
+    // reservation blocks overspending, and the same payload can't be reserved twice
+    assert!(panics(|| v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(1_000_001, N2), None)).contains("exceeds the claim"));
+    assert!(panics(|| v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(3_000_000, N1), None)).contains("exceeds the claim"));
+    let f = v.get_claims(0, 1)[0].in_flight[0].clone();
+    assert_eq!(f.nonce, N1);
+    // MPC signs
+    let sig = mpc_key().sign(&unhex32(&f.prehash).unwrap()).to_bytes().to_vec();
+    ctx("vault.testnet", T0_MS);
+    assert!(v
+        .on_signed(f.prehash.clone(), Some((0, U128(3_000_000), U64(0))), true, Ok(json!({"signature": sig})))
+        .unwrap()
+        .starts_with("ed25519:"));
+    // settle: anyone may ask; only the verifier's answer counts
     ctx("anyone.testnet", T0_MS);
-    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl.clone(), None);
-    // fully reserved: a second one is refused
-    assert!(panics(|| v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl.clone(), None)).contains("exceeds the claim"));
-    let pre = v.get_claims(0, 1)[0].in_flight[0].prehash.clone();
-    // a stranger can't settle; the claimant can confirm but not release
-    ctx("anyone.testnet", T0_MS);
-    assert!(panics(|| v.settle_payout(0, pre.clone(), true)).contains("only the operator"));
-    ctx("follower.testnet", T0_MS + 2 * MAX_INTENT_AHEAD_MS);
-    assert!(panics(|| v.settle_payout(0, pre.clone(), false)).contains("only the operator"));
-    v.settle_payout(0, pre, true);
+    let _ = v.settle_payout(0, f.prehash.clone());
+    ctx("vault.testnet", T0_MS);
+    assert_eq!(v.on_settle(0, f.prehash.clone(), Ok(false)), "pending"); // not used, deadline not passed
+    assert_eq!(v.on_settle(0, f.prehash.clone(), Err(PromiseError::Failed)), "verifier unavailable");
+    // executed (nonce used): paid, even after the deadline — it can never be released
+    ctx("vault.testnet", T0_MS + 11 * 60_000);
+    assert_eq!(v.on_settle(0, f.prehash.clone(), Ok(true)), "paid");
     let c = v.get_claims(0, 1)[0].clone();
-    assert_eq!((c.paid.0, c.in_flight.len()), (4_000_000, 0));
+    assert_eq!((c.paid.0, c.in_flight.len()), (3_000_000, 0));
+    // a payload that never executed is released after its deadline, and the amount is open again
+    ctx("op.testnet", T0_MS);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(1_000_000, N2), None);
+    let pre = v.get_claims(0, 1)[0].in_flight[0].prehash.clone();
+    ctx("vault.testnet", T0_MS + 11 * 60_000);
+    assert_eq!(v.on_settle(0, pre.clone(), Ok(false)), "released");
+    assert_eq!(v.on_settle(0, pre, Ok(true)), "already settled");
+    assert_eq!(open_of(&v.get_claims(0, 1)[0]), 1_000_000);
+}
+
+#[test]
+fn failed_sign_removes_only_its_own_reservation() {
+    let mut v = vault_with_claim(4_000_000, false);
+    ctx("op.testnet", T0_MS);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(1_000_000, N1), None);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, ppl(1_000_000, N2), None);
+    let fs = v.get_claims(0, 1)[0].in_flight.clone();
+    ctx("vault.testnet", T0_MS);
+    let sig = mpc_key().sign(&unhex32(&fs[0].prehash).unwrap()).to_bytes().to_vec();
+    v.on_signed(fs[0].prehash.clone(), Some((0, U128(1_000_000), U64(0))), true, Ok(json!({"signature": sig})));
+    assert_eq!(
+        v.on_signed(fs[1].prehash.clone(), Some((0, U128(1_000_000), U64(0))), true, Err(PromiseError::Failed)),
+        None
+    );
+    // a late failure for the first (already signed) payload must not drop it
+    assert_eq!(
+        v.on_signed(fs[0].prehash.clone(), Some((0, U128(1_000_000), U64(0))), true, Err(PromiseError::Failed)),
+        None
+    );
+    let left = v.get_claims(0, 1)[0].in_flight.clone();
+    assert_eq!(left.len(), 1);
+    assert!(left[0].signed && left[0].prehash == fs[0].prehash);
+}
+
+/// An operator that keeps posting NAV but never pays a claim can't censor it:
+/// after the grace period anyone triggers emergency and the claimant pays themselves.
+#[test]
+fn overdue_claim_opens_emergency() {
+    let mut v = vault_with_claim(4_000_000, false);
+    let opened = v.get_claims(0, 1)[0].opened_ms;
+    ctx("anyone.testnet", opened + CLAIM_GRACE_MS);
+    assert!(panics(|| v.trigger_emergency(Some(0))).contains("no claim is overdue"));
+    // NAV is kept fresh
+    v.last_nav_ms = opened + CLAIM_GRACE_MS;
+    ctx("anyone.testnet", opened + CLAIM_GRACE_MS + 1);
+    v.trigger_emergency(Some(0));
+    assert!(v.emergency);
+    // the (non-emergency) claim is now payable by its claimant
+    let d = "2026-11-10T10:10:00.000Z";
+    let pl = payload("exit.testnet", USDC, 4_000_000, "intents.near", d, &vault_acct());
+    ctx("follower.testnet", parse_ms(d) - 10 * 60_000);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl, None);
+    assert_eq!(v.get_claims(0, 1)[0].in_flight.len(), 1);
+}
+
+fn parse_ms(iso: &str) -> u64 {
+    crate::quote::parse_iso_ms(iso).unwrap()
+}
+
+#[test]
+fn withdrawal_requests_one_per_account_no_dust() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    ctx("follower.testnet", T0_MS);
+    assert!(panics(|| v.request_withdraw(U128(1), acc("exit.testnet"))).contains("below the minimum"));
+    v.request_withdraw(U128(1_000_000), acc("exit.testnet"));
+    assert!(panics(|| v.request_withdraw(U128(1_000_000), acc("exit.testnet"))).contains("one pending"));
+    v.cancel_withdraw(0);
+    v.request_withdraw(U128(8_000_000), acc("exit.testnet")); // everything: allowed at any size
+}
+
+#[test]
+fn duplicate_signal_hashes_are_refused() {
+    let mut v = vault();
+    ctx("leader.testnet", T0_MS);
+    v.set_signal_key(pk_str(&leader_key()));
+    let h = [9u8; 32];
+    let hh = hex(&h);
+    ctx("op.testnet", T0_MS);
+    v.record_signal(hh.clone(), sig_str(leader_key().sign(&h)), "ab".repeat(32), T0_MS);
+    assert!(panics(|| v.record_signal(hh.clone(), sig_str(leader_key().sign(&h)), "ab".repeat(32), T0_MS)).contains("already recorded"));
 }
 
 #[test]

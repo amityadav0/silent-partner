@@ -92,18 +92,18 @@ export function EmergencyPayout({ id, vault, cfg, claim, dec, sym, onDone }: { i
     update({ ...flow!, withdrawn: tx ?? "sent" });
   }
   async function settle() {
-    const f = claim.in_flight.find((x) => x.signed) ?? claim.in_flight[0];
+    const f = claim.in_flight[0];
     if (!f) throw new Error("no payout in flight");
-    await call({ receiverId: id, method: "settle_payout", args: { claim_id: claim.id, prehash: f.prehash, executed: true }, gas: 30n * TGAS });
+    await call({ receiverId: id, method: "settle_payout", args: { claim_id: claim.id, prehash: f.prehash }, gas: 60n * TGAS });
   }
 
   if (paid) return <span className="chip chip-ok">paid</span>;
   const mine = accountId === claim.account;
   const steps: [string, boolean, () => Promise<void>, boolean][] = [
-    ["1. Vault signs the payout", !!flow?.signature || claim.in_flight.length > 0, sign, open > 0n],
+    ["1. Vault signs the payout", !!flow?.signature || claim.in_flight.length > 0, sign, open > 0n && mine],
     ["2. Execute on the verifier", !!flow?.executed, execute, !!flow?.signature && !flow?.executed],
     ["3. Withdraw to wallet", !!flow?.withdrawn, withdraw, !!flow?.executed && !flow?.withdrawn],
-    ["4. Mark paid", false, settle, claim.in_flight.length > 0 && mine],
+    ["4. Settle on-chain", false, settle, claim.in_flight.length > 0],
   ];
   return (
     <div className="mt-2" data-testid={`payout-${claim.id}`}>
@@ -114,7 +114,7 @@ export function EmergencyPayout({ id, vault, cfg, claim, dec, sym, onDone }: { i
           </button>
         ))}
       </div>
-      <p className="muted mt-1 text-xs">Pays {fmtUnits(open > 0n ? open : 0n, dec)} {sym} from the vault&apos;s public intents balance to <code>{claim.exit_account}</code>. Anyone may run steps 1–3. Step 4 is for the claimant.</p>
+      <p className="muted mt-1 text-xs">Pays {fmtUnits(open > 0n ? open : 0n, dec)} {sym} from the vault&apos;s public intents balance to <code>{claim.exit_account}</code>. Step 1 is for the claimant. Anyone may run steps 2–4. Settling asks the verifier whether the payout executed, so nobody has to vouch for it.</p>
       {msg && <p className="neg mt-1 text-xs" role="status">{msg}</p>}
     </div>
   );

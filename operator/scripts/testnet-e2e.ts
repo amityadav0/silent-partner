@@ -1,3 +1,5 @@
+// Written for the P2 contract (it used the since-removed `Payout` kind; see D-H-2).
+// Kept as the record of docs/testnet.md's first run; it won't run against the current contract.
 // Testnet end-to-end for the vault contract (P2). Testnet only; never mainnet.
 //
 //   npx tsx scripts/testnet-e2e.ts

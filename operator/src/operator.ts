@@ -8,7 +8,9 @@
 //   epochs   → NAV = public base + Σ confidential holdings valued by 1Click
 //              quotes into the base asset; append to the log; post NAV with the
 //              log head, signed by the attestation key.
-//   claims   → unshield to the holder's exit account (Payout) and settle.
+//   claims   → unshield into the vault's own public balance if needed, pay the
+//              claim from there (PublicPayout, executed on intents.near), then
+//              settle on-chain against the verifier's nonce record.
 //
 // DRY mode (default): quotes are dry, nothing is signed by the vault key or
 // submitted to 1Click; fills, shields and payouts are "paper" entries in the
@@ -17,12 +19,13 @@
 // Amit's OK).
 import { KeyPair } from "near-api-js";
 import { base58 } from "@scure/base";
-import type { VaultChain, Claim } from "./chain.js";
+import type { VaultChain, Claim, SignKind } from "./chain.js";
 import { Confidential, TERMINAL, type Leg, type VerifiedQuote } from "./confidential.js";
 import { FillLog } from "./filllog.js";
 import { fold } from "./ledger.js";
 import { verifySignal, type Signal, type SignedSignal } from "./signal.js";
-import { nep413Prehash } from "./intents.js";
+import { nep413Prehash, type Nep413Payload } from "./intents.js";
+import { randomBytes } from "node:crypto";
 
 export type OperatorCfg = {
   dryRun: boolean;
@@ -142,6 +145,11 @@ export class Operator {
     const amount = sized ?? (await this.size(sig));
     if (amount === 0n) return this.log.append("note", { signal: hash, msg: "nothing to sell" }, this.now()).hash;
     const q = await this.quote("trade", sig.from, sig.to, amount, this.cfg.dryRun);
+    if (sig.type === "limit" && this.humanPrice(sig, q) < Number(sig.limit_price)) {
+      // The probe crossed but the executable quote didn't: keep waiting.
+      this.limits.push({ signal: sig, hash, signature: leaderSig });
+      return this.log.append("note", { signal: hash, msg: "limit not met on the live quote" }, this.now()).hash;
+    }
     const base = { signal: hash, from: sig.from, to: sig.to, amount_in: q.amountIn.toString(), min_amount_out: q.minAmountOut.toString(), quote_signature: q.signed.signature };
     let entry;
     if (this.cfg.dryRun) {
@@ -185,13 +193,20 @@ export class Operator {
 
   // ---------------- live path (vault key via the contract) ----------------
 
-  private async liveTransfer(kind: "Trade" | "Shield" | { Payout: { claim_id: number } }, q: VerifiedQuote) {
+  private async liveTransfer(kind: SignKind, q: VerifiedQuote) {
     const { vaultAccount } = await this.meta();
     if (!q.depositAddress) throw new Error("live quote has no deposit address");
     const payload = await this.oc.generateIntent(vaultAccount, q.depositAddress);
     const { tx, signature } = await this.chain.signIntent(kind, payload, q.signed);
     if (!signature) throw new Error(`contract refused or MPC failed (tx ${tx})`);
-    const intentHash = await this.oc.submitIntent(payload, this.vaultPublicKey, signature);
+    let intentHash: string;
+    try {
+      intentHash = await this.oc.submitIntent(payload, this.vaultPublicKey, signature);
+    } catch (e) {
+      // Keep what's needed to resubmit or reconcile by hand.
+      this.log.append("note", { msg: "submit-intent failed after signing", kind: typeof kind === "string" ? kind : "PublicPayout", deposit_address: q.depositAddress, payload, signature, sign_tx: tx, error: String((e as Error).message).slice(0, 200) }, this.now());
+      throw e;
+    }
     let last = { status: "UNKNOWN", raw: null as any };
     for (let i = 0; i < this.cfg.pollTries; i++) {
       last = await this.oc.status(q.depositAddress);
@@ -224,7 +239,8 @@ export class Operator {
     const ts = Math.max(this.now() - 1000, v.last_nav_ms + 1);
     this.log.append("nav", { epoch, nav: nav.toString(), timestamp_ms: ts }, this.now());
     const head = this.log.head();
-    const message = await this.chain.navMessage(epoch, nav.toString(), ts, head);
+    // Built here, not fetched: the attestation key signs only bytes we chose (= contract `nav_message`).
+    const message = navMessage(this.chain.contractId, epoch, nav.toString(), ts, head);
     const signature = "ed25519:" + base58.encode(this.attestation.sign(new TextEncoder().encode(message)).signature);
     const tx = this.cfg.chainWrites ? await this.chain.postNav(epoch, nav.toString(), ts, head, signature) : null;
     if (tx) await this.payClaims();
@@ -240,51 +256,84 @@ export class Operator {
   }
 
   /**
-   * Release expired in-flight payouts that this operator submitted and that
-   * 1Click reports as finished without success. Unknown in-flight entries (not
-   * in this log) are left for manual review: someone may have submitted them.
+   * Settle every in-flight payout against the public verifier's nonce record
+   * (permissionless and safe: executed → paid; never executed and expired →
+   * released; otherwise unchanged). Returns how many changed.
    */
-  async releaseExpired(claims: Claim[]): Promise<number> {
+  async settleInFlight(claims: Claim[]): Promise<number> {
     if (!this.cfg.chainWrites) return 0;
     let n = 0;
     for (const c of claims) {
       for (const f of c.in_flight) {
-        if (this.now() <= f.deadline_ms) continue;
-        const note = this.log.entries.find((e) => e.kind === "note" && e.data.claim_id === c.id && e.data.prehash === f.prehash && e.data.deposit_address);
-        if (!note) continue;
-        const st = await this.oc.status(note.data.deposit_address as string);
-        if (!TERMINAL.has(st.status) || st.status === "SUCCESS") continue;
-        await this.chain.settlePayout(c.id, f.prehash, false);
-        this.log.append("note", { msg: "released expired payout", claim_id: c.id, prehash: f.prehash, status: st.status }, this.now());
-        n++;
+        try {
+          const r = await this.chain.settlePayout(c.id, f.prehash);
+          if (r.result === "paid" || r.result === "released") {
+            this.log.append("note", { msg: `payout ${r.result}`, claim_id: c.id, prehash: f.prehash, settle_tx: r.tx }, this.now());
+            n++;
+          }
+        } catch (e) {
+          this.log.append("note", { msg: "settle failed", claim_id: c.id, prehash: f.prehash, error: String((e as Error).message).slice(0, 200) }, this.now());
+        }
       }
     }
     return n;
   }
 
+  /** A plain (non-versioned) NEP-413 nonce: the contract requires one for payouts. */
+  private plainNonce(): Buffer {
+    for (;;) {
+      const n = randomBytes(32);
+      if (!(n[0] === 0x56 && n[1] === 0x28 && n[2] === 0xf6 && n[3] === 0xc6)) return n;
+    }
+  }
+
   async payClaims(): Promise<string[]> {
-    const { base } = await this.meta();
+    const { base, vaultAccount } = await this.meta();
     const out: string[] = [];
     let claims = await this.chain.getClaims();
-    if (!this.cfg.dryRun && (await this.releaseExpired(claims)) > 0) claims = await this.chain.getClaims();
+    if (!this.cfg.dryRun && (await this.settleInFlight(claims)) > 0) claims = await this.chain.getClaims();
     for (const c of claims) {
-      if (c.emergency) continue; // emergency claims are paid by anyone, not by this loop
       const open = this.openOf(c);
       if (open <= 0n) continue;
-      if (this.cfg.dryRun) {
-        out.push(this.log.append("payout", { claim_id: c.id, exit_account: c.exit_account, amount: open.toString(), dry: true, status: "PAPER" }, this.now()).hash);
-        continue;
-      }
-      const q = await this.quote("unshield", base, base, open, false, c.exit_account);
-      const r = await this.liveTransfer({ Payout: { claim_id: c.id } }, q);
-      const prehash = nep413Prehash(r.payload).toString("hex");
-      if (r.status === "SUCCESS") {
-        await this.chain.settlePayout(c.id, prehash, true);
-        out.push(this.log.append("payout", { claim_id: c.id, exit_account: c.exit_account, amount: open.toString(), dry: false, status: r.status, intent_hash: r.intentHash, sign_tx: r.tx }, this.now()).hash);
-      } else {
-        this.log.append("note", { msg: "payout did not complete; release after deadline", claim_id: c.id, prehash, status: r.status, deposit_address: q.depositAddress }, this.now());
+      try {
+        if (this.cfg.dryRun) {
+          out.push(this.log.append("payout", { claim_id: c.id, exit_account: c.exit_account, amount: open.toString(), dry: true, status: "PAPER" }, this.now()).hash);
+          continue;
+        }
+        out.push(await this.payLive(c, open, base, vaultAccount));
+      } catch (e) {
+        // One bad claim (dust under 1Click's minimum, an odd exit account) must not block the rest.
+        this.log.append("note", { msg: "payout failed", claim_id: c.id, amount: open.toString(), error: String((e as Error).message).slice(0, 200) }, this.now());
       }
     }
     return out;
   }
+
+  /** Unshield what's missing into the vault's own public balance, then pay the claim from there. */
+  private async payLive(c: Claim, open: bigint, base: string, vaultAccount: string): Promise<string> {
+    const cfg = await this.chain.getConfig();
+    const verifier = cfg.intents_contract ?? "intents.near";
+    const pub = await this.chain.publicBalance(base);
+    if (pub < open) {
+      const need = open - pub;
+      const q = await this.quote("unshield", base, base, need, false, vaultAccount);
+      const r = await this.liveTransfer("Unshield", q);
+      if (r.status !== "SUCCESS") throw new Error(`unshield ${r.status}`);
+      this.log.append("unshield", { asset: base, amount: need.toString(), dry: false, status: r.status, intent_hash: r.intentHash, sign_tx: r.tx }, this.now());
+    }
+    const payload: Nep413Payload = {
+      message: JSON.stringify({ deadline: new Date(this.now() + 20 * 60_000).toISOString(), intents: [{ intent: "transfer", receiver_id: c.exit_account, tokens: { [base]: open.toString() } }], signer_id: vaultAccount }),
+      nonce: this.plainNonce().toString("base64"),
+      recipient: verifier,
+    };
+    const { tx, signature } = await this.chain.signIntent({ PublicPayout: { claim_id: c.id } }, payload, null);
+    if (!signature) throw new Error(`contract refused or MPC failed (tx ${tx})`);
+    const prehash = nep413Prehash(payload).toString("hex");
+    const execTx = await this.chain.executeIntents(verifier, [{ standard: "nep413", payload, public_key: this.vaultPublicKey, signature }]);
+    const settled = await this.chain.settlePayout(c.id, prehash);
+    return this.log.append("payout", { claim_id: c.id, exit_account: c.exit_account, amount: open.toString(), dry: false, status: settled.result, prehash, sign_tx: tx, exec_tx: execTx, settle_tx: settled.tx }, this.now()).hash;
+  }
 }
+
+/** The exact string the attestation key signs (contract `nav_message`). */
+export const navMessage = (contract: string, epoch: number, nav: string, ts: number, head: string) => `silent-partner/nav/v1|${contract}|${epoch}|${nav}|${ts}|${head}`;

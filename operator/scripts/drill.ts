@@ -8,7 +8,7 @@
 //   5. follower: sign_intent(PublicPayout) → the vault's MPC key signs a
 //      transfer of the claim from the vault's public intents balance to them
 //   6. follower: execute_intents on the verifier, then ft_withdraw to their wallet
-//   7. follower: settle_payout(executed) records the claim as paid
+//   7. anyone: settle_payout asks the verifier whether the nonce was used → paid
 //   npx tsx scripts/drill.ts
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -105,7 +105,9 @@ const wallet1 = await view<string>(USDC_T, "ft_balance_of", { account_id: FOLLOW
 
 // 7. confirm
 const prehash = (await view<any[]>(VAULT, "get_claims", { from: claimId, limit: 1 }))[0].in_flight[0].prehash;
-await call("follower: settle_payout(executed)", FOLLOWER, VAULT, "settle_payout", { claim_id: claimId, prehash, executed: true }, { gas: 30n * TGAS });
+// (The 2026-11-09 run used the earlier contract, where the claimant confirmed with
+// `executed: true`; since D-H-2 anyone settles against the verifier's nonce record.)
+await call("follower: settle_payout (verifier: nonce used)", FOLLOWER, VAULT, "settle_payout", { claim_id: claimId, prehash }, { gas: 60n * TGAS });
 const finalClaim = (await view<any[]>(VAULT, "get_claims", { from: claimId, limit: 1 }))[0];
 snaps.payout = {
   vault_public_before: vaultPub0, vault_public_after: await view<string>(INTENTS, "mt_balance_of", { account_id: va, token_id: BASE }),

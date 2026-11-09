@@ -38,7 +38,34 @@ struct Message {
 #[derive(Deserialize)]
 #[serde(crate = "near_sdk::serde", tag = "intent", rename_all = "snake_case", deny_unknown_fields)]
 enum IntentJson {
-    Transfer { receiver_id: String, tokens: BTreeMap<String, String> },
+    Transfer { receiver_id: String, tokens: UniqueMap },
+}
+
+/// A JSON object of token → amount that refuses repeated keys. serde's map
+/// types keep the last value of a repeated key; a verifier that read the first
+/// would transfer a different amount than the one checked here.
+struct UniqueMap(BTreeMap<String, String>);
+
+impl<'de> Deserialize<'de> for UniqueMap {
+    fn deserialize<D: near_sdk::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        struct V;
+        impl<'de> near_sdk::serde::de::Visitor<'de> for V {
+            type Value = UniqueMap;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a map of token id to amount")
+            }
+            fn visit_map<A: near_sdk::serde::de::MapAccess<'de>>(self, mut m: A) -> Result<UniqueMap, A::Error> {
+                let mut out = BTreeMap::new();
+                while let Some((k, v)) = m.next_entry::<String, String>()? {
+                    if out.insert(k, v).is_some() {
+                        return Err(near_sdk::serde::de::Error::custom("duplicate token"));
+                    }
+                }
+                Ok(UniqueMap(out))
+            }
+        }
+        d.deserialize_map(V)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +80,7 @@ pub struct ParsedPayload {
     pub signer_id: String,
     pub recipient: String,
     pub deadline_ms: u64,
+    pub nonce: [u8; 32],
     pub prehash: [u8; 32],
 }
 
@@ -79,7 +107,7 @@ pub fn parse(p: &Nep413Payload) -> Result<ParsedPayload, IntentError> {
     let kind = match m.intents.as_slice() {
         [] => Parsed::Login,
         [IntentJson::Transfer { receiver_id, tokens }] => {
-            let [(token, amount)] = tokens.iter().collect::<Vec<_>>()[..] else {
+            let [(token, amount)] = tokens.0.iter().collect::<Vec<_>>()[..] else {
                 return Err(IntentError::Shape("exactly one token"));
             };
             if amount.is_empty() || !amount.bytes().all(|c| c.is_ascii_digit()) {
@@ -98,6 +126,7 @@ pub fn parse(p: &Nep413Payload) -> Result<ParsedPayload, IntentError> {
         signer_id: m.signer_id,
         recipient: p.recipient.clone(),
         deadline_ms,
+        nonce,
         prehash: prehash(&p.message, &nonce, &p.recipient),
     })
 }

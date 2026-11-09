@@ -9,7 +9,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { canonicalJson } from "./carry/receipt.js";
 
-export type Kind = "deposit" | "shield" | "signal" | "fill" | "payout" | "nav" | "note";
+export type Kind = "deposit" | "shield" | "unshield" | "signal" | "fill" | "payout" | "nav" | "note";
 export type Entry = { seq: number; prev: string; ts: number; kind: Kind; data: Record<string, unknown>; hash: string };
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");

@@ -7,7 +7,7 @@ import { RPCS } from "./config";
 export type NavPost = { epoch: number; nav: string; timestamp_ms: number; block_ms: number; price: string; total_shares: string; fee_shares: string; withdrawn: string; fills_head: string; signature: string };
 export type VaultView = { vault_account: string | null; total_shares: string; book_nav: string; price: string; hwm: string; epoch: number; last_nav_ms: number; stale: boolean; emergency: boolean; leader_shares: string; pending_withdrawals: number; signals: number };
 export type Config = { owner: string; operator: string; leader: string; base_token: string; base_asset_id: string; attestation_key: string; oneclick_key: string; perf_fee_bps: number; min_leader_bps: number; max_slippage_bps: number; min_deposit: string; allowed_assets: string[]; intents_contract: string | null };
-export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: { prehash: string; amount: string; deadline_ms: number; signed: boolean }[]; epoch: number; emergency: boolean };
+export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: { prehash: string; nonce?: string; amount: string; deadline_ms: number; signed: boolean }[]; epoch: number; emergency: boolean; opened_ms?: number };
 export type SignalRec = { index: number; hash: string; fill_hash: string; executed_ms: number; epoch: number };
 
 export async function view<T>(contract: string, method: string, args: object = {}, fetchImpl: typeof fetch = fetch): Promise<T> {

@@ -24,7 +24,7 @@ pub mod quote;
 
 use intent::{Nep413Payload, Parsed};
 use near_sdk::json_types::{U128, U64};
-use near_sdk::store::{IterableMap, LookupMap, Vector};
+use near_sdk::store::{IterableMap, LookupMap, LookupSet, Vector};
 use near_sdk::{env, ext_contract, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError, PromiseOrValue};
 use quote::{QuoteFacts, SignedQuote};
 
@@ -37,9 +37,20 @@ pub const NAV_STALE_MS: u64 = 24 * 60 * 60 * 1000;
 pub const NAV_STALE_MS: u64 = 5 * 60 * 1000;
 pub const MAX_INTENT_AHEAD_MS: u64 = 60 * 60 * 1000;
 pub const MAX_PENDING_WITHDRAWALS: u32 = 100;
+/// A claim the operator hasn't paid within this long lets anyone trigger emergency.
+pub const CLAIM_GRACE_MS: u64 = NAV_STALE_MS;
+/// Payout payloads must stay valid at least this long (no instantly-dead reservations).
+pub const MIN_PAYOUT_AHEAD_MS: u64 = 5 * 60 * 1000;
+/// Login payloads (1Click sessions) are short-lived.
+pub const MAX_LOGIN_AHEAD_MS: u64 = 5 * 60 * 1000;
+/// Defuse's versioned-nonce prefix. Versioned nonces can be cleaned up after
+/// expiry, which would make `is_nonce_used` forget an executed payout, so payout
+/// payloads must use plain (legacy) nonces, which the verifier keeps forever.
+pub const VERSIONED_NONCE_PREFIX: [u8; 4] = [0x56, 0x28, 0xf6, 0xc6];
 pub const MPC_DOMAIN_EDDSA: u64 = 1;
 const GAS_MPC_SIGN: Gas = Gas::from_tgas(100);
 const GAS_CALLBACK: Gas = Gas::from_tgas(15);
+const GAS_VIEW: Gas = Gas::from_tgas(10);
 const GAS_FT_FORWARD: Gas = Gas::from_tgas(60);
 
 /// `imt:<treasury>:<public id>`: the confidential token id 1Click spends on intents.far.
@@ -52,6 +63,11 @@ pub fn imt(public_id: &str) -> String {
 pub trait Mpc {
     fn sign(&mut self, request: near_sdk::serde_json::Value);
     fn derived_public_key(&self, path: String, predecessor: AccountId, domain_id: u64) -> String;
+}
+
+#[ext_contract(ext_verifier)]
+pub trait Verifier {
+    fn is_nonce_used(&self, account_id: String, nonce: String) -> bool;
 }
 
 #[ext_contract(ext_ft)]
@@ -127,12 +143,17 @@ pub struct Claim {
     pub in_flight: Vec<InFlight>,
     pub epoch: u64,
     pub emergency: bool,
+    pub opened_ms: u64,
 }
 
+/// A signed (or signing) payout of part of a claim, from the vault's public
+/// intents balance. Settled by anyone against the verifier's nonce record.
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Debug, PartialEq)]
 pub struct InFlight {
     pub prehash: String,
+    /// base64 NEP-413 nonce of the payload.
+    pub nonce: String,
     pub amount: U128,
     pub deadline_ms: u64,
     pub signed: bool,
@@ -161,11 +182,11 @@ pub enum SignKind {
     Shield,
     /// Confidential swap that pays back into the vault.
     Trade,
-    /// Unshield of the base asset to a claim's exit account.
-    Payout { claim_id: u64 },
-    /// Direct transfer of the base asset from the vault's *public* intents
-    /// balance to a claim's exit account (no quote: nothing is swapped). Lets
-    /// holders exit from funds that were never shielded without 1Click.
+    /// Confidential → the vault's own public intents balance (same asset).
+    Unshield,
+    /// Transfer of the base asset from the vault's public intents balance to a
+    /// claim's exit account (no quote: nothing is swapped). The only way funds
+    /// leave the vault; settled on-chain against the verifier's nonce record.
     PublicPayout { claim_id: u64 },
 }
 
@@ -224,6 +245,9 @@ pub struct Vault {
     signals: Vector<Signal>,
     signal_key: Option<String>,
     basis: LookupMap<AccountId, Basis>,
+    /// 1Click deposit addresses already paid by a signed transfer: one quote, one transfer.
+    used_deposits: LookupSet<String>,
+    signal_hashes: LookupSet<String>,
 }
 
 #[near]
@@ -255,6 +279,8 @@ impl Vault {
             signals: Vector::new(b"g"),
             signal_key: None,
             basis: LookupMap::new(b"b"),
+            used_deposits: LookupSet::new(b"u"),
+            signal_hashes: LookupSet::new(b"h"),
         }
     }
 
@@ -328,6 +354,12 @@ impl Vault {
         require!(s > 0, "zero shares");
         require!(self.free_shares(&who) >= s, "not enough free shares");
         require!(self.pending.len() < MAX_PENDING_WITHDRAWALS, "withdrawal queue full");
+        require!(!self.pending.values().any(|r| r.account == who), "one pending withdrawal per account");
+        // No dust requests (they cost storage and queue slots), unless it's everything you have.
+        require!(
+            s == self.free_shares(&who) || math::payout_for_shares(s, self.book_nav, self.total_shares) >= self.cfg.min_deposit.0,
+            "withdrawal below the minimum (withdraw all, or at least min_deposit)"
+        );
         if who == self.cfg.leader {
             // Conservative: other holders' pending withdrawals don't count as gone
             // (they can cancel), only the leader's own locked shares do.
@@ -454,6 +486,7 @@ impl Vault {
         let sig = quote::decode_ed25519::<64>(&leader_sig).unwrap_or_else(|| env::panic_str("bad signature encoding"));
         require!(env::ed25519_verify(&sig, h, &key), "leader signature does not verify");
         require!(executed_ms <= now_ms() + 60_000, "executed in the future");
+        require!(self.signal_hashes.insert(hash.clone()), "signal already recorded");
         let index = self.signals.len() as u64;
         self.signals.push(Signal {
             index,
@@ -469,10 +502,14 @@ impl Vault {
 
     // ---------- emergency ----------
 
-    /// Anyone, once NAV is more than 24h old. Sticky.
-    pub fn trigger_emergency(&mut self) {
+    /// Anyone, once NAV is stale, or once `overdue_claim` has been left unpaid
+    /// for `CLAIM_GRACE_MS` (an operator that posts NAV but censors payouts). Sticky.
+    pub fn trigger_emergency(&mut self, overdue_claim: Option<u64>) {
         require!(self.vault_account.is_some(), "not active");
-        require!(self.is_stale(), "NAV is fresh");
+        let overdue = overdue_claim
+            .and_then(|id| self.claims.get(id as u32))
+            .is_some_and(|c| open_of(c) > 0 && now_ms() > c.opened_ms + CLAIM_GRACE_MS);
+        require!(self.is_stale() || overdue, "NAV is fresh and no claim is overdue");
         if self.emergency {
             return;
         }
@@ -505,19 +542,20 @@ impl Vault {
 
     /// Ask MPC to sign `payload` with the vault key, after binding it.
     ///
-    /// * `Login`: empty intents, recipient intents.near. Operator only.
-    /// * `Shield`: 1Click quote INTENTS → CONFIDENTIAL_INTENTS of one asset into the vault.
-    /// * `Trade`: CONFIDENTIAL_INTENTS → CONFIDENTIAL_INTENTS between allowed assets,
-    ///   recipient and refund the vault, slippage ≤ max. In emergency the destination
-    ///   must be the base asset (unwind only).
-    /// * `Payout`: base asset CONFIDENTIAL_INTENTS → INTENTS to the claim's exit
-    ///   account, amount ≤ what the claim still has open.
+    /// * `Login`: empty intents for the public verifier, deadline ≤ 5 min. Operator only.
+    /// * `Shield`: 1Click quote INTENTS → CONFIDENTIAL_INTENTS of one asset, into the vault.
+    /// * `Trade`: CONFIDENTIAL_INTENTS on all legs between allowed assets, paying and
+    ///   refunding the vault, slippage ≤ max. In emergency: to the base asset only.
+    /// * `Unshield`: CONFIDENTIAL_INTENTS → INTENTS of one asset back to the vault's
+    ///   own public balance.
+    /// * `PublicPayout{claim}`: no quote; one transfer of the base asset from the
+    ///   vault's public balance to the claim's exit account, ≤ what is open, with a
+    ///   plain nonce and a deadline 5–60 min ahead.
     ///
-    /// Operator only, except in emergency, when anyone may submit Shield, Trade
-    /// (unwind) and Payout. The payload must be one transfer from the vault of
-    /// exactly the quote's `amountIn` of the right token to the quote's deposit
-    /// address, with a deadline in the next hour and not after the quote's.
-    #[payable]
+    /// Operator only, except in emergency: anyone may Shield, Trade (unwind) and
+    /// Unshield (all of which pay the vault itself), and a claimant may pay out
+    /// their own claim. Quote-bound transfers must pay exactly the quote's
+    /// `amountIn` of the right token to its deposit address, once per quote.
     pub fn sign_intent(&mut self, kind: SignKind, payload: Nep413Payload, quote: Option<SignedQuote>) -> Promise {
         let vault = self.vault_account.clone().unwrap_or_else(|| env::panic_str("not active"));
         let caller = env::predecessor_account_id();
@@ -529,13 +567,15 @@ impl Vault {
             p.deadline_ms > now && p.deadline_ms <= now + MAX_INTENT_AHEAD_MS,
             "payload deadline out of window"
         );
+        let prehash_hex = hex(&p.prehash);
         let mut claim_reserve: Option<(u64, U128, U64)> = None;
         // The public verifier the vault's intents.near-side payloads are for.
-        let public_verifier = self.cfg.intents_contract.as_ref().map(|a| a.as_str()).unwrap_or("intents.near").to_string();
+        let public_verifier = self.public_verifier();
         match (&kind, &p.kind) {
             (SignKind::Login, Parsed::Login) => {
                 require!(is_op, "only the operator");
                 require!(p.recipient == public_verifier, "login is for the public intents contract");
+                require!(p.deadline_ms <= now + MAX_LOGIN_AHEAD_MS, "login deadline too far ahead");
                 require!(quote.is_none(), "login takes no quote");
             }
             (SignKind::Login, _) | (_, Parsed::Login) => env::panic_str("kind and payload disagree"),
@@ -544,9 +584,15 @@ impl Vault {
                 require!(p.recipient == public_verifier, "public payout is for the public intents contract");
                 require!(token == &self.cfg.base_asset_id, "payouts are in the base asset");
                 let c = self.claims.get(*claim_id as u32).unwrap_or_else(|| env::panic_str("no such claim"));
-                require!(is_op || c.emergency, "only the operator pays non-emergency claims");
+                require!(
+                    is_op || (self.emergency && caller == c.account),
+                    "only the operator, or the claimant in emergency"
+                );
                 require!(receiver_id == c.exit_account.as_str(), "payout must go to the claim's exit account");
                 require!(*amount > 0 && *amount <= open_of(c), "payout exceeds the claim");
+                require!(p.deadline_ms >= now + MIN_PAYOUT_AHEAD_MS, "payout deadline too soon");
+                require!(!p.nonce.starts_with(&VERSIONED_NONCE_PREFIX), "payouts need a plain nonce");
+                require!(!c.in_flight.iter().any(|f| f.prehash == prehash_hex), "payload already in flight");
                 claim_reserve = Some((*claim_id, U128(*amount), U64(p.deadline_ms)));
             }
             (_, Parsed::Transfer { receiver_id, token, amount }) => {
@@ -568,19 +614,18 @@ impl Vault {
                 match kind {
                     SignKind::Shield => self.check_shield(&f, &vault),
                     SignKind::Trade => self.check_trade(&f, &vault),
-                    SignKind::Payout { claim_id } => {
-                        self.check_payout(&f, &vault, claim_id, is_op);
-                        claim_reserve = Some((claim_id, U128(f.amount_in), U64(p.deadline_ms)));
-                    }
+                    SignKind::Unshield => self.check_unshield(&f, &vault),
                     SignKind::Login | SignKind::PublicPayout { .. } => unreachable!(),
                 }
+                require!(!self.used_deposits.contains(&f.deposit_address), "quote already used");
+                self.used_deposits.insert(f.deposit_address.clone());
             }
         }
-        let prehash_hex = hex(&p.prehash);
         if let Some((id, amt, dl)) = &claim_reserve {
             let mut c = self.claims.get(*id as u32).cloned().unwrap();
             c.in_flight.push(InFlight {
                 prehash: prehash_hex.clone(),
+                nonce: payload.nonce.clone(),
                 amount: *amt,
                 deadline_ms: dl.0,
                 signed: false,
@@ -590,6 +635,7 @@ impl Vault {
         let request = near_sdk::serde_json::json!({
             "path": self.cfg.mpc_path, "payload_v2": { "Eddsa": prehash_hex }, "domain_id": MPC_DOMAIN_EDDSA
         });
+        let log_signature = kind != SignKind::Login;
         ext_mpc::ext(self.cfg.mpc_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(GAS_MPC_SIGN)
@@ -597,17 +643,20 @@ impl Vault {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(GAS_CALLBACK)
-                    .on_signed(prehash_hex, claim_reserve),
+                    .on_signed(prehash_hex, claim_reserve, log_signature),
             )
     }
 
     /// Returns `ed25519:<base58 signature>` and checks it against the vault key.
-    /// A failed sign releases any claim reservation.
+    /// A failed sign releases the claim reservation it made. Payout signatures
+    /// are logged so anyone (the claimant, in emergency) can submit them; login
+    /// signatures are not.
     #[private]
     pub fn on_signed(
         &mut self,
         prehash_hex: String,
         claim: Option<(u64, U128, U64)>,
+        log_signature: bool,
         #[callback_result] r: Result<near_sdk::serde_json::Value, PromiseError>,
     ) -> Option<String> {
         let sig = r.ok().and_then(|v| {
@@ -625,12 +674,12 @@ impl Vault {
         };
         if let Some((id, _, _)) = claim {
             let mut c = self.claims.get(id as u32).cloned().unwrap();
-            if ok {
-                if let Some(f) = c.in_flight.iter_mut().find(|f| f.prehash == prehash_hex) {
-                    f.signed = true;
+            if let Some(i) = c.in_flight.iter().position(|f| f.prehash == prehash_hex && !f.signed) {
+                if ok {
+                    c.in_flight[i].signed = true;
+                } else {
+                    c.in_flight.remove(i);
                 }
-            } else {
-                c.in_flight.retain(|f| f.prehash != prehash_hex);
             }
             self.claims.replace(id as u32, c);
         }
@@ -639,36 +688,52 @@ impl Vault {
             return None;
         }
         let out = format!("ed25519:{}", near_sdk::bs58::encode(sig.unwrap()).into_string());
-        env::log_str(&format!("silent-partner.signed prehash={prehash_hex} signature={out}"));
+        if log_signature {
+            env::log_str(&format!("silent-partner.signed prehash={prehash_hex} signature={out}"));
+        }
         Some(out)
     }
 
-    /// Operator: settle an in-flight payout. `executed = true` moves it to paid
-    /// at any time; `false` releases it, only after its deadline has passed (so a
-    /// signed intent can no longer execute). In emergency, in-flight payouts stay
-    /// counted (the safe side for the remaining holders).
-    ///
-    /// In emergency the claimant may also confirm (`executed = true`) their own
-    /// payout, since the operator may be gone; only the operator can release.
-    pub fn settle_payout(&mut self, claim_id: u64, prehash: String, executed: bool) {
-        let mut c = self.claims.get(claim_id as u32).cloned().unwrap_or_else(|| env::panic_str("no such claim"));
-        let caller = env::predecessor_account_id();
-        require!(
-            caller == self.cfg.operator || (executed && c.emergency && caller == c.account),
-            "only the operator"
-        );
-        let i = c
+    /// Anyone: settle an in-flight payout against the public verifier's record.
+    /// If the payload's nonce is used, the payout executed: it's paid. If not and
+    /// its deadline has passed, it can never execute: it's released. Otherwise
+    /// nothing changes. Nobody has to be trusted about what happened.
+    pub fn settle_payout(&mut self, claim_id: u64, prehash: String) -> Promise {
+        let c = self.claims.get(claim_id as u32).unwrap_or_else(|| env::panic_str("no such claim"));
+        let f = c
             .in_flight
             .iter()
-            .position(|f| f.prehash == prehash)
+            .find(|f| f.prehash == prehash)
             .unwrap_or_else(|| env::panic_str("no such payout"));
-        if executed {
+        let vault = self.vault_account.clone().unwrap();
+        ext_verifier::ext(self.public_verifier().parse().unwrap())
+            .with_static_gas(GAS_VIEW)
+            .is_nonce_used(vault, f.nonce.clone())
+            .then(Self::ext(env::current_account_id()).with_static_gas(GAS_CALLBACK).on_settle(claim_id, prehash))
+    }
+
+    #[private]
+    pub fn on_settle(&mut self, claim_id: u64, prehash: String, #[callback_result] used: Result<bool, PromiseError>) -> String {
+        let Ok(used) = used else {
+            return "verifier unavailable".into();
+        };
+        let mut c = self.claims.get(claim_id as u32).cloned().unwrap();
+        let Some(i) = c.in_flight.iter().position(|f| f.prehash == prehash) else {
+            return "already settled".into();
+        };
+        let out = if used {
             c.paid = U128(c.paid.0 + c.in_flight[i].amount.0);
+            c.in_flight.remove(i);
+            "paid"
+        } else if now_ms() > c.in_flight[i].deadline_ms {
+            c.in_flight.remove(i);
+            "released"
         } else {
-            require!(now_ms() > c.in_flight[i].deadline_ms, "intent deadline not passed");
-        }
-        c.in_flight.remove(i);
+            "pending"
+        };
         self.claims.replace(claim_id as u32, c);
+        env::log_str(&format!("silent-partner.settle claim={claim_id} prehash={prehash} result={out}"));
+        out.into()
     }
 
     // ---------- views ----------
@@ -699,13 +764,13 @@ impl Vault {
     }
 
     pub fn get_navs(&self, from: u64, limit: u64) -> Vec<NavPost> {
-        (from..(from + limit).min(self.navs.len() as u64))
+        (from..from.saturating_add(limit).min(self.navs.len() as u64))
             .filter_map(|i| self.navs.get(i as u32).cloned())
             .collect()
     }
 
     pub fn get_signals(&self, from: u64, limit: u64) -> Vec<Signal> {
-        (from..(from + limit).min(self.signals.len() as u64))
+        (from..from.saturating_add(limit).min(self.signals.len() as u64))
             .filter_map(|i| self.signals.get(i as u32).cloned())
             .collect()
     }
@@ -715,7 +780,7 @@ impl Vault {
     }
 
     pub fn get_claims(&self, from: u64, limit: u64) -> Vec<Claim> {
-        (from..(from + limit).min(self.claims.len() as u64))
+        (from..from.saturating_add(limit).min(self.claims.len() as u64))
             .filter_map(|i| self.claims.get(i as u32).cloned())
             .collect()
     }
@@ -741,6 +806,14 @@ impl Vault {
 impl Vault {
     fn only_operator(&self) {
         require!(env::predecessor_account_id() == self.cfg.operator, "only the operator");
+    }
+
+    fn public_verifier(&self) -> String {
+        self.cfg
+            .intents_contract
+            .as_ref()
+            .map(|a| a.to_string())
+            .unwrap_or_else(|| "intents.near".into())
     }
 
     fn is_stale(&self) -> bool {
@@ -822,6 +895,7 @@ impl Vault {
             in_flight: vec![],
             epoch,
             emergency,
+            opened_ms: now_ms(),
         });
         env::log_str(&format!("silent-partner.claim id={id} account={account} amount={amount} emergency={emergency}"));
         id
@@ -854,20 +928,14 @@ impl Vault {
         }
     }
 
-    fn check_payout(&self, f: &QuoteFacts, vault: &str, claim_id: u64, is_op: bool) {
-        let c = self.claims.get(claim_id as u32).unwrap_or_else(|| env::panic_str("no such claim"));
-        require!(is_op || c.emergency, "only the operator pays non-emergency claims");
+    fn check_unshield(&self, f: &QuoteFacts, vault: &str) {
         require!(
             f.deposit_type == "CONFIDENTIAL_INTENTS" && f.recipient_type == "INTENTS" && f.refund_type == "CONFIDENTIAL_INTENTS",
             "not an unshield quote"
         );
-        require!(
-            f.origin_asset == self.cfg.base_asset_id && f.destination_asset == self.cfg.base_asset_id,
-            "payouts are in the base asset"
-        );
-        require!(f.recipient == c.exit_account.as_str(), "payout must go to the claim's exit account");
-        require!(f.refund_to == vault, "payout must refund the vault");
-        require!(f.amount_in <= open_of(c), "payout exceeds the claim");
+        require!(f.origin_asset == f.destination_asset, "unshield must keep the asset");
+        require!(self.cfg.allowed_assets.contains(&f.origin_asset), "asset not allowed");
+        require!(f.recipient == vault && f.refund_to == vault, "unshield must pay and refund the vault");
     }
 }
 

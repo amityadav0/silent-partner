@@ -23,7 +23,9 @@ export class FakeChain implements VaultChain {
   getClaims = async () => this.claims;
   getSignalKey = async () => this.signalKey;
   publicBase = async () => this.public;
-  navMessage = async (e: number, nav: string, ts: number, head: string) => `silent-partner/nav/v1|${this.contractId}|${e}|${nav}|${ts}|${head}`;
+  publicBal = 0n;
+  settleResult = "paid";
+  publicBalance = async () => this.publicBal;
   async postNav(epoch: number, nav: string, ts: number, head: string, sig: string) {
     this.calls.push({ m: "postNav", args: [epoch, nav, ts, head, sig] });
     this.view = { ...this.view, epoch, last_nav_ms: ts };
@@ -40,9 +42,13 @@ export class FakeChain implements VaultChain {
     const sig = this.signWith ? "ed25519:" + base58.encode(this.signWith.sign(nep413Prehash(payload)).signature) : null;
     return { tx: "tx-sign", signature: sig };
   }
-  async settlePayout(...args: [number, string, boolean]) {
+  async settlePayout(...args: [number, string]) {
     this.calls.push({ m: "settlePayout", args });
-    return "tx-settle";
+    return { tx: "tx-settle", result: this.settleResult };
+  }
+  async executeIntents(...args: [string, unknown[]]) {
+    this.calls.push({ m: "executeIntents", args });
+    return "tx-exec";
   }
 }
 

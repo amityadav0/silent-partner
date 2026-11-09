@@ -137,7 +137,7 @@ fn run(ops: Vec<Op>) -> Result<(), TestCaseError> {
                 if v.vault_account.is_some() && !v.emergency {
                     t = v.last_nav_ms.max(t) + NAV_STALE_MS + 1;
                     ctx("anyone.testnet", t);
-                    v.trigger_emergency();
+                    v.trigger_emergency(None);
                 }
             }
             Op::Exit(w) => {
@@ -159,5 +159,63 @@ proptest! {
     #[test]
     fn random_sequences_conserve_value(ops in prop::collection::vec(op(), 1..60)) {
         run(ops)?;
+    }
+}
+
+// ---------------- payload parser fuzz ----------------
+
+use crate::intent::{parse, Nep413Payload, Parsed};
+
+const NONCE: &str = "Vij2xgDhEPMXAKd3B6vG5RhBVeL9AuFIA1IZaLl832U=";
+
+fn pl(message: String) -> Nep413Payload {
+    Nep413Payload {
+        message,
+        nonce: NONCE.into(),
+        recipient: "intents.far".into(),
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 3000, ..ProptestConfig::default() })]
+
+    /// Arbitrary bytes never panic the parser.
+    #[test]
+    fn parser_never_panics(m in ".{0,400}") {
+        let _ = parse(&pl(m));
+    }
+
+    /// Mutations of a valid transfer are either rejected or parse to exactly
+    /// one transfer whose fields are the ones in the message.
+    #[test]
+    fn mutated_transfers_parse_to_what_they_say(
+        receiver in "[a-z0-9]{1,64}",
+        token in prop_oneof![Just("nep141:usdc".to_string()), Just("imt:x:nep141:usdc".to_string()), "[a-z:.0-9]{1,30}"],
+        amount in prop_oneof!["[0-9]{1,30}", ".{0,8}"],
+        extra in prop_oneof![Just(String::new()), Just(r#","memo":"x""#.to_string()), Just(r#","msg":"x""#.to_string()), Just(r#","receiver_id":"thief""#.to_string())],
+    ) {
+        let m = format!(
+            r#"{{"deadline":"2026-11-09T12:00:00.000Z","intents":[{{"intent":"transfer","receiver_id":"{receiver}","tokens":{{"{token}":"{amount}"}}{extra}}}],"signer_id":"vault"}}"#
+        );
+        if let Ok(p) = parse(&pl(m)) {
+                prop_assert!(extra.is_empty(), "accepted an extra field: {}", extra);
+                match p.kind {
+                    Parsed::Transfer { receiver_id, token: t, amount: a } => {
+                        prop_assert_eq!(receiver_id, receiver);
+                        prop_assert_eq!(t, token);
+                        prop_assert_eq!(Some(a), amount.parse::<u128>().ok());
+                    }
+                    Parsed::Login => prop_assert!(false, "transfer parsed as login"),
+                }
+        }
+    }
+
+    /// A tokens map with the same token twice must not parse (the verifier might read the other value).
+    #[test]
+    fn duplicate_token_keys_are_rejected(a in "[0-9]{1,10}", b in "[0-9]{1,10}") {
+        let m = format!(
+            r#"{{"deadline":"2026-11-09T12:00:00.000Z","intents":[{{"intent":"transfer","receiver_id":"r","tokens":{{"nep141:usdc":"{a}","nep141:usdc":"{b}"}}}}],"signer_id":"vault"}}"#
+        );
+        prop_assert!(parse(&pl(m)).is_err(), "duplicate token key accepted");
     }
 }
