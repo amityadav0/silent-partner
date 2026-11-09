@@ -1,7 +1,7 @@
 {
  "vault": "sp-manual-92991.testnet",
- "upto_epoch": 3,
- "published_at": "2026-11-09T03:19:20.135Z",
+ "upto_epoch": 11,
+ "published_at": "2026-11-09T06:40:39.744Z",
  "entries": [
   {
    "seq": 0,
@@ -80,6 +80,132 @@
     "timestamp_ms": 1794194336260
    },
    "hash": "5d18825075b1a0de65c3e01cb648843925e7deae0bb2441d44ef181bd774231a"
+  },
+  {
+   "seq": 6,
+   "prev": "5d18825075b1a0de65c3e01cb648843925e7deae0bb2441d44ef181bd774231a",
+   "ts": 1794201105275,
+   "kind": "nav",
+   "data": {
+    "epoch": 4,
+    "nav": "646980591",
+    "timestamp_ms": 1794201104275
+   },
+   "hash": "167d8e7c02d4a7f66f9a52468548d8230c90f0d07f32f13ce59737292cdc479e"
+  },
+  {
+   "seq": 7,
+   "prev": "167d8e7c02d4a7f66f9a52468548d8230c90f0d07f32f13ce59737292cdc479e",
+   "ts": 1794202003720,
+   "kind": "signal",
+   "data": {
+    "hash": "7b41d1224833b11eacb7ca9b0f361d7d614d5bf7a74653119696c55015b4ccfb",
+    "nonce": "19132f930ff0dfef",
+    "type": "market"
+   },
+   "hash": "1e3eddc3cea39cebaf89acb24a906af76510ef86b6b66972745444238e4e595f"
+  },
+  {
+   "seq": 8,
+   "prev": "1e3eddc3cea39cebaf89acb24a906af76510ef86b6b66972745444238e4e595f",
+   "ts": 1794202006219,
+   "kind": "fill",
+   "data": {
+    "signal": "7b41d1224833b11eacb7ca9b0f361d7d614d5bf7a74653119696c55015b4ccfb",
+    "from": "nep141:wrap.testnet",
+    "to": "nep141:usdc.fakes.testnet",
+    "amount_in": "36260041340845699436754449",
+    "min_amount_out": "128495196",
+    "quote_signature": "ed25519:3yKXDxpEDUPFHKYPntzWEDZxHXmn4bjt1FuZ2ney1yhSX4gxDCMiBbixoy7MBmdXJqAW7TVSx518ot1WNB12hN8p",
+    "amount_out": "129140901",
+    "dry": true,
+    "status": "PAPER"
+   },
+   "hash": "74b8b8c54ec6cab88c8fa71c36fdf7f89c0449ecdc56037394588f28bc41ca7a"
+  },
+  {
+   "seq": 9,
+   "prev": "74b8b8c54ec6cab88c8fa71c36fdf7f89c0449ecdc56037394588f28bc41ca7a",
+   "ts": 1794202010875,
+   "kind": "nav",
+   "data": {
+    "epoch": 5,
+    "nav": "645975719",
+    "timestamp_ms": 1794202009875
+   },
+   "hash": "bce2404575faae64d67870fa2e86d4747bc00f6246ab6fa9d83772b7d9559a6a"
+  },
+  {
+   "seq": 10,
+   "prev": "bce2404575faae64d67870fa2e86d4747bc00f6246ab6fa9d83772b7d9559a6a",
+   "ts": 1794202305676,
+   "kind": "nav",
+   "data": {
+    "epoch": 6,
+    "nav": "645514431",
+    "timestamp_ms": 1794202304676
+   },
+   "hash": "4c67862d2d49c577e3cf384920c65efa8b0bc926567fb2126125bb4400bb4be3"
+  },
+  {
+   "seq": 11,
+   "prev": "4c67862d2d49c577e3cf384920c65efa8b0bc926567fb2126125bb4400bb4be3",
+   "ts": 1794203204165,
+   "kind": "nav",
+   "data": {
+    "epoch": 7,
+    "nav": "645977771",
+    "timestamp_ms": 1794203203165
+   },
+   "hash": "d0084cab14fd3cc7ca64c798f9875cc9269df57030e285caeaca344650834c31"
+  },
+  {
+   "seq": 12,
+   "prev": "d0084cab14fd3cc7ca64c798f9875cc9269df57030e285caeaca344650834c31",
+   "ts": 1794204104660,
+   "kind": "nav",
+   "data": {
+    "epoch": 8,
+    "nav": "644858071",
+    "timestamp_ms": 1794204103660
+   },
+   "hash": "c5695c4b5127eb9a33802cdf163b4fd3841a6b460ca65e46afe95a02bb55c56b"
+  },
+  {
+   "seq": 13,
+   "prev": "c5695c4b5127eb9a33802cdf163b4fd3841a6b460ca65e46afe95a02bb55c56b",
+   "ts": 1794205004755,
+   "kind": "nav",
+   "data": {
+    "epoch": 9,
+    "nav": "643695816",
+    "timestamp_ms": 1794205003755
+   },
+   "hash": "4a4d75ec79febb00a14138a42a1d427f37e52d643d069354a8f6755a668576b7"
+  },
+  {
+   "seq": 14,
+   "prev": "4a4d75ec79febb00a14138a42a1d427f37e52d643d069354a8f6755a668576b7",
+   "ts": 1794205268757,
+   "kind": "nav",
+   "data": {
+    "epoch": 10,
+    "nav": "643995879",
+    "timestamp_ms": 1794205267757
+   },
+   "hash": "011b25596cf64f039f560ca9ca8aa177f847631967b4e903258c2476d3daea98"
+  },
+  {
+   "seq": 15,
+   "prev": "011b25596cf64f039f560ca9ca8aa177f847631967b4e903258c2476d3daea98",
+   "ts": 1794205772351,
+   "kind": "nav",
+   "data": {
+    "epoch": 11,
+    "nav": "644335347",
+    "timestamp_ms": 1794205771351
+   },
+   "hash": "ff3e971dee18242c43212bad0a2df7c3f132c3377bee1e23be0bea832e1af908"
   }
  ],
  "signals": [
@@ -94,6 +220,20 @@
     "type": "market",
     "nonce": "3c30ff6bb32958ce",
     "created_ms": 1794194290434
+   },
+   "why": "manual"
+  },
+  {
+   "hash": "7b41d1224833b11eacb7ca9b0f361d7d614d5bf7a74653119696c55015b4ccfb",
+   "signal": {
+    "v": 1,
+    "vault": "sp-manual-92991.testnet",
+    "from": "nep141:wrap.testnet",
+    "to": "nep141:usdc.fakes.testnet",
+    "size_bps": 2000,
+    "type": "market",
+    "nonce": "19132f930ff0dfef",
+    "created_ms": 1794201812740
    },
    "why": "manual"
   }
