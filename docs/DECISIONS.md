@@ -185,3 +185,7 @@ Each decision is dated, with its reason.
   - **Funding.** The faucet rate-limits per IP ("retry in 8 hours").
     - **Rejected:** requesting accounts from a GitHub runner's IP (refused as circumventing the faucet's limit, and not attempted); global-contract deploys (they don't remove the per-NAV storage cost, which dominates); deleting old test vaults to reclaim NEAR (breaks links in docs/testnet.md).
     - **Chosen:** fund the new accounts from testnet NEAR the project already holds (old probe, operator and drill accounts), 8–9 NEAR per vault. That covers code plus NAV storage through Nov 25 (~0.29 NEAR/day per vault).
+- **D-U-2 (2026-11-09) Paper follow, no wallet.**
+  - **What it does.** Every vault page has "Follow with $1,000 (paper)". It records the vault's latest attested share price and epoch in localStorage, falling back to memory when storage is blocked. It then shows the simulated value and P&L since joining, at each new NAV and after fees, exactly as a real follower would see them, plus a dashed "your copy" line on the chart.
+  - **Privacy.** Nothing is signed and nothing leaves the browser.
+  - **Why.** A judge can try the product in ten seconds on the hosted site.

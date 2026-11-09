@@ -119,3 +119,24 @@ test("create-vault wizard: four steps to init args and deploy commands", async (
   await page.getByRole("button", { name: "4. Review" }).click();
   await expect(page.getByTestId("create-errors")).toContainText("Vault account");
 });
+
+test("paper follow: no wallet, $1,000 copy with P&L and a dashed copy line, kept across reloads", async ({ page }) => {
+  await page.goto("/vault/?id=sp-convict-8952.testnet");
+  await page.getByTestId("paper-start").click();
+  await expect(page.getByTestId("paper-value")).toContainText("$1,000.00");
+  await expect(page.getByTestId("paper-pnl")).toContainText("%");
+  await expect(page.getByTestId("copy-line")).toBeAttached();
+  await page.reload();
+  await expect(page.getByTestId("paper-value")).toBeVisible();
+  await page.getByRole("button", { name: "Stop following" }).click();
+  await expect(page.getByTestId("paper-start")).toBeVisible();
+});
+
+test("leaderboard: every house leader has a badge and a style", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  for (const id of ["sp-trend-8952.testnet", "sp-convict-8952.testnet", "sp-momo-92991.testnet", "sp-manual-92991.testnet"]) {
+    await expect(page.getByTestId(`row-${id}`).getByTestId("badge")).toBeVisible();
+  }
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("badge")).toHaveText("AI");
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveText("high risk");
+});

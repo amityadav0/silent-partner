@@ -182,3 +182,25 @@ describe("rpc fallback", () => {
     expect(seen).toEqual(["a", "b", "c"]);
   });
 });
+
+import { copyLine, paperPosition, startPaper } from "../lib/paper";
+
+describe("paper follow", () => {
+  const E18 = 10n ** 18n;
+  it("enters at the latest attested price and values the copy at later NAVs", () => {
+    const f = startPaper("v", 1000, { price: E18.toString(), epoch: 5 }, 0)!;
+    expect(f.entry_epoch).toBe(5);
+    const p = paperPosition(f, ((E18 * 105n) / 100n).toString());
+    expect([p.value, p.pnl]).toEqual([1050, 50]);
+    expect(p.pct).toBeCloseTo(0.05);
+    expect(paperPosition(f, ((E18 * 9n) / 10n).toString()).pnl).toBeCloseTo(-100);
+    expect(startPaper("v", 1000, undefined)).toBeNull();
+  });
+  it("the copy line starts at zero on the entry epoch", () => {
+    const f = startPaper("v", 1000, { price: E18.toString(), epoch: 2 }, 0)!;
+    const navs = [1, 2, 3].map((e) => ({ epoch: e, timestamp_ms: e, price: (E18 + BigInt(e) * 10n ** 16n).toString() }));
+    const f2 = { ...f, entry_price: navs[1].price };
+    expect(copyLine(navs, f2).map((p) => p.epoch)).toEqual([2, 3]);
+    expect(copyLine(navs, f2)[0].r).toBe(0);
+  });
+});

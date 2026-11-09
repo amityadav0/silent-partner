@@ -8,10 +8,21 @@ import { LeaderChips, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQ
 import { metaOf } from "@/lib/vaults";
 import { EmergencyBanner } from "./emergency";
 import { PositionDetails } from "./position";
+import { PaperFollowPanel, usePaper } from "./paper";
+import { copyLine, type PaperFollow } from "@/lib/paper";
+
+/** Chart overlay for a paper follow: index into [inception, ...navs] where it starts. */
+function copyOverlay(navs: { epoch: number; timestamp_ms: number; price: string }[], f: PaperFollow | null) {
+  if (!f) return undefined;
+  const k = navs.findIndex((n) => n.epoch === f.entry_epoch);
+  if (k < 0) return undefined;
+  return { fromIndex: k + 1, r: copyLine(navs, f).map((p) => p.r) };
+}
 
 export default function VaultPage() {
   const id = useQueryParam("id");
   const { data, error, reload } = useVault(id);
+  const paper = usePaper(id ?? "");
   const { accountId, call } = useWallet();
   // Read-only "view as" any account: positions are public on-chain data; actions still need the wallet.
   const asParam = useQueryParam("as");
@@ -90,7 +101,8 @@ export default function VaultPage() {
         <Stat label="Attested" value={`${m.v.ok}/${navs.length}`} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
       </div>
 
-      <div className="mt-5"><ReturnsChart points={returns(navs)} /></div>
+      <div className="mt-5"><ReturnsChart points={returns(navs)} copy={copyOverlay(navs, paper.follow)} /></div>
+      <div className="mt-3"><PaperFollowPanel navs={navs} paper={paper} /></div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div className="panel">

@@ -119,7 +119,7 @@ export function Sparkline({ points, w = 96, h = 24 }: { points: { t: number; r: 
 }
 
 /** Return since inception per NAV epoch: a line with a zero baseline. */
-export function ReturnsChart({ points, height = 180 }: { points: { t: number; r: number }[]; height?: number }) {
+export function ReturnsChart({ points, height = 180, copy }: { points: { t: number; r: number }[]; height?: number; copy?: { fromIndex: number; r: number[] } }) {
   // Draw at the container's real width so axis text stays 11px on phones.
   const box = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(640);
@@ -133,7 +133,7 @@ export function ReturnsChart({ points, height = 180 }: { points: { t: number; r:
   const H = height, L = 48, R = 12, T = 12, B = 26;
   if (points.length === 0) return <div className="panel muted text-sm">No NAV posted yet.</div>;
   const all = [{ t: points[0].t, r: 0 }, ...points];
-  const rs = all.map((p) => p.r);
+  const rs = [...all.map((p) => p.r), ...(copy?.r ?? [])];
   let lo = Math.min(0, ...rs), hi = Math.max(0, ...rs);
   if (hi - lo < 0.01) { hi += 0.005; lo -= 0.005; }
   const pad = (hi - lo) * 0.1;
@@ -156,6 +156,16 @@ export function ReturnsChart({ points, height = 180 }: { points: { t: number; r:
         ))}
         <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} className="zero" />
         <path d={path} className={last.r >= 0 ? "line-pos" : "line-neg"} fill="none" strokeWidth={2} strokeLinejoin="round" />
+        {copy && copy.r.length > 0 && (
+          <path
+            data-testid="copy-line"
+            d={copy.r.map((r, k) => `${k ? "L" : "M"}${x(copy.fromIndex + k).toFixed(1)},${y(r).toFixed(1)}`).join(" ")}
+            className="line-copy"
+            fill="none"
+            strokeWidth={2}
+            strokeDasharray="5 4"
+          />
+        )}
         {all.map((p, i) => (
           <circle key={i} cx={x(i)} cy={y(p.r)} r={i === all.length - 1 ? 4 : 2.5} className={last.r >= 0 ? "dot-pos" : "dot-neg"}>
             <title>{i === 0 ? "inception" : `epoch ${i}: ${pct(p.r)}`}</title>
@@ -165,7 +175,7 @@ export function ReturnsChart({ points, height = 180 }: { points: { t: number; r:
         <text x={W - R} y={H - 6} textAnchor="end" className="axis">{fmtDate(last.t)}</text>
       </svg>
       </div>
-      <figcaption className="muted mt-1 text-xs">Return since inception, from the post-fee share price in each operator-attested NAV post.</figcaption>
+      <figcaption className="muted mt-1 text-xs">Return since inception, from the post-fee share price in each operator-attested NAV post.{copy ? " Dashed: your paper copy since you joined." : ""}</figcaption>
     </figure>
   );
 }
