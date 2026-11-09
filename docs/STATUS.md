@@ -70,7 +70,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 ## AI leader (Nov 9)
 - [x] NEARAI_API_KEY → repo secret; AI leader deciding every tick on NEAR AI Cloud (D-AI-2)
 - [x] AI leader is an active allocator: target weight 0–100%, trades on ≥ 5-point moves, public log = bucket + rationale hash (D-AI-3)
-- [ ] first AI signal on-chain (rationale hash only, rationale sealed); see docs/testnet.md
+- [x] first AI signals on-chain (Contrarian, Vol Target, Conviction at 07:34 UTC); Contrarian's verified: hash, signature, memo_hash = sha256(sealed rationale) (docs/testnet.md)
 - [x] Price source: 1Click-signed dry quotes for the NAV band (replaces Pyth on mainnet, D-H-5); testnet run: honest posts accepted, +20% rejected
 - [x] reproducible mainnet wasm rebuilt at 1b1ec1a (D-P5-6), NEEDS-AMIT §3 updated
 

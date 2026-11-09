@@ -281,3 +281,19 @@ Vault [`quotes2.sp-lmomo-92991.testnet`](https://testnet.nearblocks.io/address/q
 | post 5: re-uses post 4's quotes | 10000000 | 25 bps | [-175, 75] | **rejected**: price not newer than the last post's [`271mergq6s…`](https://testnet.nearblocks.io/txns/271mergq6svcvqZ11Xw6mu6NXnf1H82vuuwnkK6oEK9H) |
 
 The first post was checked against the book price, and the bands are asymmetric (costs only on the low side). The +20% post and the reused quotes were refused on-chain, and the vault's epoch didn't move.
+
+## First AI signals on-chain (2026-11-09 07:34 UTC)
+
+On their first tick, three AI leaders traded: Contrarian (target bucket 60–80%), Vol Target and Conviction (both 20–40%). The bucket and the rationale hash are all the public season log shows (`season-state/last-run.json`).
+
+Checked for [Contrarian](https://testnet.nearblocks.io/address/sp-contra-8952.testnet) with `operator/scripts/season-disclose.ts`, which reads the sealed notebook locally:
+
+| | |
+|---|---|
+| Signal | buy wNEAR with 60% of NAV (USDC → wNEAR, market) |
+| On-chain record | `get_signals` index 0, hash `0806d4d93e0b00cce120e6cad130bad9aa706119eed52fd76ca7c563706f0644`, fill `766e0512…c583` |
+| Signed `memo_hash` | `3235fb679becde5dc6da4142c843fe6ed781c38f44cc1f6774bef62f8e79d4b1` |
+| Model | `deepseek-ai/DeepSeek-V4.1-Flash-1017` on NEAR AI Cloud (TEE); the rationale (322 chars) and the chat id are sealed |
+| Checks | signal hashes to the on-chain hash ✓ · recorded on-chain with the leader's signature ✓ · sha256(rationale) = memo_hash ✓ |
+
+The rationale was never published. The chain holds its hash inside the leader-signed signal, so the leader can disclose it later and anyone can check it.
