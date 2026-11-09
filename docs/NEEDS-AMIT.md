@@ -227,7 +227,9 @@ Two more rule checks:
 - **Two-project rule.** If you also submit Scope as a separate project, each README must name the other. Tell me and I'll add the line.
 - **`consent: true`** means you agree to the site's contact notice. Read it on the form before you send.
 
-## 7. NEAR AI Cloud key for the AI leader (season item 2)
+## 7. NEAR AI Cloud key for the AI leader (season item 2): DONE (2026-11-09)
+
+**Done.** The key is in `.env` and uploaded as the repo secret `NEARAI_API_KEY`. The AI leader has been deciding on NEAR AI Cloud since the 06:21 UTC tick, at ≈ $0.00037 per tick (D-AI-2). The original instructions follow.
 
 `NEARAI_API_KEY` isn't in `.env`. Until it exists, the AI leader vault (`sp-ai-92991.testnet`) holds: it posts NAV every epoch but sends no signals. The two bot vaults run meanwhile.
 

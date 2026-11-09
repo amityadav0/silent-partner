@@ -67,9 +67,13 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 2. NAV bound from a public price (Pyth-compatible oracle), withdrawals at min(NAV_t, NAV_t+1), property tests, threat-model §7; season vaults migrated (D-H-3)
 - [x] 2b. Bounded posts verified on the season vaults (honest epoch 7 accepted; a +20% lie rejected on-chain, docs/testnet.md); mainnet wasm rebuilt at 72b9614 (D-P5-5)
 
+## AI leader (Nov 9)
+- [x] NEARAI_API_KEY → repo secret; AI leader deciding every tick on NEAR AI Cloud (D-AI-2)
+- [ ] first AI signal on-chain (rationale hash only, rationale sealed); see docs/testnet.md
+
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- Waiting on Amit: §7 the NEAR AI key (the AI vault holds meanwhile). §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
