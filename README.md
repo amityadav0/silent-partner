@@ -2,6 +2,8 @@
 
 **Private copy-trading vaults on NEAR Confidential Intents.** By Scope. Built at the NEAR Hackathon "Build Beyond Boundaries" (tracks: Privacy, DeFi).
 
+**Live site: https://amityadav0.github.io/silent-partner/** (testnet paper season: four leader vaults trading every 15 minutes at real 1Click prices, plus the emergency drill).
+
 **What.** A leader and their followers share one vault. The vault's assets sit in a confidential NEAR Intents account. When the leader sends a trade signal, the operator executes it once, for the whole pool, through a single 1Click confidential quote, so everyone gets the same price. The public sees attested NAV and returns; nobody sees positions.
 
 **Why.** Copy trading on public chains is broken in two ways.

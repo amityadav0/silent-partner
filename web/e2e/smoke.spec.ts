@@ -4,13 +4,23 @@
 import { expect, test } from "@playwright/test";
 import { VAULT, leaderSeedHex, withLeaderKey } from "./helpers";
 
-test("leaderboard lists the vault with attested NAVs and no positions", async ({ page }) => {
+test("landing page: hero, three steps, links to the leaderboard and docs, live stats", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByTestId("landing")).toContainText("How it works");
+  await expect(page.getByRole("link", { name: "See the leaderboard" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Docs" })).toHaveAttribute("href", /github\.com\/amityadav0\/silent-partner/);
+  await expect(page.getByTestId("live-stats")).toContainText(/\d+ NAV posts/);
+});
+
+test("leaderboard lists the vault with attested NAVs and no positions", async ({ page }) => {
+  await page.goto("/leaderboard/");
   const row = page.getByTestId(`row-${VAULT}`);
   await expect(row).toBeVisible();
   await expect(row).toContainText(/\d+\/\d+ ✓/);
   await expect(row).toContainText(/[+−]\d+\.\d{2}%/);
   await expect(page.getByTestId("leaderboard")).not.toContainText(/wNEAR|holdings|position/i);
+  await expect(page.getByTestId("honesty")).toContainText("paper · testnet");
+  await expect(page.getByTestId("row-sp-momo-92991.testnet").getByTestId("mode")).toHaveText("paper · testnet");
 });
 
 test("vault page: chart, every NAV signature verified, deposit and withdraw controls", async ({ page }) => {

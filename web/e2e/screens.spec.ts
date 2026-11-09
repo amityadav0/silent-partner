@@ -7,6 +7,10 @@ const OUT = "../docs/screens";
 test("screens", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/");
+  await expect(page.getByTestId("live-stats")).toBeVisible();
+  await page.screenshot({ path: `${OUT}/landing.png`, fullPage: true });
+
+  await page.goto("/leaderboard/");
   await expect(page.getByTestId(`row-${VAULT}`)).toBeVisible();
   await page.screenshot({ path: `${OUT}/leaderboard.png`, fullPage: true });
 

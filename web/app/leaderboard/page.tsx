@@ -1,16 +1,33 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ASSETS, VAULTS } from "@/lib/config";
-import { aumBucket, loadVault, maxDrawdown, priceOf, status, verifyNavs, type VaultData } from "@/lib/vault";
+import { aumBucket, loadVault, maxDrawdown, priceOf, returns, status, verifyNavs, type VaultData } from "@/lib/vault";
 import { metaOf, modeLabel } from "@/lib/vaults";
-import { ModeChip, Ret, StatusChip, short } from "./ui";
+import { ModeChip, Ret, Sparkline, StatusChip, short } from "../ui";
 
-type Row = { d: VaultData; ret: number; dd: number; verified: string };
+type Row = { d: VaultData; ret: number; dd: number; verified: string; aum: number };
+type Key = "ret" | "dd" | "aum" | "epochs" | "name";
+const SORTS: Record<Key, (a: Row, b: Row) => number> = {
+  ret: (a, b) => b.ret - a.ret,
+  dd: (a, b) => a.dd - b.dd,
+  aum: (a, b) => b.aum - a.aum,
+  epochs: (a, b) => b.d.navs.length - a.d.navs.length,
+  name: (a, b) => metaOf(a.d.id).name.localeCompare(metaOf(b.d.id).name),
+};
 
 export default function Leaderboard() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [sort, setSort] = useState<Key>("ret");
+  const sorted = useMemo(() => (rows ? [...rows].sort(SORTS[sort]) : null), [rows, sort]);
+  const th = (k: Key, label: string, title?: string) => (
+    <th>
+      <button className={`sort ${sort === k ? "on" : ""}`} onClick={() => setSort(k)} title={title ?? `Sort by ${label.toLowerCase()}`} data-testid={`sort-${k}`} aria-pressed={sort === k}>
+        {label}{sort === k ? " ↓" : ""}
+      </button>
+    </th>
+  );
   useEffect(() => {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then((rs) => {
       const ok: Row[] = [];
@@ -20,9 +37,8 @@ export default function Leaderboard() {
         const d = r.value;
         const last = d.navs.at(-1);
         const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
-        ok.push({ d, ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), verified: `${v.ok}/${d.navs.length}` });
+        ok.push({ d, ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), verified: `${v.ok}/${d.navs.length}`, aum: Number(BigInt(d.vault.book_nav)) });
       });
-      ok.sort((a, b) => b.ret - a.ret);
       setRows(ok);
       setErrors(errs);
     });
@@ -39,17 +55,17 @@ export default function Leaderboard() {
         <table className="t" data-testid="leaderboard">
           <thead>
             <tr>
-              <th>#</th><th>Vault</th><th>Return</th><th>Max drawdown</th><th>AUM</th><th>Epochs</th><th>Attested</th><th>Status</th>
+              <th>#</th>{th("name", "Vault")}{th("ret", "Return")}<th>Trend</th>{th("dd", "Max drawdown", "Sort by smallest drawdown")}{th("aum", "AUM")}{th("epochs", "Epochs")}<th>Attested</th><th>Status</th>
             </tr>
           </thead>
           <tbody>
             {rows === null && (
-              <tr><td colSpan={8} className="muted">Reading vaults from NEAR…</td></tr>
+              <tr><td colSpan={9} className="muted">Reading vaults from NEAR…</td></tr>
             )}
             {rows?.length === 0 && (
-              <tr><td colSpan={8} className="muted">No vaults yet.</td></tr>
+              <tr><td colSpan={9} className="muted">No vaults yet.</td></tr>
             )}
-            {rows?.map((r, i) => (
+            {sorted?.map((r, i) => (
               <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
                 <td>{i + 1}</td>
                 <td>
@@ -57,6 +73,7 @@ export default function Leaderboard() {
                   <div className="muted text-xs">{short(r.d.id, 10)} · leader {short(r.d.cfg.leader, 8)}</div>
                 </td>
                 <td className="font-semibold"><Ret r={r.ret} /></td>
+                <td><Sparkline points={returns(r.d.navs)} /></td>
                 <td className="neg">{r.dd === 0 ? <span className="muted">0%</span> : `−${(r.dd * 100).toFixed(2)}%`}</td>
                 <td>{aumBucket(r.d.vault.book_nav, ASSETS[r.d.cfg.base_asset_id]?.decimals ?? 6)}</td>
                 <td>{r.d.navs.length}</td>

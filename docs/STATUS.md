@@ -56,7 +56,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 2. AI leader on NEAR AI Cloud (rationale kept private, hash only). Waiting on `NEARAI_API_KEY` (NEEDS-AMIT §7); it holds until then
 - [x] 3. Emergency exit drill: drill build, operator stopped, follower exited pro rata via `PublicPayout` on the real testnet verifier and withdrew to their wallet (docs/testnet.md); emergency banner, Exit button and self-service payout in the UI
 - [x] 4. "What the chain sees" page (`/chain/`): observer, follower and leader views of the manual vault, real testnet data, disclosure verified in the browser
-- [ ] 5. Landing page + GitHub Pages deploy
+- [x] 5. Landing page + GitHub Pages deploy: https://amityadav0.github.io/silent-partner/
 - [ ] 6. UX: position P&L, withdrawal states, create-vault wizard, sparklines and sorting, refresh screens
 - [ ] 7. Hardening: property tests, fresh-context review, fixes, threat-model list
 - [ ] after 7: rebuild the reproducible mainnet wasm and update NEEDS-AMIT §3 (contract changed in D-S-1)

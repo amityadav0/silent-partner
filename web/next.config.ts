@@ -7,5 +7,7 @@ const config: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
+  // GitHub Pages serves the site from /<repo>/ (set by .github/workflows/pages.yml).
+  ...(process.env.NEXT_PUBLIC_BASE_PATH ? { basePath: process.env.NEXT_PUBLIC_BASE_PATH } : {}),
 };
 export default config;
