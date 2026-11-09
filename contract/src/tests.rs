@@ -9,14 +9,14 @@ use near_sdk::test_utils::VMContextBuilder;
 use near_sdk::testing_env;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
-const T0_MS: u64 = 1_794_218_400_000; // 2026-11-09T10:00:00Z
+pub(crate) const T0_MS: u64 = 1_794_218_400_000; // 2026-11-09T10:00:00Z
 const USDC: &str = "nep141:usdc";
 const WNEAR: &str = "nep141:wrap.near";
 
-fn acc(s: &str) -> AccountId {
+pub(crate) fn acc(s: &str) -> AccountId {
     s.parse().unwrap()
 }
-fn att_key() -> SigningKey {
+pub(crate) fn att_key() -> SigningKey {
     SigningKey::from_bytes(&[3u8; 32])
 }
 fn leader_key() -> SigningKey {
@@ -35,7 +35,7 @@ fn vault_acct() -> String {
     hex(&mpc_key().verifying_key().to_bytes())
 }
 
-fn ctx(pred: &str, ms: u64) {
+pub(crate) fn ctx(pred: &str, ms: u64) {
     testing_env!(VMContextBuilder::new()
         .current_account_id(acc("vault.testnet"))
         .predecessor_account_id(acc(pred))
@@ -44,7 +44,7 @@ fn ctx(pred: &str, ms: u64) {
         .build());
 }
 
-fn cfg() -> Config {
+pub(crate) fn cfg() -> Config {
     Config {
         owner: acc("owner.testnet"),
         operator: acc("op.testnet"),
@@ -65,7 +65,7 @@ fn cfg() -> Config {
 }
 
 /// A fresh, activated vault at T0.
-fn vault() -> Vault {
+pub(crate) fn vault() -> Vault {
     ctx("owner.testnet", T0_MS);
     // testing_env! carries storage over; start each vault empty.
     near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
@@ -75,7 +75,7 @@ fn vault() -> Vault {
     v
 }
 
-fn deposit(v: &mut Vault, who: &str, amount: u128, ms: u64) -> u128 {
+pub(crate) fn deposit(v: &mut Vault, who: &str, amount: u128, ms: u64) -> u128 {
     ctx("usdc.testnet", ms);
     match v.ft_on_transfer(acc(who), U128(amount), String::new()) {
         PromiseOrValue::Value(r) => r.0,
@@ -83,14 +83,14 @@ fn deposit(v: &mut Vault, who: &str, amount: u128, ms: u64) -> u128 {
     }
 }
 
-fn post(v: &mut Vault, epoch: u64, nav: u128, ms: u64) -> NavPost {
+pub(crate) fn post(v: &mut Vault, epoch: u64, nav: u128, ms: u64) -> NavPost {
     let head = "ab".repeat(32);
     ctx("op.testnet", ms);
     let m = v.nav_message(epoch, U128(nav), ms, head.clone());
     v.post_nav(epoch, U128(nav), ms, head, sig_str(att_key().sign(m.as_bytes())))
 }
 
-fn panics<R>(f: impl FnOnce() -> R) -> String {
+pub(crate) fn panics<R>(f: impl FnOnce() -> R) -> String {
     match catch_unwind(AssertUnwindSafe(f)) {
         Ok(_) => "<no panic>".into(),
         Err(e) => e
@@ -101,7 +101,7 @@ fn panics<R>(f: impl FnOnce() -> R) -> String {
     }
 }
 
-fn shares(v: &Vault, who: &str) -> u128 {
+pub(crate) fn shares(v: &Vault, who: &str) -> u128 {
     v.get_shares(acc(who)).0 .0
 }
 
@@ -850,4 +850,29 @@ fn position_tracks_cost_basis() {
     let pnl = (value + p.claimed.0) as i128 - p.deposited.0 as i128;
     assert!(pnl > 600_000 && pnl < 700_000, "pnl {pnl}");
     assert_eq!(v.get_position(acc("nobody.testnet")).deposited.0, 0);
+}
+
+#[test]
+fn leader_locked_shares_do_not_count_toward_the_stake() {
+    // Found by prop_tests: the leader, alone, locks shares for withdrawal; a
+    // follower deposit sized against the leader's *total* balance would leave
+    // the leader under 10% once the locked shares burn at the next NAV.
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    ctx("leader.testnet", T0_MS);
+    v.request_withdraw(U128(4_000_000), acc("leader.testnet")); // last holder: allowed
+                                                                // 6M free leader shares → at most 54M of follower deposits keep 10%
+    assert_eq!(deposit(&mut v, "follower.testnet", 60_000_000, T0_MS), 60_000_000, "refunded");
+    assert_eq!(deposit(&mut v, "follower.testnet", 54_000_000, T0_MS), 0);
+    let nav = v.book_nav;
+    post(&mut v, 1, nav, T0_MS + 1);
+    assert!(math::leader_ok(shares(&v, "leader.testnet"), v.total_shares, 1000));
+    // and a follower's pending withdrawal doesn't let the leader withdraw past the minimum:
+    ctx("follower.testnet", T0_MS + 2);
+    let r = v.request_withdraw(U128(27_000_000), acc("follower.testnet"));
+    ctx("leader.testnet", T0_MS + 2);
+    assert!(panics(|| v.request_withdraw(U128(1_000_000), acc("leader.testnet"))).contains("below minimum"));
+    ctx("follower.testnet", T0_MS + 2);
+    v.cancel_withdraw(r);
+    assert!(math::leader_ok(shares(&v, "leader.testnet"), v.total_shares, 1000));
 }

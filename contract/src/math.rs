@@ -137,3 +137,59 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod props {
+    use super::*;
+    use proptest::prelude::*;
+
+    // Realistic bounds: up to 10^13 base units (10M USDC) and 10^13 shares.
+    const MAX: u128 = 10_000_000_000_000;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(2000))]
+
+        /// A depositor never gets shares worth more than they paid, and the
+        /// existing holders' price never falls.
+        #[test]
+        fn mint_never_extracts_value(amount in 1u128..MAX, nav in 1u128..MAX, shares in 1u128..MAX) {
+            let minted = shares_for_deposit(amount, nav, shares).unwrap();
+            prop_assert!(minted * nav <= amount * shares);
+            prop_assert!(price(nav + amount, shares + minted) >= price(nav, shares));
+        }
+
+        /// A burn never pays more than its pro-rata value, and the holders who stay keep their price.
+        #[test]
+        fn burn_never_overpays(nav in 0u128..MAX, shares in 1u128..MAX, frac in 0u128..=1000) {
+            let burn = shares * frac / 1000;
+            let pay = payout_for_shares(burn, nav, shares);
+            prop_assert!(pay * shares <= burn * nav);
+            prop_assert!(pay <= nav);
+            if burn < shares {
+                prop_assert!(price(nav - pay, shares - burn) >= price(nav, shares));
+            }
+        }
+
+        /// The fee is charged only above the HWM, never takes holders below it,
+        /// and the leader's fee shares are worth at most the fee.
+        #[test]
+        fn fee_respects_hwm(nav in 1u128..MAX, shares in 1u128..MAX, hwm_milli in 1u128..5000, fee_bps in 0u128..=5000) {
+            let hwm = PRICE_SCALE * hwm_milli / 1000;
+            let (fee_shares, new_hwm) = performance_fee(nav, shares, hwm, fee_bps);
+            let p0 = price(nav, shares);
+            if p0 <= hwm || fee_bps == 0 {
+                prop_assert_eq!((fee_shares, new_hwm), (0, hwm));
+            } else {
+                prop_assert!(new_hwm >= hwm || fee_shares == 0);
+                prop_assert_eq!(new_hwm, if fee_shares == 0 { hwm } else { price(nav, shares + fee_shares) });
+                let gain = nav - hwm * shares / PRICE_SCALE;
+                let fee_value = gain * fee_bps / BPS;
+                // value of the fee shares at the post-fee price
+                prop_assert!(fee_shares * nav <= fee_value * (shares + fee_shares) + nav);
+                // holders keep at least their value at the HWM (to rounding)
+                let holders_after = nav * shares / (shares + fee_shares);
+                prop_assert!(holders_after + 1 >= hwm * shares / PRICE_SCALE);
+            }
+        }
+    }
+}

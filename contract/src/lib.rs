@@ -329,9 +329,10 @@ impl Vault {
         require!(self.free_shares(&who) >= s, "not enough free shares");
         require!(self.pending.len() < MAX_PENDING_WITHDRAWALS, "withdrawal queue full");
         if who == self.cfg.leader {
-            let pending_total: u128 = self.pending.values().map(|r| r.shares.0).sum::<u128>() + s;
+            // Conservative: other holders' pending withdrawals don't count as gone
+            // (they can cancel), only the leader's own locked shares do.
             let leader_left = self.balance(&who) - self.locked_of(&who) - s;
-            let total_left = self.total_shares - pending_total;
+            let total_left = self.total_shares - self.locked_of(&who) - s;
             require!(
                 math::leader_ok(leader_left, total_left, self.cfg.min_leader_bps as u128) || total_left == leader_left,
                 "leader stake would fall below minimum"
@@ -779,7 +780,15 @@ impl Vault {
         if minted == 0 {
             return Err("deposit too small to mint a share");
         }
-        if who != leader && !math::leader_ok(self.balance(leader), self.total_shares + minted, self.cfg.min_leader_bps as u128) {
+        // The leader's locked shares burn at the next NAV, so only their free shares count.
+        let leader_locked = self.locked_of(leader);
+        if who != leader
+            && !math::leader_ok(
+                self.balance(leader) - leader_locked,
+                self.total_shares + minted - leader_locked,
+                self.cfg.min_leader_bps as u128,
+            )
+        {
             return Err("leader stake would fall below minimum");
         }
         self.shares.insert(who.clone(), self.balance(who) + minted);
@@ -883,5 +892,7 @@ fn unhex32(s: &str) -> Option<[u8; 32]> {
     v?.try_into().ok()
 }
 
+#[cfg(test)]
+mod prop_tests;
 #[cfg(test)]
 mod tests;
