@@ -101,7 +101,9 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
 /** What may be printed (CI logs are public) or committed in clear: only what the chain shows. */
 function redact(r: TickResult) {
   const sig = r.signal && "hash" in r.signal ? { signal_hash: r.signal.hash, signal_status: r.signal.status } : r.signal ? { signal_error: r.signal.error } : {};
-  return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...(r.error ? { error: r.error } : {}) };
+  // Token counts and the model are not positions: safe to print (cost tracking).
+  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_tokens: r.decision.usage ?? null } : {};
+  return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...ai, ...(r.error ? { error: r.error } : {}) };
 }
 
 const manualIds = new Set(S.vaults.filter((v) => v.strategy === "manual").map((v) => v.id));

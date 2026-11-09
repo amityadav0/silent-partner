@@ -7,7 +7,7 @@ import type { Operator } from "../operator.js";
 import { signSignal } from "../signal.js";
 import { rebalance } from "../leaders/strategies.js";
 
-export type Decision = { target: number | null; why: string; /** private, never published; only its hash goes in the signal */ rationale?: string; model?: string };
+export type Decision = { target: number | null; why: string; /** private, never published; only its hash goes in the signal */ rationale?: string; model?: string; usage?: { prompt_tokens: number; completion_tokens: number } };
 export type Decide = (current: number) => Promise<Decision>;
 
 export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale">; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
@@ -34,7 +34,7 @@ export async function tick(o: { op: Operator; vault: string; base: string; risk:
     out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: (o.manual as any).signal.size_bps, from: (o.manual as any).signal.from, to: (o.manual as any).signal.to } : { error: r.error };
   } else if (o.decide && o.signalKey) {
     const d = await o.decide(current);
-    out.decision = { target: d.target, why: d.why, model: d.model };
+    out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage };
     const memo = d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
     const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo);
     if (s) {

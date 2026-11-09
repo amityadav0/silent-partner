@@ -46,11 +46,12 @@ export async function aiLeader(s: Series, current: number, o: { apiKey?: string;
       headers: { "content-type": "application/json", authorization: `Bearer ${o.apiKey}` },
       body: JSON.stringify({ model, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 }),
     });
-    const j = (await r.json()) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string } };
+    const j = (await r.json()) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } };
     if (!r.ok) return { target: null, why: `NEAR AI ${r.status}: holding`, model };
     const { target, rationale } = parseReply(j.choices?.[0]?.message?.content ?? "");
     // chat id: lets the leader fetch NEAR AI's TEE signature for this completion when it discloses.
-    return { target, why: target === null ? "model holds" : `model target ${target}`, rationale: JSON.stringify({ chat_id: j.id ?? null, model, rationale }), model };
+    const usage = j.usage ? { prompt_tokens: j.usage.prompt_tokens, completion_tokens: j.usage.completion_tokens } : undefined;
+    return { target, why: target === null ? "model holds" : `model target ${target}`, rationale: JSON.stringify({ chat_id: j.id ?? null, model, rationale }), model, usage };
   } catch (e) {
     return { target: null, why: `NEAR AI unreachable (${(e as Error).message.slice(0, 80)}): holding`, model };
   }
