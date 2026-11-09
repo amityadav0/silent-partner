@@ -59,7 +59,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 5. Landing page + GitHub Pages deploy: https://amityadav0.github.io/silent-partner/
 - [x] 6. UX: position P&L, withdrawal tracks, create-vault wizard, sparklines and sorting, RPC fallback, docs/screens refreshed
 - [x] 7. Hardening: property and fuzz tests (found the leader-stake and duplicate-token bugs), fresh-context review, fixes (D-H-2; critical payout double-pay closed and checked on testnet), the rest listed in threat-model §7
-- [ ] after 7: rebuild the reproducible mainnet wasm and update NEEDS-AMIT §3 (contract changed in D-S-1)
+- [x] after 7: reproducible mainnet wasm rebuilt at 9aed265 (D-P5-4), NEEDS-AMIT §3 updated
 
 ## Next
 Season items 2–7 (above), then rebuild the mainnet wasm hash. Mainnet still waits for Amit (§1, §3).

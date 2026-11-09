@@ -18,7 +18,7 @@ import { Operator, navMessage } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
 import { viewCall, nep413Prehash } from "../src/intents.js";
 
-const RPC = "https://near-testnet.drpc.org";
+const RPC = "https://rpc.testnet.fastnear.com";
 const A = JSON.parse(readFileSync("data/season-accounts.json", "utf8")) as Record<string, string>;
 const K = JSON.parse(readFileSync("data/season-keys.json", "utf8"));
 const K0 = JSON.parse(readFileSync("data/testnet-keys.json", "utf8"));
@@ -53,12 +53,15 @@ if ((await acct.state()).code_hash === "11111111111111111111111111111111") {
     mpc_contract: "v1.signer-prod.testnet", mpc_path: "silent-partner/vault", oneclick_key: KeyPair.fromString(K0.testQuote).getPublicKey().toString(),
     attestation_key: att.getPublicKey().toString(), perf_fee_bps: 2000, min_leader_bps: 1000, max_slippage_bps: 100, min_deposit: "1000000", allowed_assets: [BASE, "nep141:wrap.testnet"],
   } });
-  await call("activate (MPC)", OP, VAULT, "activate", {}, { gas: 50n * TGAS });
-  await call("storage on fake USDC", OP, USDC_T, "storage_deposit", { account_id: VAULT }, { deposit: 1_250_000_000_000_000_000_000n, gas: 30n * TGAS });
-  for (const [who, amt] of [[LEADER, "10000000"], [FOLLOWER, "20000000"]] as const) {
-    await call(`${who.split("-")[1]}: mint`, who, USDC_T, "mint", { account_id: who, amount: amt }, { gas: 30n * TGAS });
-    await call(`${who.split("-")[1]}: deposit ${Number(amt) / 1e6} USDC`, who, USDC_T, "ft_transfer_call", { receiver_id: VAULT, amount: amt, msg: "" }, { deposit: 1n, gas: 150n * TGAS });
-  }
+}
+// Each step checks the chain first, so a rerun after an RPC hiccup picks up where it stopped.
+if (!(await chain.getVault()).vault_account) await call("activate (MPC)", OP, VAULT, "activate", {}, { gas: 50n * TGAS });
+if (!(await view(USDC_T, "storage_balance_of", { account_id: VAULT }))) await call("storage on fake USDC", OP, USDC_T, "storage_deposit", { account_id: VAULT }, { deposit: 1_250_000_000_000_000_000_000n, gas: 30n * TGAS });
+for (const [who, amt] of [[LEADER, "10000000"], [FOLLOWER, "20000000"]] as const) {
+  const [sh] = await view<[string, string]>(VAULT, "get_shares", { account_id: who });
+  if (BigInt(sh) > 0n) continue;
+  await call(`${who.split("-")[1]}: mint`, who, USDC_T, "mint", { account_id: who, amount: amt }, { gas: 30n * TGAS });
+  await call(`${who.split("-")[1]}: deposit ${Number(amt) / 1e6} USDC`, who, USDC_T, "ft_transfer_call", { receiver_id: VAULT, amount: amt, msg: "" }, { deposit: 1n, gas: 150n * TGAS });
 }
 const va = (await chain.getVault()).vault_account!;
 const vaultPk = "ed25519:" + base58.encode(Buffer.from(va, "hex"));

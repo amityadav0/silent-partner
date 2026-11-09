@@ -192,3 +192,30 @@ The leader's 20 shares are still in the vault (book NAV 20000000, emergency True
 | follower: execute_intents on the verifier | `sp-follower-60270.testnet` | [`DhphuPPKd2…`](https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ) |  |
 | follower: ft_withdraw to wallet | `sp-follower-60270.testnet` | [`J6Gvruurzp…`](https://testnet.nearblocks.io/txns/J6GvruurzpVxVsmuCYDrZkbCC5t16oLN7ogbdk2atiV9) |  |
 | follower: settle_payout(executed) | `sp-follower-60270.testnet` | [`EUZvm6KBEG…`](https://testnet.nearblocks.io/txns/EUZvm6KBEG6UtTUYx8cquBKQEWZazTYp8By23NaqZNWJ) |  |
+
+## Settlement check (review finding 1, 2026-11-09)
+
+Vault [`settle.sp-lmanual-92991.testnet`](https://testnet.nearblocks.io/address/settle.sp-lmanual-92991.testnet), running the fixed contract (D-H-2, commit `9aed265`) against the real defuse verifier `sp-intents-61557.testnet`. Script: `operator/scripts/settle-check.ts`.
+
+- **Executed payout → paid.** Claim 0 (8000000 USDC units) was paid by the operator's live path: a `PublicPayout` signed by the vault's MPC key, then `execute_intents` on the verifier, then `settle_payout`. Settlement asked the verifier `is_nonce_used` and got true, so the claim is marked paid (8000000 of 8000000, nothing in flight). The follower's intents balance was credited 8000000. The review's attack (release an executed payout, then pay again) now ends here: an executed payout can't be released.
+- **Payout that never executed → pending, then released.** A payout for claim 1 was signed and never submitted. `settle_payout` before its deadline returned `pending`, and after its deadline `released`. The claim had 4000000 open again, and the operator then paid it properly (`paid`, paid 4000000 of 4000000).
+- **Who settled.** Every `settle_payout` above was sent by the follower, not the operator: settlement is permissionless.
+
+| Step | Tx | Result |
+|---|---|---|
+| storage on fake USDC | [`BNVdB5fetd…`](https://testnet.nearblocks.io/txns/BNVdB5fetdayJeHVYhJKySTw7WALUbfWWhm5FAagc5Mi) | {'total': '1250000000000000000000', 'available': '0'} |
+| lmanual: mint | [`3jbXSEjDuh…`](https://testnet.nearblocks.io/txns/3jbXSEjDuhbZsFNrM19Cj4655UQD6mVuRXPTsxwPyQuQ) |  |
+| lmanual: deposit 10 USDC | [`FPADtx8i7K…`](https://testnet.nearblocks.io/txns/FPADtx8i7KtgLsbQocyiXrMjrn5X3fsbCZtikP6h8J5d) | 10000000 |
+| follower: mint | [`7QDFXWfXvk…`](https://testnet.nearblocks.io/txns/7QDFXWfXvkmy5E21itRaWgrkryrEXtH4R4pa9Hn9V1Ae) |  |
+| follower: deposit 20 USDC | [`5AUqFLL5Wj…`](https://testnet.nearblocks.io/txns/5AUqFLL5WjuCAnFu9ry5xKi5fFRDQKbnnGpmdTndUso2) | 20000000 |
+| follower: request_withdraw 8 USDC | [`DtG8DY1dSf…`](https://testnet.nearblocks.io/txns/DtG8DY1dSfepFH6uUSipYkiiMjW5owBthpxnr5sXXM1) | 0 |
+| post NAV epoch 1 (30 USDC) | [`9Unxuh1tLX…`](https://testnet.nearblocks.io/txns/9Unxuh1tLXeBP3vPSV1LTSo6eGABoN39Sw1VmWSPkTgi) |  |
+| operator: sign_intent(PublicPayout claim 0) | [`8EvWYyCBRc…`](https://testnet.nearblocks.io/txns/8EvWYyCBRcYYvt9NPPMRViYM7G4LWppmYmTmEvobsrND) |  |
+| operator: execute_intents on the verifier | [`2PG4qSKGBN…`](https://testnet.nearblocks.io/txns/2PG4qSKGBNf5QFtvLx1rRzCeEWsQrkvqpuRH9aGKwA11) |  |
+| anyone: settle_payout → verifier says nonce used | [`8i7a8EbW7i…`](https://testnet.nearblocks.io/txns/8i7a8EbW7i7vJfxu7U15zeFhJcZZqGdHYq859N6Y2Bw5) | paid |
+| follower: request_withdraw 4 USDC | [`6YEidm3efK…`](https://testnet.nearblocks.io/txns/6YEidm3efKVgmJeadsr6ijLVQHKzNWj8SsynjPUtxayR) | 1 |
+| post NAV epoch 2 (22 USDC) | [`91JQhLGtiA…`](https://testnet.nearblocks.io/txns/91JQhLGtiA9XgzXUDGzYUXCEMDQyQ4dBzE2QoLeWhbTq) |  |
+| operator: sign_intent(PublicPayout claim 1), not executed | [`CZrQPLSjg4…`](https://testnet.nearblocks.io/txns/CZrQPLSjg4156y4RLL7vns6pVnjMf7XgmntH4o7rsEH7) | signature |
+| anyone: settle_payout before the deadline | [`Dj8N6iJRAt…`](https://testnet.nearblocks.io/txns/Dj8N6iJRAtEhbEfEUScCHzvZAsp5CgzfPfmgWes4L5hv) | pending |
+| anyone: settle_payout after the deadline | [`4wMufA7TuH…`](https://testnet.nearblocks.io/txns/4wMufA7TuHFt1cggmbDZd7SbHPxkDmBqjLyURdZXAvV6) | released |
+| operator: pays claim 1 properly (sign, execute, settle) | [`9kDfZ1Rv2f…`](https://testnet.nearblocks.io/txns/9kDfZ1Rv2fjazwkiZAHBM1iJBf3kt2RLxaZZ5bfYthyK) | paid |
