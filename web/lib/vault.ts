@@ -2,7 +2,7 @@
 // them. Only on-chain NAV posts are used: no positions exist anywhere here.
 import { ed25519 } from "@noble/curves/ed25519";
 import { base58 } from "@scure/base";
-import { RPC } from "./config";
+import { RPCS } from "./config";
 
 export type NavPost = { epoch: number; nav: string; timestamp_ms: number; block_ms: number; price: string; total_shares: string; fee_shares: string; withdrawn: string; fills_head: string; signature: string };
 export type VaultView = { vault_account: string | null; total_shares: string; book_nav: string; price: string; hwm: string; epoch: number; last_nav_ms: number; stale: boolean; emergency: boolean; leader_shares: string; pending_withdrawals: number; signals: number };
@@ -11,11 +11,33 @@ export type Claim = { id: number; account: string; exit_account: string; amount:
 export type SignalRec = { index: number; hash: string; fill_hash: string; executed_ms: number; epoch: number };
 
 export async function view<T>(contract: string, method: string, args: object = {}, fetchImpl: typeof fetch = fetch): Promise<T> {
-  const r = await fetchImpl(RPC, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: contract, method_name: method, args_base64: btoa(JSON.stringify(args)) } }),
-  });
+  const r = await rpc({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: contract, method_name: method, args_base64: btoa(JSON.stringify(args)) } }, fetchImpl);
+  return parseView<T>(contract, method, r);
+}
+
+/**
+ * POST a JSON-RPC body. Public RPCs rate-limit bursts (a 429 often surfaces as
+ * "Failed to fetch" under CORS), so a failing endpoint falls through to the
+ * next, with backoff between rounds.
+ */
+export async function rpc(body: unknown, fetchImpl: typeof fetch = fetch, endpoints: string[] = RPCS): Promise<Response> {
+  let last: unknown = null;
+  for (let round = 0; round < 3; round++) {
+    for (const url of endpoints) {
+      try {
+        const r = await fetchImpl(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        if (r.status !== 429 && r.status < 500) return r;
+        last = new Error(`${url}: HTTP ${r.status}`);
+      } catch (e) {
+        last = e;
+      }
+    }
+    await new Promise((ok) => setTimeout(ok, 400 * 2 ** round + Math.random() * 200));
+  }
+  throw last instanceof Error ? last : new Error("RPC unreachable");
+}
+
+async function parseView<T>(contract: string, method: string, r: Response): Promise<T> {
   const j = await r.json();
   if (j.error || j.result?.error) throw new Error(`${contract}.${method}: ${JSON.stringify(j.error?.data ?? j.result?.error).slice(0, 200)}`);
   return JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result))) as T;
@@ -105,11 +127,7 @@ export function toUnits(human: string, decimals: number): bigint | null {
 
 /** Logs and final return value of a transaction (RPC `tx`), waiting until it's final. */
 export async function txOutcome(hash: string, sender: string, fetchImpl: typeof fetch = fetch): Promise<{ logs: string[]; value: unknown; failed: boolean }> {
-  const r = await fetchImpl(RPC, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "FINAL" } }),
-  });
+  const r = await rpc({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "FINAL" } }, fetchImpl);
   const j = await r.json();
   if (j.error) throw new Error(`tx ${hash}: ${JSON.stringify(j.error.data ?? j.error).slice(0, 200)}`);
   const outs = (j.result.receipts_outcome as { outcome: { logs: string[]; status: Record<string, string> } }[]).map((x) => x.outcome);
@@ -132,3 +150,24 @@ export function publicPayoutPayload(vaultAccount: string, to: string, token: str
 export const emergencyExitValue = (shares: bigint, bookNav: string, totalShares: string) => (BigInt(totalShares) === 0n ? 0n : (shares * BigInt(bookNav)) / BigInt(totalShares));
 
 export const openOfClaim = (c: Claim) => BigInt(c.amount) - BigInt(c.paid) - c.in_flight.reduce((s, f) => s + BigInt(f.amount), 0n);
+
+export type Position = { shares: string; locked: string; deposited: string; claimed: string };
+export type WithdrawRequest = { id: number; account: string; shares: string; exit_account: string; requested_ms: number };
+
+/** P&L from on-chain cost basis: value at the book price + what was withdrawn − what was deposited. */
+export function pnl(p: Position, price: string): { value: bigint; abs: bigint; pct: number | null } {
+  const value = (BigInt(p.shares) * BigInt(price)) / 10n ** 18n;
+  const abs = value + BigInt(p.claimed) - BigInt(p.deposited);
+  const dep = BigInt(p.deposited);
+  return { value, abs, pct: dep > 0n ? Number((abs * 1_000_000n) / dep) / 1_000_000 : null };
+}
+
+export type WState = "requested" | "burned" | "paying" | "paid";
+export const W_STEPS: WState[] = ["requested", "burned", "paying", "paid"];
+
+/** Where a claim is: burned (claim open, payout not started), paying (payout signed or in flight), paid. */
+export function claimState(c: Claim): WState {
+  if (BigInt(c.paid) >= BigInt(c.amount)) return "paid";
+  if (c.in_flight.length > 0 || BigInt(c.paid) > 0n) return "paying";
+  return "burned";
+}

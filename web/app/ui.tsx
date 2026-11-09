@@ -27,6 +27,7 @@ export function Nav() {
         {link("/leaderboard/", "Leaderboard")}
         {link("/chain/", "What the chain sees")}
         {link("/leader/", "Leader console")}
+        {link("/create/", "Create")}
         <span className="ml-auto flex items-center gap-3">
           {NETWORK === "testnet" && <span className="chip chip-warn">testnet</span>}
           {accountId ? (

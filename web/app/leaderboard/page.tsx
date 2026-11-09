@@ -70,7 +70,7 @@ export default function Leaderboard() {
                 <td>{i + 1}</td>
                 <td>
                   <Link href={`/vault/?id=${r.d.id}`} className="font-semibold">{metaOf(r.d.id).name}</Link> <ModeChip id={r.d.id} />
-                  <div className="muted text-xs">{short(r.d.id, 10)} · leader {short(r.d.cfg.leader, 8)}</div>
+                  <div className="muted text-xs" title={`leader ${r.d.cfg.leader}`}>{r.d.id}</div>
                 </td>
                 <td className="font-semibold"><Ret r={r.ret} /></td>
                 <td><Sparkline points={returns(r.d.navs)} /></td>

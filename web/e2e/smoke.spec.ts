@@ -85,3 +85,37 @@ test("what the chain sees: three views of one vault; the disclosed log matches e
   await expect(page.getByTestId("disclosure-verdict")).toContainText("Matches the chain");
   await expect(page.getByTestId("checks")).toContainText("Signal #0");
 });
+
+test("vault page as a follower: P&L from on-chain cost basis", async ({ page }) => {
+  await page.goto("/vault/?id=sp-manual-92991.testnet&as=sp-follower-60270.testnet");
+  await expect(page.getByTestId("pnl")).toContainText("Deposited");
+  await expect(page.getByTestId("pnl")).toContainText("300.00 USDC");
+  await expect(page.getByTestId("pnl")).toContainText(/[+−]\d+\.\d{2} USDC \([+−]\d+\.\d{2}%\)/);
+});
+
+test("withdrawal track: the drill follower's claim shows Paid", async ({ page }) => {
+  await page.goto("/vault/?id=sp-drill-92991.testnet&as=sp-follower-60270.testnet");
+  await expect(page.getByTestId("claim-0").getByTestId("track").locator("li.now")).toHaveText("Paid");
+});
+
+test("leaderboard sorts by any column and draws a sparkline per vault", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("sparkline").first()).toBeVisible();
+  await page.getByTestId("sort-name").click();
+  const names = await page.locator("tbody tr td:nth-child(2) a").allTextContents();
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+});
+
+test("create-vault wizard: four steps to init args and deploy commands", async ({ page }) => {
+  await page.goto("/create/");
+  await page.getByTestId("f-vault").fill("my-vault.testnet");
+  await page.getByTestId("f-leader").fill("me.testnet");
+  for (let i = 0; i < 3; i++) await page.getByTestId("next").click();
+  await expect(page.getByTestId("create-ok")).toBeVisible();
+  await expect(page.getByTestId("create-json")).toContainText('"perf_fee_bps": 2000');
+  await expect(page.getByTestId("create-commands")).toContainText("near contract deploy my-vault.testnet");
+  await page.getByRole("button", { name: "1. Roles" }).click();
+  await page.getByTestId("f-vault").fill("Bad Vault");
+  await page.getByRole("button", { name: "4. Review" }).click();
+  await expect(page.getByTestId("create-errors")).toContainText("Vault account");
+});

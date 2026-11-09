@@ -123,3 +123,62 @@ describe("disclosure checks", () => {
     expect(checkDisclosure(D(es, [{ hash: sh, signal: forged }]), navs(es), signals(es))[2].ok).toBe(false);
   });
 });
+
+import { claimState, pnl } from "../lib/vault";
+
+describe("position", () => {
+  const E18 = 10n ** 18n;
+  it("P&L = value at book price + withdrawn − deposited", () => {
+    expect(pnl({ shares: "4000000", locked: "0", deposited: "8000000", claimed: "4400000" }, (11n * E18 / 10n).toString())).toEqual({ value: 4_400_000n, abs: 800_000n, pct: 0.1 });
+    expect(pnl({ shares: "1000000", locked: "0", deposited: "1000000", claimed: "0" }, (9n * E18 / 10n).toString()).abs).toBe(-100_000n);
+    expect(pnl({ shares: "0", locked: "0", deposited: "0", claimed: "0" }, E18.toString()).pct).toBeNull();
+  });
+  it("claim states", () => {
+    const c = { id: 0, account: "a", exit_account: "a", amount: "100", paid: "0", in_flight: [] as { prehash: string; amount: string; deadline_ms: number; signed: boolean }[], epoch: 1, emergency: false };
+    expect(claimState(c)).toBe("burned");
+    expect(claimState({ ...c, in_flight: [{ prehash: "", amount: "100", deadline_ms: 0, signed: true }] })).toBe("paying");
+    expect(claimState({ ...c, paid: "40" })).toBe("paying");
+    expect(claimState({ ...c, paid: "100" })).toBe("paid");
+  });
+});
+
+import { buildInit, commands, type Form } from "../lib/create";
+
+describe("create-vault wizard", () => {
+  const f: Form = { network: "testnet", vault: "my-vault.testnet", leader: "me.testnet", owner: "", operatorMode: "silent-partner", operator: "", attestationKey: "", feePct: "20", minLeaderPct: "10", slippagePct: "1", minDeposit: "1", extraAssets: ["nep141:wrap.testnet"] };
+  it("builds the exact init args the contract takes", () => {
+    const { cfg, errors } = buildInit(f);
+    expect(errors).toEqual([]);
+    expect(cfg).toMatchObject({ owner: "me.testnet", leader: "me.testnet", operator: "sp-sop-92991.testnet", perf_fee_bps: 2000, min_leader_bps: 1000, max_slippage_bps: 100, min_deposit: "1000000", allowed_assets: ["nep141:usdc.fakes.testnet", "nep141:wrap.testnet"], mpc_contract: "v1.signer-prod.testnet" });
+    expect(commands(f, cfg!)[1]).toContain(`json-args '{"cfg":{`);
+  });
+  it("mirrors the contract's limits", () => {
+    expect(buildInit({ ...f, feePct: "60" }).errors).toContain("Performance fee: 0–50%");
+    expect(buildInit({ ...f, slippagePct: "6" }).errors).toContain("Max slippage: 0–5%");
+    expect(buildInit({ ...f, vault: "Bad Vault" }).errors[0]).toMatch(/Vault account/);
+    expect(buildInit({ ...f, vault: "v.near" }).errors[0]).toMatch(/end in .testnet/);
+  });
+  it("mainnet needs your own operator; uses 1Click's real key and USDC", () => {
+    const m = { ...f, network: "mainnet" as const, vault: "v.near", leader: "me.near", extraAssets: ["nep141:wrap.near"] };
+    expect(buildInit(m).errors[0]).toMatch(/no Silent Partner operator on mainnet/);
+    const { cfg } = buildInit({ ...m, operatorMode: "own", operator: "op.near", attestationKey: "ed25519:4mm15GiMGtZSfQnSy14N2N2D114sUcSSSc3qBdyasgih" });
+    expect(cfg).toMatchObject({ oneclick_key: "ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc", intents_contract: "intents.near", mpc_contract: "v1.signer", allowed_assets: ["nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1", "nep141:wrap.near"] });
+  });
+});
+
+import { rpc } from "../lib/vault";
+
+describe("rpc fallback", () => {
+  it("falls through a rate-limited or unreachable endpoint to the next", async () => {
+    const seen: string[] = [];
+    const f = (async (url: string) => {
+      seen.push(url);
+      if (url === "a") return new Response("{}", { status: 429 });
+      if (url === "b") throw new TypeError("Failed to fetch");
+      return new Response('{"ok":1}');
+    }) as unknown as typeof fetch;
+    const r = await rpc({}, f, ["a", "b", "c"]);
+    expect(await r.json()).toEqual({ ok: 1 });
+    expect(seen).toEqual(["a", "b", "c"]);
+  });
+});

@@ -6,6 +6,12 @@ export const VAULTS = (process.env.NEXT_PUBLIC_VAULTS ?? DEFAULT_VAULTS.join(","
 export const OPERATOR_API = (process.env.NEXT_PUBLIC_OPERATOR_API ?? "http://localhost:8788").replace(/\/$/, "");
 // rpc.{testnet,mainnet}.near.org are deprecated and rate-limit (429).
 export const RPC = process.env.NEXT_PUBLIC_NEAR_RPC ?? (NETWORK === "mainnet" ? "https://rpc.mainnet.fastnear.com" : "https://rpc.testnet.fastnear.com");
+/** Read endpoints, tried in order: a rate-limited (429) or unreachable one falls through to the next. */
+export const RPCS: string[] = process.env.NEXT_PUBLIC_NEAR_RPC
+  ? [process.env.NEXT_PUBLIC_NEAR_RPC]
+  : NETWORK === "mainnet"
+    ? ["https://rpc.mainnet.fastnear.com", "https://near.drpc.org", "https://rpc.mainnet.near.org"]
+    : ["https://rpc.testnet.fastnear.com", "https://near-testnet.drpc.org", "https://rpc.testnet.near.org"];
 export const NEAR_EXPLORER = NETWORK === "mainnet" ? "https://nearblocks.io" : "https://testnet.nearblocks.io";
 export const TGAS = 1_000_000_000_000n;
 /** Display names and decimals for intents asset ids. */

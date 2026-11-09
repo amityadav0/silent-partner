@@ -84,5 +84,9 @@ table.t td { white-space: nowrap; padding: 0.5rem; border-top: 1px solid color-m
 .scroll-x { overflow-x: auto; }
 .panel-warn { border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 8%, Canvas); }
 .panel-bad { border-color: #dc2626; background: color-mix(in srgb, #dc2626 8%, Canvas); }
-button.sort { background: none; border: 0; padding: 0; font: inherit; font-weight: inherit; color: inherit; cursor: pointer; }
+button.sort { background: none; border: 0; padding: 0; font: inherit; font-weight: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
 button.sort.on { text-decoration: underline; text-underline-offset: 3px; }
+ol.track { display: flex; gap: 0.25rem; margin: 0.35rem 0; padding: 0; list-style: none; flex-wrap: wrap; }
+ol.track li { flex: 1 1 0; min-width: 4.5rem; border-top: 3px solid color-mix(in srgb, CanvasText 15%, transparent); padding-top: 0.2rem; font-size: 0.7rem; color: GrayText; }
+ol.track li.done { border-color: #16a34a; }
+ol.track li.now { border-color: #2563eb; color: CanvasText; font-weight: 600; }

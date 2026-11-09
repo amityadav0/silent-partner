@@ -6,7 +6,8 @@ import { useWallet } from "@/lib/wallet";
 import { aumBucket, fmtUnits, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
 import { Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
-import { EmergencyBanner, EmergencyPayout } from "./emergency";
+import { EmergencyBanner } from "./emergency";
+import { PositionDetails } from "./position";
 
 export default function VaultPage() {
   const id = useQueryParam("id");
@@ -76,12 +77,10 @@ export default function VaultPage() {
         <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
       </div>
       {metaOf(data.id).blurb && <p className="mt-1 text-sm">{metaOf(data.id).blurb}</p>}
-      <EmergencyBanner id={data.id} vault={vault} cfg={cfg} shares={mine?.shares ?? 0n} dec={m.dec} sym={m.sym} onDone={reload} />
       <p className="muted mt-1 text-sm">
         Led by <code>{cfg.leader}</code> · performance fee {cfg.perf_fee_bps / 100}% above the high-water mark · leader stake ≥ {cfg.min_leader_bps / 100}%
       </p>
-      {st === "emergency" && <p className="panel neg mt-3 text-sm">Emergency mode: no NAV for 24h. Deposits are closed. Holders can exit at the last NAV with <code>emergency_exit</code>, and anyone may submit the payout quotes.</p>}
-      {st === "stale" && <p className="panel mt-3 text-sm">NAV is more than 24h old. Deposits are refused, and anyone can trigger emergency mode.</p>}
+      <EmergencyBanner id={data.id} vault={vault} cfg={cfg} shares={mine?.shares ?? 0n} dec={m.dec} sym={m.sym} onDone={reload} />
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Return" value={<Ret r={m.ret} />} hint="since inception, after fees" testid="stat-return" />
@@ -113,22 +112,13 @@ export default function VaultPage() {
             <>
               <p className="mt-1 text-sm tabular-nums">
                 {mine.shares.toLocaleString()} shares ≈ {fmtUnits((mine.shares * BigInt(vault.price)) / 10n ** 18n, m.dec)} {m.sym}
-                {mine.locked > 0n && <span className="muted"> · {mine.locked.toLocaleString()} waiting for the next NAV</span>}
+                {mine.locked > 0n && <span className="muted"> · {mine.locked.toLocaleString()} locked for withdrawal</span>}
               </p>
               <div className="mt-3 flex gap-2">
                 <input aria-label="Shares to withdraw" className="w-40" placeholder={free.toString()} value={wShares} onChange={(e) => setWShares(e.target.value)} inputMode="numeric" />
                 <button className="btn ml-auto" disabled={free <= 0n || st === "emergency"} onClick={withdraw}>Request withdrawal</button>
               </div>
-              {mine.claims.length > 0 && (
-                <ul className="muted mt-3 text-xs">
-                  {mine.claims.map((c) => (
-                    <li key={c.id}>
-                      Claim #{c.id}{c.emergency ? " (emergency)" : ""}: {fmtUnits(c.amount, m.dec)} {m.sym}, paid {fmtUnits(c.paid, m.dec)}{c.in_flight.length ? `, ${c.in_flight.length} payout in flight` : ""}
-                      {c.emergency && <EmergencyPayout id={data.id} vault={vault} cfg={cfg} claim={c} dec={m.dec} sym={m.sym} onDone={reload} />}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <PositionDetails id={data.id} viewer={viewer} vault={vault} cfg={cfg} dec={m.dec} sym={m.sym} claims={mine.claims} refresh={data} onDone={reload} />
             </>
           )}
         </div>
