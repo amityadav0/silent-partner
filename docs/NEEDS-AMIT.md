@@ -244,4 +244,5 @@ The vault now rejects any NAV whose per-share move doesn't fit NEAR's price move
 
 1. Get a Hermes API key from Pyth (https://docs.pyth.network): an account signup, so it's yours.
 2. Put `PYTH_HERMES_KEY=…` in `.env`. The operator (`src/oracle.ts`, `PythPush`) then calls `update_price_feeds` on `pyth-oracle.near` before each epoch. It pays Pyth's update fee from the operator account: a fraction of a cent per update, but it is a mainnet payment, so it starts only with the rest of §3.
-3. Without a key, mainnet NAV posts are rejected ("no fresh oracle price") and the vault goes stale. Alternatively, deploy with `"nav_oracle": null` in `docs/mainnet-init.json` to run without the bound (back to attested-only NAV).
+3. A key-free alternative was checked and doesn't work. Burrow's `priceoracle.near` has no fresh prices: every asset reads `null` inside its 90 s window, and the last `wrap.near` report is ~230 days old (D-H-4). So the Pyth key is still needed.
+4. Without a key, mainnet NAV posts are rejected ("no fresh oracle price") and the vault goes stale. Alternatively, deploy with `"nav_oracle": null` in `docs/mainnet-init.json` to run without the bound (back to attested-only NAV).
