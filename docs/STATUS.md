@@ -49,7 +49,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] README, architecture.md, threat-model.md, demo script, X post, application JSON (NEEDS-AMIT §4–6)
 
 ## P7 Buffer (Nov 14)
-- [ ] re-run all tests, final push
+- [ ] re-run all tests, final push (dry run 2026-11-09: contract 55, operator 47, web 20, oracle-mock 1, Playwright 12 on live testnet: all green)
 
 ## Season (Nov 9–13): items from Amit's list, in order
 - [x] 1. Paper season: 4 demo vaults + drill vault on testnet, bots, operator in paper mode at real 1Click dry-quote prices, GitHub Actions cron every 15 min, honest "paper · testnet" labels
@@ -72,7 +72,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] AI leader is an active allocator: target weight 0–100%, trades on ≥ 5-point moves, public log = bucket + rationale hash (D-AI-3)
 - [ ] first AI signal on-chain (rationale hash only, rationale sealed); see docs/testnet.md
 - [x] Price source: 1Click-signed dry quotes for the NAV band (replaces Pyth on mainnet, D-H-5); testnet run: honest posts accepted, +20% rejected
-- [ ] rebuild the reproducible mainnet wasm; update NEEDS-AMIT §3 hash
+- [x] reproducible mainnet wasm rebuilt at 1b1ec1a (D-P5-6), NEEDS-AMIT §3 updated
 
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.

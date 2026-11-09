@@ -148,3 +148,4 @@ Each decision is dated, with its reason.
   - **Season vaults.** They keep the Pyth-compatible mock adapter (`nav_oracle`): their `oneclick_key` is the testnet test key, so quotes signed by real 1Click couldn't be verified there, and re-keying a deployed vault isn't allowed.
   - **Removed.** `PythPush` and the `PYTH_*` env vars.
   - **Testnet run.** `quotes.sp-lmeanrev-92991.testnet` is configured with 1Click's real key and the mainnet USDC/wNEAR pair. Its posts carried real public 1Click dry quotes (half-spread ~22 bps). Honest posts were accepted; +20% was rejected. See docs/testnet.md.
+- **D-P5-6 (2026-11-09) Mainnet artifact rebuilt for 1Click-quote pricing.** `cargo near build reproducible-wasm` at commit `1b1ec1a` (embedded in the wasm's source metadata) produced sha256 `cda36f4fe985aaa0328ff80bfbc0f2a0395c3f9598d88389b1ea58ce52be4152` (code hash `Eqj7zm5Mg8E64MGeVZkTGu9FEgptUMYuXNwtrSEeSDaH`, 381,750 bytes). It supersedes D-P5-5.

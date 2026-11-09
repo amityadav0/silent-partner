@@ -85,7 +85,7 @@ Every command is yours to sign. The operator steps (`op.ts`) print what they wil
 
 Replace the placeholders in `docs/mainnet-init.json`. The attestation key in that file is the operator's mainnet NAV key. Its private half is in `operator/data/mainnet-keys.json`, which is gitignored.
 
-**0. Check the artifact.** `contract/target/near/silent_partner.wasm` from `cargo near build reproducible-wasm` should hash to `sha256 = 9dd5ce0e3e51d6756f9fca64ec3b9fe23b1653481b59651900fa5f7bc49ea676` (base58 `Bd86izePzGzMNVJPGcx813x7T9RaehqhqFPb3dmaoNyK`, 365,462 bytes). It's built from commit `72b9614` (PLACEHOLDER_COMMIT) with image `sourcescan/cargo-near:0.22.0-rust-1.98.1`. After the deploy, `near contract view-code-hash`, or the account's `code_hash`, must show that base58 value. If Docker's credential helper hangs, set `DOCKER_CONFIG` to a directory containing an empty `config.json`.
+**0. Check the artifact.** `contract/target/near/silent_partner.wasm` from `cargo near build reproducible-wasm` should hash to `sha256 = cda36f4fe985aaa0328ff80bfbc0f2a0395c3f9598d88389b1ea58ce52be4152` (base58 `Eqj7zm5Mg8E64MGeVZkTGu9FEgptUMYuXNwtrSEeSDaH`, 381,750 bytes). It's built from commit `1b1ec1a` (the NAV band priced by 1Click-signed quotes, D-H-5; `docs/mainnet-init.json` sets `nav_quotes` for USDC/wNEAR and `nav_oracle: null`) with image `sourcescan/cargo-near:0.22.0-rust-1.98.1`. After the deploy, `near contract view-code-hash`, or the account's `code_hash`, must show that base58 value. If Docker's credential helper hangs, set `DOCKER_CONFIG` to a directory containing an empty `config.json`.
 
 **1. Create the accounts.** Two txs:
 ```sh
