@@ -104,8 +104,8 @@ pub const QUOTE_PRICE_SCALE: u128 = 1_000_000_000_000_000_000_000_000_000_000; /
 /// (base_in → risky_out), `sell` sells risky for base (risky_in → base_out).
 /// Returns (mid, half-spread in bps, rounded up), prices × QUOTE_PRICE_SCALE.
 pub fn bracket(buy_base_in: u128, buy_risk_out: u128, sell_risk_in: u128, sell_base_out: u128) -> Option<(u128, u32)> {
-    let ask = buy_base_in.checked_mul(QUOTE_PRICE_SCALE)?.checked_div(buy_risk_out)?;
-    let bid = sell_base_out.checked_mul(QUOTE_PRICE_SCALE)?.checked_div(sell_risk_in)?;
+    let ask = mul_div(buy_base_in, QUOTE_PRICE_SCALE, buy_risk_out)?;
+    let bid = mul_div(sell_base_out, QUOTE_PRICE_SCALE, sell_risk_in)?;
     let (lo, hi) = (bid.min(ask), bid.max(ask));
     let mid = lo / 2 + hi / 2;
     if mid == 0 {
@@ -113,6 +113,35 @@ pub fn bracket(buy_base_in: u128, buy_risk_out: u128, sell_risk_in: u128, sell_b
     }
     let hs = ((hi - lo) * BPS).div_ceil(2 * mid);
     Some((mid, u32::try_from(hs).ok()?))
+}
+
+/// ⌊a × b / c⌋ with a 256-bit intermediate; None if c = 0 or the result exceeds u128.
+pub fn mul_div(a: u128, b: u128, c: u128) -> Option<u128> {
+    if c == 0 {
+        return None;
+    }
+    // 128×128 → 256 via 64-bit limbs
+    let (a1, a0) = (a >> 64, a & u64::MAX as u128);
+    let (b1, b0) = (b >> 64, b & u64::MAX as u128);
+    let (p00, p01, p10, p11) = (a0 * b0, a0 * b1, a1 * b0, a1 * b1);
+    let mid = (p00 >> 64) + (p01 & u64::MAX as u128) + (p10 & u64::MAX as u128);
+    let lo = (p00 & u64::MAX as u128) | (mid << 64);
+    let hi = p11 + (p01 >> 64) + (p10 >> 64) + (mid >> 64);
+    if hi >= c {
+        return None; // quotient would not fit in 128 bits
+    }
+    // long division of (hi, lo) by c, one bit at a time
+    let (mut rem, mut q) = (hi, 0u128);
+    for i in (0..128).rev() {
+        let carry = rem >> 127;
+        rem = (rem << 1) | ((lo >> i) & 1);
+        q <<= 1;
+        if carry == 1 || rem >= c {
+            rem = rem.wrapping_sub(c);
+            q |= 1;
+        }
+    }
+    Some(q)
 }
 
 /// Return in bps between two mids of the same source.

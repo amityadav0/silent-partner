@@ -1012,6 +1012,11 @@ pub(crate) fn px(p: i64) -> OraclePrice {
 
 /// Post `nav` and answer the oracle with `price` (None: no fresh price). Returns whether it applied.
 pub(crate) fn post_with_price(v: &mut Vault, nav: u128, price: Option<OraclePrice>, ms: u64) -> bool {
+    // observed at the post's second (the band needs strictly newer prices)
+    let price = price.map(|p| OraclePrice {
+        publish_time: (ms / 1000) as i64,
+        ..p
+    });
     let epoch = v.epoch + 1;
     let head = "ab".repeat(32);
     ctx("op.testnet", ms);
@@ -1031,21 +1036,20 @@ fn nav_is_bounded_by_the_risky_assets_move() {
     deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
     deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
     // first post: nothing to compare against yet; records the oracle price
-    assert!(post_with_price(&mut v, 10_000_000, Some(px(400_000_000)), T0_MS + 1));
-    // tolerance = slippage 100 + 50 = 150 bps (conf 0)
-    // NEAR +10%: anything from −1.5% to +11.5% per share is plausible
+    assert!(post_with_price(&mut v, 10_000_000, Some(px(400_000_000)), T0_MS + 1000));
+    // NEAR +10%: anything from −1.5% (costs) to +10.5% per share is plausible
     let book = v.book_nav;
-    assert!(!post_with_price(&mut v, 11_200_000, Some(px(440_000_000)), T0_MS + 2), "+12% with NEAR +10%");
+    assert!(!post_with_price(&mut v, 11_200_000, Some(px(440_000_000)), T0_MS + 2000), "+12% with NEAR +10%");
     assert_eq!((v.epoch, v.book_nav), (1, book), "a rejected post changes nothing");
-    assert!(!post_with_price(&mut v, 9_800_000, Some(px(440_000_000)), T0_MS + 3), "−2% with NEAR +10%");
+    assert!(!post_with_price(&mut v, 9_800_000, Some(px(440_000_000)), T0_MS + 3000), "−2% with NEAR +10%");
     assert!(
-        post_with_price(&mut v, 10_500_000, Some(px(440_000_000)), T0_MS + 4),
+        post_with_price(&mut v, 10_500_000, Some(px(440_000_000)), T0_MS + 4000),
         "+5% with NEAR +10%: half exposure"
     );
     // NEAR flat: the vault can only lose costs or gain within tolerance
-    assert!(!post_with_price(&mut v, 10_900_000, Some(px(440_000_000)), T0_MS + 5));
+    assert!(!post_with_price(&mut v, 10_900_000, Some(px(440_000_000)), T0_MS + 5000));
     // a missing or stale oracle price rejects the post and unblocks the next one
-    assert!(!post_with_price(&mut v, 10_400_000, None, T0_MS + 6));
+    assert!(!post_with_price(&mut v, 10_400_000, None, T0_MS + 6000));
     assert_eq!(v.posting_since_ms, 0);
     // a wide confidence interval widens the band
     let wide = OraclePrice {
@@ -1053,7 +1057,7 @@ fn nav_is_bounded_by_the_risky_assets_move() {
         ..px(440_000_000)
     }; // 1%
     let band = v.nav_band(oracle_point(&wide).unwrap()).unwrap();
-    assert_eq!(band, (-(100 + 50 + 100), 100 + 50 + 100)); // slippage + tolerance + conf_now (last conf 0)
+    assert_eq!(band, (-(100 + 50 + 100), 50 + 100)); // down: slippage + tolerance + conf; up: tolerance + conf
 }
 
 #[test]
@@ -1193,6 +1197,8 @@ pub(crate) fn quotes_vault() -> Vault {
         max_age_ms: 5 * 60_000,
         tolerance_bps: 50,
         max_spread_bps: 100,
+        min_interval_ms: 60_000,
+        window_up_bps: 300,
     });
     let mut v = Vault::new(c);
     ctx("vault.testnet", T0_MS);
@@ -1213,7 +1219,7 @@ pub(crate) fn price_quotes(usd_micro: u128, hs_bps: u128, at_ms: u64, key: &Sign
     let bid = usd_micro * (10_000 - hs_bps) / 10_000;
     let near = 1_000_000_000_000_000_000_000_000u128;
     let buy_out = 10_000_000u128 * near / ask;
-    let sell_out = 3 * bid;
+    let sell_out = buy_out * bid / near; // sell back exactly what the buy leg bought
     let t = json!(iso(at_ms));
     vec![
         sign_like_oneclick(
@@ -1233,8 +1239,8 @@ pub(crate) fn price_quotes(usd_micro: u128, hs_bps: u128, at_ms: u64, key: &Sign
                 ("dry", json!(true)),
                 ("originAsset", json!(WNEAR)),
                 ("destinationAsset", json!(USDC)),
-                ("amount", json!((3 * near).to_string())),
-                ("amountIn", json!((3 * near).to_string())),
+                ("amount", json!(buy_out.to_string())),
+                ("amountIn", json!(buy_out.to_string())),
                 ("amountOut", json!(sell_out.to_string())),
                 ("timestamp", t),
             ]),
@@ -1285,7 +1291,7 @@ fn nav_is_bounded_by_signed_quotes() {
     let t = T0_MS + 60_000;
     // first post records the price
     assert_eq!(post_q(&mut v, 10_000_000, price_quotes(4_000_000, 20, t, &k), t), Ok(true));
-    // NEAR +10%; tolerance = 100 slippage + 50 + spreads 20 + 20 = 190 bps
+    // NEAR +10%; up: +50 tolerance + 40 spreads above +10%; down: 190 below 0
     let t2 = t + 60_000;
     let book = v.book_nav;
     assert_eq!(
@@ -1313,7 +1319,9 @@ fn nav_is_bounded_by_signed_quotes() {
         .contains("risky → base"));
     // the band view
     let p = v.price_from_quotes(price_quotes(4_400_000, 20, t3, &k));
-    assert_eq!(v.nav_band(p), Some((-190, 190)));
+    // flat since the last post: down = slippage + tolerance + spreads, up = tolerance + spreads
+    let spreads = p.half_spread_bps as i64 + v.band_ref.as_ref().unwrap().point.half_spread_bps as i64;
+    assert_eq!(v.nav_band(p), Some((-(150 + spreads), 50 + spreads)));
 }
 
 #[test]
@@ -1335,6 +1343,8 @@ fn one_price_source_at_most() {
         max_age_ms: 300_000,
         tolerance_bps: 50,
         max_spread_bps: 100,
+        min_interval_ms: 60_000,
+        window_up_bps: 300,
     });
     c.nav_oracle = Some(NavOracle {
         contract: acc("pyth.testnet"),
@@ -1344,4 +1354,177 @@ fn one_price_source_at_most() {
     });
     ctx("owner.testnet", T0_MS);
     assert!(panics(|| Vault::new(c)).contains("one NAV price source"));
+}
+
+// ---------------- regressions from the NAV-price review ----------------
+
+/// Finding 1: the per-post allowance can't be stacked. Reusing quotes, posting
+/// again before the interval, and creeping up by the allowance every hour all fail.
+#[test]
+fn band_allowance_does_not_compound() {
+    let k = test_key();
+    let mut v = quotes_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    let q = price_quotes(4_000_000, 20, t, &k);
+    assert_eq!(post_q(&mut v, 10_000_000, q.clone(), t), Ok(true));
+    // the same quotes again (r = 0 forever) are refused, and so is posting again at once
+    assert_eq!(post_q(&mut v, 10_080_000, q, t + 60_000), Ok(false));
+    assert_eq!(post_q(&mut v, 10_080_000, price_quotes(4_000_000, 20, t + 1000, &k), t + 1000), Ok(false));
+    // flat market, a fresh hourly price, and the NAV pushed to the per-post edge each time:
+    // the 24h window stops it within a few hours (budget 300 bps + spreads)
+    let mut accepted = 0;
+    let mut nav = v.book_nav;
+    for h in 1..=12u64 {
+        let at = t + h * 3_600_000;
+        ctx("op.testnet", at);
+        let p = v.price_from_quotes(price_quotes(4_000_000, 20, at, &k));
+        let (_, hi) = v.nav_band(p).unwrap();
+        nav = nav * (10_000 + hi as u128 - 1) / 10_000;
+        if post_q(&mut v, nav, price_quotes(4_000_000, 20, at, &k), at) == Ok(true) {
+            accepted += 1;
+        } else {
+            nav = v.book_nav;
+        }
+    }
+    let gain = math::share_return_bps(math::PRICE_SCALE, math::price(v.book_nav, v.total_shares));
+    assert!(accepted >= 3, "honest-sized steps should pass for a while ({accepted})");
+    assert!(gain <= 300 + 60, "cumulative fake gain {gain} bps exceeds the window budget");
+}
+
+/// Finding 2: the first post is checked against the book price, and an empty vault
+/// can't be given value.
+#[test]
+fn first_post_and_empty_vault_are_bounded() {
+    let k = test_key();
+    let mut v = quotes_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    assert_eq!(
+        post_q(&mut v, 100_000_000, price_quotes(4_000_000, 20, t, &k), t),
+        Ok(false),
+        "10x on the first post"
+    );
+    assert_eq!(
+        post_q(&mut v, 10_100_000, price_quotes(4_000_000, 20, t, &k), t),
+        Ok(true),
+        "+1% (within costs + tolerance)"
+    );
+    // an empty vault: NAV can't exceed book NAV
+    let mut e = quotes_vault();
+    ctx("op.testnet", t);
+    let head = "ab".repeat(32);
+    let m = e.nav_message(1, U128(1_000_000_000_000), t, head.clone());
+    let r = e.post_nav(
+        1,
+        U128(1_000_000_000_000),
+        t,
+        head,
+        sig_str(att_key().sign(m.as_bytes())),
+        Some(price_quotes(4_000_000, 20, t, &k)),
+    );
+    assert!(matches!(r, PromiseOrValue::Value(None)));
+    assert_eq!(e.book_nav, 0);
+}
+
+/// Finding 3: the reference is the share price after burns, so an honest flat post
+/// after a matured withdrawal (paid at the lower price) is accepted.
+#[test]
+fn reference_is_the_post_burn_price() {
+    let k = test_key();
+    let mut v = quotes_vault();
+    deposit(&mut v, "leader.testnet", 5_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 5_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    assert_eq!(post_q(&mut v, 10_000_000, price_quotes(4_000_000, 20, t, &k), t), Ok(true));
+    ctx("follower.testnet", t + 1);
+    v.request_withdraw(U128(5_000_000), acc("follower.testnet"));
+    let t2 = t + 3_600_000;
+    assert_eq!(post_q(&mut v, 10_000_000, price_quotes(4_000_000, 20, t2, &k), t2), Ok(true)); // priced at 1.0
+                                                                                               // NEAR +10% and the vault fully in NEAR: NAV +10%; the request burns at min(1.0, 1.1) = 1.0
+    let t3 = t2 + 3_600_000;
+    assert_eq!(post_q(&mut v, 11_000_000, price_quotes(4_400_000, 20, t3, &k), t3), Ok(true));
+    // flat market, honest NAV = book NAV: accepted (it was stuck before the fix)
+    let t4 = t3 + 3_600_000;
+    let book = v.book_nav;
+    assert_eq!(post_q(&mut v, book, price_quotes(4_400_000, 20, t4, &k), t4), Ok(true));
+}
+
+/// Finding 4: the legs must be one observation of one size, without fees, and fresh.
+#[test]
+fn price_quote_hygiene() {
+    let k = test_key();
+    let v = quotes_vault();
+    let t = T0_MS + 60_000;
+    ctx("op.testnet", t);
+    let mut q = price_quotes(4_000_000, 20, t, &k);
+    let late = price_quotes(4_000_000, 20, t + 31_000, &k);
+    q[1] = late[1].clone();
+    ctx("op.testnet", t + 31_000);
+    assert!(panics(|| v.price_from_quotes(q.clone())).contains("not taken together"));
+    // a sell leg of a different size
+    let near = 1_000_000_000_000_000_000_000_000u128;
+    let mut m: Value = near_sdk::serde_json::from_str(&price_quotes(4_000_000, 20, t, &k)[1].message).unwrap();
+    m["amount"] = json!((2 * near).to_string());
+    m["amountIn"] = json!((2 * near).to_string());
+    let odd = sign_like_oneclick(&near_sdk::serde_json::to_string(&m).unwrap(), &k);
+    ctx("op.testnet", t);
+    let q2 = vec![price_quotes(4_000_000, 20, t, &k)[0].clone(), odd];
+    assert!(panics(|| v.price_from_quotes(q2)).contains("differ in size"));
+    // fees in a price quote
+    let mut f: Value = near_sdk::serde_json::from_str(&price_quotes(4_000_000, 20, t, &k)[0].message).unwrap();
+    f["appFees"] = json!([{"recipient": "x", "fee": 100}]);
+    let fee = sign_like_oneclick(&near_sdk::serde_json::to_string(&f).unwrap(), &k);
+    assert_eq!(
+        quote::price_facts(&fee, &quote::decode_ed25519::<32>(&pk_str(&k)).unwrap()),
+        Err(quote::QuoteError::Malformed("appFees"))
+    );
+    // config caps
+    let mut c = cfg();
+    c.nav_quotes = Some(NavQuotes {
+        base_id: USDC.into(),
+        risk_id: WNEAR.into(),
+        max_age_ms: 10 * 60_000,
+        tolerance_bps: 50,
+        max_spread_bps: 100,
+        min_interval_ms: 0,
+        window_up_bps: 300,
+    });
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| Vault::new(c)).contains("max_age_ms"));
+}
+
+/// Finding 5: on a mainnet account the quoted pair must be the vault's own assets.
+/// (Not in the drill build, which refuses non-testnet accounts outright.)
+#[cfg(not(feature = "drill"))]
+#[test]
+fn mainnet_quote_assets_are_the_vaults() {
+    let mut c = cfg();
+    c.nav_quotes = Some(NavQuotes {
+        base_id: "nep141:other".into(),
+        risk_id: WNEAR.into(),
+        max_age_ms: 300_000,
+        tolerance_bps: 50,
+        max_spread_bps: 100,
+        min_interval_ms: 0,
+        window_up_bps: 300,
+    });
+    testing_env!(VMContextBuilder::new()
+        .current_account_id(acc("vault.near"))
+        .predecessor_account_id(acc("owner.near"))
+        .build());
+    assert!(panics(|| Vault::new(c.clone())).contains("quote assets must be the vault's"));
+    c.nav_quotes.as_mut().unwrap().base_id = USDC.into();
+    assert_eq!(panics(|| Vault::new(c)), "<no panic>");
+}
+
+/// Finding 6: large quote sizes don't overflow.
+#[test]
+fn large_quotes_do_not_overflow() {
+    let near = 1_000_000_000_000_000_000_000_000u128;
+    // 1,000,000 USDC ↔ 250,000 NEAR
+    let (mid, hs) = math::bracket(1_000_000_000_000, 250_000 * near, 250_000 * near, 990_000_000_000).unwrap();
+    assert!(mid > 0 && hs > 0);
+    assert_eq!(math::mul_div(u128::MAX, 2, 4), Some(u128::MAX / 2));
+    assert_eq!(math::mul_div(u128::MAX, 2, 1), None);
 }

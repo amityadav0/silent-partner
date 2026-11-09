@@ -133,6 +133,12 @@ pub fn price_facts(q: &SignedQuote, key: &[u8; 32]) -> Result<PriceFacts, QuoteE
     if s(&v, "swapType")? != "EXACT_INPUT" {
         return Err(QuoteError::Malformed("swapType"));
     }
+    // Fees or referrals would make amountOut something other than the market price.
+    for k in ["appFees", "referral"] {
+        if !v.get(k).is_none_or(Value::is_null) {
+            return Err(QuoteError::Malformed(k));
+        }
+    }
     let amount_in = units(&v, "amountIn")?;
     if units(&v, "amount")? != amount_in {
         return Err(QuoteError::Malformed("amountIn"));

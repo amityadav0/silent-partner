@@ -17,7 +17,8 @@ import { USDC, WNEAR, viewCall } from "../src/intents.js";
 const RPC = "https://rpc.testnet.fastnear.com";
 const A = JSON.parse(readFileSync("data/season-accounts.json", "utf8")) as Record<string, string>;
 const K = JSON.parse(readFileSync("data/season-keys.json", "utf8"));
-const VAULT = `quotes.${A.lmeanrev}`, LEADER = A.lmeanrev, OP = A.sop;
+// argv[2]: vault account (default: the second run's vault, after the band review fixes)
+const VAULT = process.argv[2] ?? `quotes2.${A.lmomo}`, LEADER = VAULT.split(".").slice(1).join("."), OP = A.sop;
 const USDC_T = "usdc.fakes.testnet";
 const TGAS = 1_000_000_000_000n;
 const ONECLICK_KEY = "ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc";
@@ -42,7 +43,7 @@ if ((await acct.state()).code_hash === "11111111111111111111111111111111") {
     owner: VAULT, operator: OP, leader: LEADER, base_token: USDC_T, base_asset_id: `nep141:${USDC_T}`, intents_contract: "sp-intents-61557.testnet",
     mpc_contract: "v1.signer-prod.testnet", mpc_path: "silent-partner/vault", oneclick_key: ONECLICK_KEY, attestation_key: KeyPair.fromString(K.attestation).getPublicKey().toString(),
     perf_fee_bps: 2000, min_leader_bps: 1000, max_slippage_bps: 100, min_deposit: "1000000", allowed_assets: [`nep141:${USDC_T}`, "nep141:wrap.testnet"],
-    nav_oracle: null, nav_quotes: { base_id: USDC, risk_id: WNEAR, max_age_ms: 300_000, tolerance_bps: 50, max_spread_bps: 100 },
+    nav_oracle: null, nav_quotes: { base_id: USDC, risk_id: WNEAR, max_age_ms: 120_000, tolerance_bps: 25, max_spread_bps: 40, min_interval_ms: 60_000, window_up_bps: 200 },
   } });
   await call("activate (MPC)", OP, VAULT, "activate", {}, { gas: 50n * TGAS });
   await call("storage on fake USDC", OP, USDC_T, "storage_deposit", { account_id: VAULT }, { deposit: 1_250_000_000_000_000_000_000n, gas: 30n * TGAS });
@@ -55,10 +56,13 @@ const va = (await chain.getVault()).vault_account!;
 const env = loadEnv({ NEAR_NETWORK: "testnet", DRY_RUN: "1" });
 const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, ONECLICK_KEY, true), new FillLog(VAULT, null), KeyPair.fromString(K.attestation), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
 
-async function post(label: string, factor: number) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+let lastQuotes: Awaited<ReturnType<typeof op.priceQuotes>>;
+async function post(label: string, factor: number, reuse = false) {
   const v = await chain.getVault();
   const nav = BigInt(Math.round(Number(v.book_nav) * factor)).toString();
-  const quotes = (await op.priceQuotes())!;
+  const quotes = reuse && lastQuotes ? lastQuotes : (await op.priceQuotes())!;
+  lastQuotes = quotes;
   const facts = quotes.map((q) => { const m = JSON.parse(q.message); return { from: m.originAsset.slice(0, 14), in: m.amountIn, out: m.amountOut, timestamp: m.timestamp }; });
   const point = await view<any>("price_from_quotes", { price_quotes: quotes });
   const band = await view<[number, number] | null>("nav_band", { point });
@@ -77,5 +81,12 @@ async function post(label: string, factor: number) {
   if (r.tx) txs.push({ step: label, tx: String(r.tx), note: r.accepted ? "accepted" : String(r.log ?? r.error) });
   return out;
 }
-const runs = [await post("post 1: honest (records the price)", 1), await post("post 2: honest", 1), await post("post 3: +20% inflated", 1.2), await post("post 4: honest again", 1)];
+const runs = [await post("post 1: honest (checked against the book price)", 1)];
+await sleep(62_000);
+runs.push(await post("post 2: honest", 1));
+await sleep(62_000);
+runs.push(await post("post 3: +20% inflated", 1.2));
+runs.push(await post("post 4: honest again", 1));
+await sleep(62_000);
+runs.push(await post("post 5: re-uses post 4's quotes", 1, true));
 writeFileSync("data/quotes-check.json", JSON.stringify({ ranAt: new Date().toISOString(), vault: VAULT, runs, txs }, null, 2));

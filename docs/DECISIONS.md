@@ -149,3 +149,24 @@ Each decision is dated, with its reason.
   - **Removed.** `PythPush` and the `PYTH_*` env vars.
   - **Testnet run.** `quotes.sp-lmeanrev-92991.testnet` is configured with 1Click's real key and the mainnet USDC/wNEAR pair. Its posts carried real public 1Click dry quotes (half-spread ~22 bps). Honest posts were accepted; +20% was rejected. See docs/testnet.md.
 - **D-P5-6 (2026-11-09) Mainnet artifact rebuilt for 1Click-quote pricing.** `cargo near build reproducible-wasm` at commit `1b1ec1a` (embedded in the wasm's source metadata) produced sha256 `cda36f4fe985aaa0328ff80bfbc0f2a0395c3f9598d88389b1ea58ce52be4152` (code hash `Eqj7zm5Mg8E64MGeVZkTGu9FEgptUMYuXNwtrSEeSDaH`, 381,750 bytes). It supersedes D-P5-5.
+- **D-H-6 (2026-11-09) Fixes from the review of the NAV price path.** A fresh-context agent reviewed quote parsing, signature checks, freshness, spread and band math, and confirmed its findings with unit tests. All six are fixed; regression tests in `contract/src/tests.rs` ("regressions from the NAV-price review").
+  1. **Critical: the allowance compounded per post.** Each post got a fresh ±tolerance and posts weren't rate-limited; re-using one pair of quotes made r = 0. 40 posts took the price 1.00 → 1.82 on a flat market. **Fix:**
+     - at least `min_interval_ms` between bounded posts;
+     - a strictly newer price at every post;
+     - an asymmetric band: slippage only on the low side, since costs only lower NAV;
+     - a 24h window with a fixed budget. Since the window's anchor, the share return may exceed max(0, R) by at most `window_up_bps` + spreads. The low side gets that budget plus max slippage per trade the vault actually signed (`trades_since_anchor`, counted in `sign_intent(Trade)`).
+  2. **Critical: the first post and empty vaults were unbounded.** **Fix:**
+     - with no reference, the share price must be within slippage + tolerance + spread of the book price, since deposits are base asset at 1:1 (this also covers the first post after a migration);
+     - with no shares, NAV can't exceed book NAV.
+  3. **High: the band started from the pre-burn price.** Withdrawals burn at min(NAV_t, NAV_t+1), so the remaining holders' real price was higher than the recorded one, and honest posts got stuck. **Fix:**
+     - the reference is the share price after burns;
+     - the window's anchor moves up by the same factor when burns pay below the post price, because that's a transfer to the holders who stay, not a market move.
+  4. **Medium: quote shopping.** **Fix:**
+     - the two legs must be ≤ 30 s apart and the same size ±5%;
+     - `max_age_ms` ≤ 5 min;
+     - `appFees` and `referral` are refused in price quotes.
+     The residual is bounded in threat-model §7.
+  5. **Low: quoted pair not tied to the vault.** On mainnet accounts, `base_id` must equal `base_asset_id` and `risk_id` must be an allowed asset. Testnet vaults price the mainnet pair, since 1Click has no testnet.
+  6. **Low: overflow at 1e30 scaling.** It overflowed above ~340 USDC quotes. Now 256-bit `mul_div`, with a property test against u128.
+  - **Mainnet parameters** (`docs/mainnet-init.json`): `max_age_ms` 120 s, `tolerance_bps` 25, `max_spread_bps` 40 (testnet quotes ran at ~22 bps), `min_interval_ms` 1 h (the operator's default epoch), `window_up_bps` 200.
+  - **Season vaults** (oracle path, earlier code) are unchanged. They're paper vaults with a mock feed, and the same bound fixes apply to any new oracle-priced vault.

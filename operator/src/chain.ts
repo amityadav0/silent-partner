@@ -9,7 +9,7 @@ export type VaultView = { vault_account: string | null; total_shares: string; bo
 export type InFlight = { prehash: string; nonce: string; amount: string; deadline_ms: number; signed: boolean };
 export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: InFlight[]; epoch: number; emergency: boolean; opened_ms?: number };
 export type SignedIntent = { standard: "nep413"; payload: Nep413Payload; public_key: string; signature: string };
-export type NavQuotes = { base_id: string; risk_id: string; max_age_ms: number; tolerance_bps: number; max_spread_bps: number };
+export type NavQuotes = { base_id: string; risk_id: string; max_age_ms: number; tolerance_bps: number; max_spread_bps: number; min_interval_ms?: number; window_up_bps?: number };
 export type Config = { base_token: string; base_asset_id: string; allowed_assets: string[]; max_slippage_bps: number; intents_contract: string | null; leader: string; nav_quotes?: NavQuotes | null };
 
 export interface VaultChain {

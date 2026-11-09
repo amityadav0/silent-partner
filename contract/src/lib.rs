@@ -54,6 +54,20 @@ const GAS_CALLBACK: Gas = Gas::from_tgas(15);
 const GAS_VIEW: Gas = Gas::from_tgas(10);
 /// The NAV callback burns up to 100 withdrawals.
 const GAS_NAV_CALLBACK: Gas = Gas::from_tgas(200);
+/// The cumulative NAV band's window.
+pub const BAND_WINDOW_MS: u64 = 24 * 60 * 60 * 1000;
+/// Window upside budget for oracle-priced vaults (testnet season).
+pub const DEFAULT_WINDOW_UP_BPS: u16 = 300;
+/// The two price-quote legs must be observed within this much of each other.
+pub const MAX_LEG_GAP_MS: u64 = 30_000;
+
+struct BandParams {
+    tolerance: i128,
+    slippage: i128,
+    min_interval_ms: u64,
+    window_up: i128,
+}
+
 /// A post whose callback never ran (out of gas) stops blocking after this long.
 const POSTING_TIMEOUT_MS: u64 = 10 * 60 * 1000;
 const GAS_FT_FORWARD: Gas = Gas::from_tgas(60);
@@ -131,6 +145,11 @@ pub struct NavQuotes {
     pub tolerance_bps: u16,
     /// Quotes wider than this (half-spread) are refused: a huge quote size can't buy a wide band.
     pub max_spread_bps: u16,
+    /// Minimum time between bounded posts: the per-post allowance can't be stacked by posting often.
+    pub min_interval_ms: u64,
+    /// 24h envelope: the share return since the window's anchor may exceed the risky asset's
+    /// return over the same window by at most this much (active-trading allowance per day).
+    pub window_up_bps: u16,
 }
 
 /// A price at a NAV post: `mid` in the source's own fixed-point units, and how
@@ -141,6 +160,18 @@ pub struct PricePoint {
     pub mid: U128,
     pub half_spread_bps: u32,
     pub source: String,
+    /// When the price was observed (oldest quote timestamp / oracle publish time), ms.
+    pub observed_ms: u64,
+}
+
+/// Where the band starts: the price and the post-burn share price at a post.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BandRef {
+    pub point: PricePoint,
+    /// Share price × 1e18 after the post's fee and burns (what the holders who stay hold).
+    pub share_price: U128,
+    pub at_ms: u64,
 }
 
 /// A Pyth-compatible price feed for the vault's risky asset in base units
@@ -328,8 +359,11 @@ pub struct Vault {
     signal_hashes: LookupSet<String>,
     /// Withdrawals priced at the last post, burned at the next.
     maturing: IterableMap<u64, Maturing>,
-    /// Price at the last post (the band's starting point).
-    last_price: Option<PricePoint>,
+    /// The last bounded post (per-post band) and the 24h window's anchor (cumulative band).
+    band_ref: Option<BandRef>,
+    band_anchor: Option<BandRef>,
+    /// Trade transfers the vault key signed since the window's anchor (each may cost up to max slippage).
+    trades_since_anchor: u32,
     /// A post waiting for its oracle callback (block ms), 0 when none.
     posting_since_ms: u64,
 }
@@ -349,8 +383,19 @@ impl Vault {
         if let Some(q) = &cfg.nav_quotes {
             require!(cfg.allowed_assets.len() == 2, "the NAV bound needs exactly base + one risky asset");
             require!(q.base_id != q.risk_id, "quote assets must differ");
-            require!(q.max_age_ms > 0 && q.max_age_ms <= 15 * 60 * 1000, "max_age_ms must be 1 ms..15 min");
-            require!(q.tolerance_bps <= 1000 && q.max_spread_bps <= 500, "tolerance or spread cap too wide");
+            require!(q.max_age_ms > 0 && q.max_age_ms <= 5 * 60 * 1000, "max_age_ms must be 1 ms..5 min");
+            require!(
+                q.tolerance_bps <= 500 && q.max_spread_bps <= 200 && q.window_up_bps <= 2000,
+                "tolerance, spread cap or window too wide"
+            );
+            // On mainnet the quoted pair must be the vault's own assets. (Testnet vaults
+            // price the mainnet pair, since 1Click has no testnet.)
+            if !env::current_account_id().as_str().ends_with(".testnet") {
+                require!(
+                    q.base_id == cfg.base_asset_id && cfg.allowed_assets.contains(&q.risk_id),
+                    "quote assets must be the vault's"
+                );
+            }
         }
         if let Some(o) = &cfg.nav_oracle {
             require!(cfg.allowed_assets.len() == 2, "the NAV bound needs exactly base + one risky asset");
@@ -379,7 +424,9 @@ impl Vault {
             used_deposits: LookupSet::new(b"u"),
             signal_hashes: LookupSet::new(b"h"),
             maturing: IterableMap::new(b"m"),
-            last_price: None,
+            band_ref: None,
+            band_anchor: None,
+            trades_since_anchor: 0,
             posting_since_ms: 0,
         }
     }
@@ -526,8 +573,9 @@ impl Vault {
                 env::log_str(&format!("silent-partner.nav_rejected epoch={epoch} nav={} reason={why}", nav.0));
                 return PromiseOrValue::Value(None);
             }
-            self.last_price = Some(p);
-            return PromiseOrValue::Value(Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature)));
+            let post = self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature);
+            self.record_band(p);
+            return PromiseOrValue::Value(Some(post));
         }
         let Some(o) = self.cfg.nav_oracle.clone() else {
             return PromiseOrValue::Value(Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature)));
@@ -580,19 +628,36 @@ impl Vault {
         if let Err(why) = self.check_band(nav.0, &point) {
             return reject(why);
         }
-        self.last_price = Some(point);
-        Some(self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature))
+        let post = self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature);
+        self.record_band(point);
+        Some(post)
     }
 
     pub fn get_maturing(&self) -> Vec<Maturing> {
         self.maturing.values().cloned().collect()
     }
 
-    /// The band a NAV for the next post must fall in, given a price now:
-    /// (low, high) per-share return in bps since the last post, or None if unbounded.
+    /// The per-post band a NAV for the next post must fall in, given a price now:
+    /// (low, high) share return in bps against the reference share price (or the
+    /// book price before the first bounded post). None for an unbounded vault.
     pub fn nav_band(&self, point: PricePoint) -> Option<(i64, i64)> {
-        let (r, tol) = self.band_inputs(&point).ok()??;
-        Some(((r.min(0) - tol) as i64, (r.max(0) + tol) as i64))
+        let b = self.band_params()?;
+        let (lo, hi) = match &self.band_ref {
+            Some(r) => {
+                let ra = math::mid_return_bps(r.point.mid.0, point.mid.0)?;
+                let spread = point.half_spread_bps as i128 + r.point.half_spread_bps as i128;
+                (ra.min(0) - (b.slippage + b.tolerance + spread), ra.max(0) + b.tolerance + spread)
+            }
+            None => {
+                let t = b.slippage + b.tolerance + point.half_spread_bps as i128;
+                (-t, t)
+            }
+        };
+        Some((lo as i64, hi as i64))
+    }
+
+    pub fn get_band_state(&self) -> (Option<BandRef>, Option<BandRef>, u32) {
+        (self.band_ref.clone(), self.band_anchor.clone(), self.trades_since_anchor)
     }
 
     /// Verify two signed quotes and return the price point they give (panics if refused).
@@ -614,12 +679,23 @@ impl Vault {
         for t in [buy.timestamp_ms, sell.timestamp_ms] {
             require!(t <= now + 60_000 && now.saturating_sub(t) <= q.max_age_ms, "price quote too old");
         }
+        // One observation: both legs within 30 s of each other, the same size both ways
+        // (the sell leg sells what the buy leg bought, ±5%).
+        require!(
+            buy.timestamp_ms.abs_diff(sell.timestamp_ms) <= MAX_LEG_GAP_MS,
+            "price quotes not taken together"
+        );
+        require!(
+            sell.amount_in.saturating_mul(100) >= buy.amount_out.saturating_mul(95) && sell.amount_in.saturating_mul(100) <= buy.amount_out.saturating_mul(105),
+            "price quote legs differ in size"
+        );
         let (mid, hs) = math::bracket(buy.amount_in, buy.amount_out, sell.amount_in, sell.amount_out).unwrap_or_else(|| env::panic_str("bad quote amounts"));
         require!(hs <= q.max_spread_bps as u32, "price quotes too wide");
         PricePoint {
             mid: U128(mid),
             half_spread_bps: hs,
             source: "1click".into(),
+            observed_ms: buy.timestamp_ms.min(sell.timestamp_ms),
         }
     }
 
@@ -780,7 +856,10 @@ impl Vault {
                 require!(p.recipient == want_recipient, "payload recipient does not match depositType");
                 match kind {
                     SignKind::Shield => self.check_shield(&f, &vault),
-                    SignKind::Trade => self.check_trade(&f, &vault),
+                    SignKind::Trade => {
+                        self.check_trade(&f, &vault);
+                        self.trades_since_anchor = self.trades_since_anchor.saturating_add(1);
+                    }
                     SignKind::Unshield => self.check_unshield(&f, &vault),
                     SignKind::Login | SignKind::PublicPayout { .. } => unreachable!(),
                 }
@@ -990,43 +1069,102 @@ impl Vault {
         require!(env::ed25519_verify(&sig, msg.as_bytes(), &key), "NAV signature does not verify");
     }
 
-    /// (risky asset's return since the last post, tolerance), both bps; None when
-    /// there's nothing to compare against yet (first post, no oracle price, empty vault).
-    fn band_inputs(&self, p: &PricePoint) -> Result<Option<(i128, i128)>, String> {
-        let tolerance = match (&self.cfg.nav_quotes, &self.cfg.nav_oracle) {
-            (Some(q), _) => q.tolerance_bps,
-            (_, Some(o)) => o.tolerance_bps,
-            _ => return Ok(None),
+    fn band_params(&self) -> Option<BandParams> {
+        let (tolerance, min_interval, window_up) = match (&self.cfg.nav_quotes, &self.cfg.nav_oracle) {
+            (Some(q), _) => (q.tolerance_bps, q.min_interval_ms, q.window_up_bps),
+            (_, Some(o)) => (o.tolerance_bps, 0, DEFAULT_WINDOW_UP_BPS),
+            _ => return None,
         };
-        let Some(last) = &self.last_price else {
-            return Ok(None);
-        };
-        if self.total_shares == 0 || self.navs.is_empty() {
-            return Ok(None);
-        }
-        if last.source != p.source {
-            return Ok(None); // a change of price source restarts the band
-        }
-        let r = math::mid_return_bps(last.mid.0, p.mid.0).ok_or("bad price")?;
-        let tol = self.cfg.max_slippage_bps as i128 + tolerance as i128 + p.half_spread_bps as i128 + last.half_spread_bps as i128;
-        Ok(Some((r, tol)))
+        Some(BandParams {
+            tolerance: tolerance as i128,
+            slippage: self.cfg.max_slippage_bps as i128,
+            min_interval_ms: min_interval,
+            window_up: window_up as i128,
+        })
     }
 
+    /// The NAV bound. Returns are share returns in bps; r is the risky asset's
+    /// return over the same span (mid to mid).
+    /// * No holders: NAV can't exceed book NAV (no value can appear with nobody to own it).
+    /// * No reference yet (first bounded post, or after migration): the share price must be
+    ///   within slippage + tolerance + spread of the book price (deposits are base, 1:1).
+    /// * Per post, against the last bounded post (at least `min_interval_ms` earlier, with a
+    ///   strictly newer price): [min(0, r) − (slippage + tolerance + spreads), max(0, r) +
+    ///   tolerance + spreads]. Costs only lower NAV, so slippage is on the low side only.
+    /// * Over the 24h window, against its anchor: the same with a fixed upside budget
+    ///   `window_up_bps` + spreads, and on the low side that budget plus max slippage per
+    ///   trade the vault actually signed. Per-post allowances can't compound past this.
     fn check_band(&self, nav: u128, p: &PricePoint) -> Result<(), String> {
-        let Some((r, tol)) = self.band_inputs(p)? else {
+        let Some(b) = self.band_params() else {
             return Ok(());
         };
-        let p_last = self.navs.get(self.navs.len() - 1).map(|n| n.price.0).unwrap_or(math::PRICE_SCALE);
-        let rv = math::share_return_bps(p_last, math::price(nav, self.total_shares));
-        if math::within_band(rv, r, tol) {
-            Ok(())
-        } else {
-            Err(format!(
-                "share return {rv}bps outside [{}, {}]bps (asset {r}bps)",
-                r.min(0) - tol,
-                r.max(0) + tol
-            ))
+        if self.total_shares == 0 {
+            return if nav <= self.book_nav {
+                Ok(())
+            } else {
+                Err(format!("no holders: NAV {nav} above book NAV {}", self.book_nav))
+            };
         }
+        let share = math::price(nav, self.total_shares);
+        let fmt = |what: &str, rv: i128, lo: i128, hi: i128, ra: i128| format!("{what}: share return {rv}bps outside [{lo}, {hi}]bps (asset {ra}bps)");
+        let Some(r) = &self.band_ref else {
+            let rv = math::share_return_bps(math::price(self.book_nav, self.total_shares), share);
+            let t = b.slippage + b.tolerance + p.half_spread_bps as i128;
+            return if rv.abs() <= t {
+                Ok(())
+            } else {
+                Err(fmt("first post vs book price", rv, -t, t, 0))
+            };
+        };
+        if r.point.source != p.source {
+            return Err("price source changed".into());
+        }
+        if now_ms() < r.at_ms + b.min_interval_ms {
+            return Err(format!("too soon: one bounded post per {} ms", b.min_interval_ms));
+        }
+        if p.observed_ms <= r.point.observed_ms {
+            return Err("price not newer than the last post's".into());
+        }
+        let check = |what: &str, from: &BandRef, up_budget: i128, down_extra: i128| -> Result<(), String> {
+            let ra = math::mid_return_bps(from.point.mid.0, p.mid.0).ok_or("bad price")?;
+            let rv = math::share_return_bps(from.share_price.0, share);
+            let spread = p.half_spread_bps as i128 + from.point.half_spread_bps as i128;
+            let (lo, hi) = (ra.min(0) - (up_budget + down_extra + spread), ra.max(0) + up_budget + spread);
+            if rv >= lo && rv <= hi {
+                Ok(())
+            } else {
+                Err(fmt(what, rv, lo, hi, ra))
+            }
+        };
+        check("per post", r, b.tolerance, b.slippage)?;
+        if let Some(a) = &self.band_anchor {
+            check("24h window", a, b.window_up, b.slippage * self.trades_since_anchor.max(1) as i128)?;
+        }
+        Ok(())
+    }
+
+    /// After an accepted bounded post: it becomes the reference, and it anchors a new
+    /// 24h window when there is none or the current one is over.
+    fn record_band(&mut self, p: PricePoint) {
+        let after_burns = math::price(self.book_nav, self.total_shares);
+        let r = BandRef {
+            point: p,
+            share_price: U128(after_burns),
+            at_ms: now_ms(),
+        };
+        // Withdrawals burned below this post's price leave value to the holders who
+        // stay. That isn't a market move, so the window's anchor moves up with it.
+        let posted = self.navs.get(self.navs.len() - 1).map(|n| n.price.0).unwrap_or(after_burns);
+        if let Some(a) = self.band_anchor.as_mut() {
+            if after_burns > posted && posted > 0 {
+                a.share_price = U128(math::mul_div(a.share_price.0, after_burns, posted).unwrap_or(a.share_price.0));
+            }
+        }
+        if self.band_anchor.as_ref().is_none_or(|a| r.at_ms >= a.at_ms + BAND_WINDOW_MS) {
+            self.band_anchor = Some(r.clone());
+            self.trades_since_anchor = 0;
+        }
+        self.band_ref = Some(r);
     }
 
     /// Fee above the HWM, then: withdrawals priced at the previous post burn at
@@ -1232,6 +1370,7 @@ fn oracle_point(p: &OraclePrice) -> Option<PricePoint> {
         mid: U128(mid),
         half_spread_bps: hs,
         source: "oracle".into(),
+        observed_ms: (p.publish_time.max(0) as u64) * 1000,
     })
 }
 

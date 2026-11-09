@@ -267,3 +267,17 @@ The +20% post was refused on-chain (epoch stayed 2), and the next honest post wa
 | leader: deposit 10 USDC | [`7zaBJEjAy3…`](https://testnet.nearblocks.io/txns/7zaBJEjAy3GxZPck2cw8o7mrT9658boLk7FJzoWnmoRW) |
 
 </details>
+
+## NAV quote band after the review fixes (D-H-6, 2026-11-09)
+
+Vault [`quotes2.sp-lmomo-92991.testnet`](https://testnet.nearblocks.io/address/quotes2.sp-lmomo-92991.testnet) uses the fixed contract with 1Click's real key and the mainnet USDC/wNEAR pair, the mainnet tolerance (25 bps), spread cap (40 bps) and age (120 s), and a 60 s minimum post interval so the run fits in minutes (mainnet: 1 h). Real public 1Click dry quotes, verified on-chain.
+
+| Post | NAV | Half-spread | Band (bps) | Result |
+|---|---|---|---|---|
+| post 1: honest (checked against the book price) | 10000000 | 24 bps | [-149, 149] | accepted [`GSR5FrgaPF…`](https://testnet.nearblocks.io/txns/GSR5FrgaPFf9fBrAaP6aqt9cFs6GFGgV7u69ZmFJDArn) |
+| post 2: honest | 10000000 | 24 bps | [-215, 73] | accepted [`5PPQ2zWYp2…`](https://testnet.nearblocks.io/txns/5PPQ2zWYp2sT2VkinPP6pTbf9gEgJUyyNEwoaydif2nY) |
+| post 3: +20% inflated | 12000000 | 25 bps | [-187, 74] | **rejected**: per post: share return 2000bps outside [-187, 74]bps (asset -13bps) [`9sSBzqNoE5…`](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn) |
+| post 4: honest again | 10000000 | 25 bps | [-174, 77] | accepted [`7CuTtYUcEc…`](https://testnet.nearblocks.io/txns/7CuTtYUcEcY6GZDQs59XVJBMbJCciKA73D5WKDuku7zC) |
+| post 5: re-uses post 4's quotes | 10000000 | 25 bps | [-175, 75] | **rejected**: price not newer than the last post's [`271mergq6s…`](https://testnet.nearblocks.io/txns/271mergq6svcvqZ11Xw6mu6NXnf1H82vuuwnkK6oEK9H) |
+
+The first post was checked against the book price, and the bands are asymmetric (costs only on the low side). The +20% post and the reused quotes were refused on-chain, and the vault's epoch didn't move.

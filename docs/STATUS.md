@@ -74,6 +74,11 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] Price source: 1Click-signed dry quotes for the NAV band (replaces Pyth on mainnet, D-H-5); testnet run: honest posts accepted, +20% rejected
 - [x] reproducible mainnet wasm rebuilt at 1b1ec1a (D-P5-6), NEEDS-AMIT §3 updated
 
+## NAV price review (Nov 9)
+- [x] fresh-context review of the NAV price path; 6 findings fixed (D-H-6); testnet rerun: honest accepted, +20% and reused quotes rejected
+- [x] threat-model §7 row 16: quote shopping bounded (≈1.85%/post, ≈3.6%/24h with mainnet params)
+- [ ] reproducible mainnet wasm rebuilt; NEEDS-AMIT §3 hash
+
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.

@@ -105,7 +105,9 @@ impl Vault {
             used_deposits: LookupSet::new(b"u"),
             signal_hashes,
             maturing: IterableMap::new(b"m"),
-            last_price: None,
+            band_ref: None,
+            band_anchor: None,
+            trades_since_anchor: 0,
             posting_since_ms: 0,
         }
     }

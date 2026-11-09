@@ -231,26 +231,28 @@ proptest! {
     /// of NEAR, paying trading costs within slippage, is always accepted as
     /// NEAR's price walks. A NAV outside the band is always rejected and changes nothing.
     #[test]
-    fn honest_navs_pass_and_lies_fail(steps in prop::collection::vec((-1500i64..=1500, 0u32..=1000, 0u32..=100, 200u32..3000, any::<bool>()), 1..25)) {
+    fn honest_navs_pass_and_lies_fail(w_milli in 0u32..=1000, steps in prop::collection::vec((-500i64..=500, 0u32..=100, 60u32..3000, any::<bool>()), 1..15)) {
         let mut v = oracle_vault();
         deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
-        let mut t = T0_MS + 1;
+        let mut t = T0_MS + 1000;
         let mut near: i64 = 400_000_000;
         prop_assert!(post_with_price(&mut v, 10_000_000, Some(px(near)), t));
-        for (move_bps, w_milli, cost_bps, lie_bps, up) in steps {
+        for (move_bps, cost_bps, lie_bps, up) in steps {
             t += 1000;
             let next = (near as i128 * (10_000 + move_bps as i128) / 10_000) as i64;
             let r_near = math::oracle_return_bps(near, -8, next, -8).unwrap();
-            let p_last = v.navs.get(v.navs.len() - 1).unwrap().price.0 as i128;
-            // honest: w of NAV moved with NEAR, minus up to the slippage cap in costs
+            let p_last = v.band_ref.as_ref().unwrap().share_price.0 as i128;
+            let nav_at = |ret: i128, v: &Vault| ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            // honest: a constant NEAR weight w; costs only when it trades (each trade is a signed Trade)
             let ret = r_near * w_milli as i128 / 1000 - cost_bps as i128;
-            let honest_price = p_last * (10_000 + ret) / 10_000;
-            let honest_nav = (honest_price * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
-            // a lie beyond the band (tolerance 150 bps)
-            let edge = if up { r_near.max(0) + 150 } else { r_near.min(0) - 150 };
+            if cost_bps > 0 {
+                v.trades_since_anchor += 1;
+            }
+            // a lie past the per-post band: up = tolerance 50 (conf 0), down = slippage 100 + 50
+            let edge = if up { r_near.max(0) + 50 } else { r_near.min(0) - 150 };
             let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
-            let lie_nav = ((p_last * (10_000 + lie_ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
             let (epoch, book) = (v.epoch, v.book_nav);
+            let (lie_nav, honest_nav) = (nav_at(lie_ret, &v), nav_at(ret, &v));
             prop_assert!(!post_with_price(&mut v, lie_nav, Some(px(next)), t), "lie {} bps accepted (asset {} bps)", lie_ret, r_near);
             prop_assert_eq!((v.epoch, v.book_nav), (epoch, book));
             prop_assert!(post_with_price(&mut v, honest_nav, Some(px(next)), t + 1), "honest {} bps rejected (asset {} bps)", ret, r_near);
@@ -282,36 +284,45 @@ proptest! {
     /// Same guarantee with 1Click-signed quotes: honest NAVs at any NEAR weight
     /// pass for any spread under the cap; anything outside the widened band fails.
     #[test]
-    fn quotes_bound_honest_pass_lies_fail(steps in prop::collection::vec((-1500i64..=1500, 0u32..=1000, 0u32..=100, 0u32..=95, 200u32..3000, any::<bool>()), 1..15)) {
+    fn quotes_bound_honest_pass_lies_fail(w_milli in 0u32..=1000, steps in prop::collection::vec((-500i64..=500, 0u32..=100, 0u32..=95, 60u32..3000, any::<bool>()), 1..12)) {
         let k = crate::quote::tests::test_key();
         let mut v = quotes_vault();
         deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
         let mut t = T0_MS + 60_000;
         let mut usd: u128 = 4_000_000;
-        let mut hs_last = 20u32;
-        prop_assert_eq!(post_q(&mut v, 10_000_000, price_quotes(usd, hs_last as u128, t, &k), t), Ok(true));
-        for (move_bps, w_milli, cost_bps, hs, lie_bps, up) in steps {
+        prop_assert_eq!(post_q(&mut v, 10_000_000, price_quotes(usd, 20, t, &k), t), Ok(true));
+        for (move_bps, cost_bps, hs, lie_bps, up) in steps {
             t += 60_000;
             let next = (usd as i128 * (10_000 + move_bps as i128) / 10_000) as u128;
             let qs = price_quotes(next, hs as u128, t, &k);
             let point = v.price_from_quotes(qs.clone());
-            let last = v.last_price.clone().unwrap();
-            let r = math::mid_return_bps(last.mid.0, point.mid.0).unwrap();
-            let tol = 150 + point.half_spread_bps as i128 + last.half_spread_bps as i128;
-            let p_last = v.navs.get(v.navs.len() - 1).unwrap().price.0 as i128;
-            let ret = r * w_milli as i128 / 1000 - cost_bps as i128;
-            let honest = ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
-            let edge = if up { r.max(0) + tol } else { r.min(0) - tol };
+            let r = v.band_ref.clone().unwrap();
+            let ra = math::mid_return_bps(r.point.mid.0, point.mid.0).unwrap();
+            let spread = point.half_spread_bps as i128 + r.point.half_spread_bps as i128;
+            let p_last = r.share_price.0 as i128;
+            let nav_at = |ret: i128, v: &Vault| ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            let ret = ra * w_milli as i128 / 1000 - cost_bps as i128;
+            if cost_bps > 0 {
+                v.trades_since_anchor += 1;
+            }
+            let edge = if up { ra.max(0) + 50 + spread } else { ra.min(0) - (150 + spread) };
             let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
-            let lie = ((p_last * (10_000 + lie_ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
             let (epoch, book) = (v.epoch, v.book_nav);
-            prop_assert_eq!(post_q(&mut v, lie, qs.clone(), t), Ok(false), "lie {} bps accepted (asset {} bps)", lie_ret, r);
+            let (lie_nav, honest_nav) = (nav_at(lie_ret, &v), nav_at(ret, &v));
+            prop_assert_eq!(post_q(&mut v, lie_nav, qs.clone(), t), Ok(false), "lie {} bps accepted (asset {} bps)", lie_ret, ra);
             prop_assert_eq!((v.epoch, v.book_nav), (epoch, book));
-            prop_assert_eq!(post_q(&mut v, honest, qs, t + 1), Ok(true), "honest {} bps rejected (asset {} bps)", ret, r);
+            prop_assert_eq!(post_q(&mut v, honest_nav, qs, t + 1), Ok(true), "honest {} bps rejected (asset {} bps)", ret, ra);
             usd = next;
-            hs_last = hs;
             t += 1;
         }
-        let _ = hs_last;
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(2000))]
+    /// mul_div agrees with plain u128 arithmetic wherever that doesn't overflow.
+    #[test]
+    fn mul_div_matches_u128(a in any::<u64>(), b in any::<u64>(), c in 1u128..u64::MAX as u128) {
+        prop_assert_eq!(math::mul_div(a as u128, b as u128, c), Some(a as u128 * b as u128 / c));
     }
 }
