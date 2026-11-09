@@ -61,6 +61,11 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 7. Hardening: property and fuzz tests (found the leader-stake and duplicate-token bugs), fresh-context review, fixes (D-H-2; critical payout double-pay closed and checked on testnet), the rest listed in threat-model §7
 - [x] after 7: reproducible mainnet wasm rebuilt at 9aed265 (D-P5-4), NEEDS-AMIT §3 updated
 
+## Follow-ups (Nov 9, second list)
+- [x] 1. Self-sustaining season scheduler (15-min loop for ~5h30m, then re-dispatch; cron backup at :07/:22/:37/:52; sealed manual-signal inbox). D-S-8
+- [ ] 1b. Verify ticks land on season-state from the loop; record in docs/testnet.md
+- [ ] 2. NAV bound from a public price (Pyth-compatible oracle), withdrawals at min(NAV_t, NAV_t+1), property tests, threat-model §7, rebuild the mainnet wasm
+
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.

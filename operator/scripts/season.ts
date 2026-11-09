@@ -13,7 +13,7 @@
 //   NEARAI_API_KEY          optional; the AI leader holds without it
 // Inputs: SEASON_SIGNAL (manual leader's signed envelope), SEASON_STATE_DIR
 // (sealed state checkout, default ../season-state).
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { KeyPair } from "near-api-js";
@@ -26,7 +26,7 @@ import { loadEnv } from "../src/config.js";
 import { nearUsd, type Series } from "../src/leaders/market.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
 import { aiLeader } from "../src/leaders/ai.js";
-import { sealDir, unsealDir } from "../src/season/state.js";
+import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
@@ -45,7 +45,18 @@ unsealDir(join(sealed, "state"), plain, stateKey);
 
 const env = loadEnv({ NEAR_NETWORK: "testnet", DRY_RUN: "1", CHAIN_WRITES: "1" });
 if (env.network !== "testnet" || !env.op.dryRun) throw new Error("the season is testnet paper only");
-const manual = e.SEASON_SIGNAL ? JSON.parse(e.SEASON_SIGNAL) : null;
+// Manual signals: the sealed inbox (season-inbox.ts), oldest first; SEASON_SIGNAL (clear JSON) for local runs.
+const inboxDir = join(sealed, "inbox");
+const inbox = existsSync(inboxDir) ? readdirSync(inboxDir).filter((n) => n.endsWith(".enc")).sort() : [];
+const pending = inbox.map((n) => {
+  try {
+    return { file: n, env: JSON.parse(open(readFileSync(join(inboxDir, n), "utf8").trim(), stateKey).toString()) };
+  } catch {
+    return { file: n, env: null };
+  }
+});
+if (e.SEASON_SIGNAL) pending.push({ file: "", env: JSON.parse(e.SEASON_SIGNAL) });
+const consumed: string[] = pending.filter((p) => p.env === null).map((p) => p.file); // undecryptable: drop
 
 let market: Series | null = null;
 try { market = await nearUsd(); } catch (x) { console.log("market data unavailable; bots hold:", (x as Error).message); }
@@ -62,8 +73,10 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
     let decide: Decide | undefined;
     if (market && STRATEGIES[v.strategy]) decide = async (cur) => STRATEGIES[v.strategy](market!, cur);
     if (market && v.strategy === "ai") decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL });
-    const isManual = v.strategy === "manual" && manual?.signal?.vault === v.id;
-    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: isManual ? manual : undefined, notesPath: join(plain, notes) }));
+    // one manual signal per vault per tick; the rest wait for the next tick
+    const m = v.strategy === "manual" ? pending.find((p) => p.env?.signal?.vault === v.id) : undefined;
+    if (m?.file) consumed.push(m.file);
+    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes) }));
   } catch (x) {
     results.push({ vault: v.id, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }
@@ -76,7 +89,10 @@ function redact(r: TickResult) {
   return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...(r.error ? { error: r.error } : {}) };
 }
 
+const manualIds = new Set(S.vaults.filter((v) => v.strategy === "manual").map((v) => v.id));
+for (const p of pending) if (p.file && !manualIds.has(p.env?.signal?.vault)) consumed.push(p.file); // not for a manual vault: drop
 sealDir(plain, join(sealed, "state"), files, stateKey);
+for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
 writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt: new Date().toISOString(), marketData: !!market, results: results.map(redact) }, null, 2) + "\n");
 if (results.some((r) => r.error)) process.exitCode = 1;

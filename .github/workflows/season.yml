@@ -1,34 +1,37 @@
-# Testnet paper season: every 15 minutes the bot leaders decide, the operator
-# paper-fills their signals at real 1Click dry-quote prices and posts a signed
-# NAV epoch to each testnet vault. Testnet keys only (repo secrets); no mainnet
-# key exists in this repository's secrets.
+# Testnet paper season. One long-running loop ticks every 15 minutes: bot
+# leaders decide, the operator paper-fills their signals at real 1Click
+# dry-quote prices and posts a signed NAV epoch to each testnet vault; the
+# sealed state is pushed to the season-state branch after every tick. After
+# ~5h30m the loop dispatches the next run of itself, so the season doesn't
+# depend on GitHub's cron (which is best-effort). The cron below is a backup:
+# with job-level concurrency only one loop runs, and at most one waits.
+# Testnet keys only (repo secrets); no mainnet key is in this repository.
 #
-# Manual leader: run this workflow with `signal` = a signed signal envelope
-#   gh workflow run season.yml -f signal="$(npx tsx scripts/season-signal.ts …)"
-# (workflow inputs are visible in the run, at the same time the signal executes).
+# Manual leader: run this workflow with `signal` = a sealed envelope
+#   gh workflow run season.yml -f signal="$(npx tsx scripts/season-signal.ts <vault> buy 3000)"
+# The envelope is encrypted under the season key, so the (public) input
+# reveals nothing; the inbox job queues it and the loop executes it at its next tick.
 name: season
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       signal:
-        description: "Manual leader: signed signal envelope (JSON)"
+        description: "Manual leader: sealed signal envelope (sp1:…)"
         required: false
         default: ""
 
 permissions:
   contents: write
-
-concurrency:
-  group: season
-  cancel-in-progress: false
+  actions: write
 
 jobs:
-  tick:
+  inbox:
+    if: inputs.signal != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -42,28 +45,71 @@ jobs:
           cache-dependency-path: operator/package-lock.json
       - run: npm ci
         working-directory: operator
-      - name: tick
+      - name: queue the sealed signal
+        working-directory: operator
+        env:
+          SEASON_SIGNAL: ${{ inputs.signal }}
+          SEASON_STATE_KEY: ${{ secrets.SEASON_STATE_KEY }}
+          SEASON_STATE_DIR: ../season-state
+        run: npx tsx scripts/season-inbox.ts
+      - name: push
+        working-directory: season-state
+        run: |
+          git config user.name "season-bot"
+          git config user.email "season-bot@users.noreply.github.com"
+          git add -A && git commit -qm "season inbox $(date -u +%FT%TZ)"
+          for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
+
+  loop:
+    if: inputs.signal == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    concurrency:
+      group: season
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: season-state
+          path: season-state
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: operator/package-lock.json
+      - run: npm ci
+        working-directory: operator
+      - name: tick every 15 minutes for ~5h30m
         working-directory: operator
         env:
           SEASON_OPERATOR_KEY: ${{ secrets.SEASON_OPERATOR_KEY }}
           SEASON_ATTESTATION_KEY: ${{ secrets.SEASON_ATTESTATION_KEY }}
           SEASON_SIGNAL_KEYS: ${{ secrets.SEASON_SIGNAL_KEYS }}
           SEASON_STATE_KEY: ${{ secrets.SEASON_STATE_KEY }}
+          SEASON_ORACLE_KEY: ${{ secrets.SEASON_ORACLE_KEY }}
           NEARAI_API_KEY: ${{ secrets.NEARAI_API_KEY }}
-          SEASON_SIGNAL: ${{ inputs.signal }}
           SEASON_STATE_DIR: ../season-state
-        # Contract logs (public anyway) are noisy; the runner prints one redacted line per vault.
+          TICKS: "22"
         run: |
           set +e
-          npx tsx scripts/season.ts > /tmp/season.log 2>&1; code=$?
-          grep -E '^\{|unavailable|Error' /tmp/season.log
-          exit $code
-      - name: save sealed state
-        if: always()
-        working-directory: season-state
-        run: |
-          git config user.name "season-bot"
-          git config user.email "season-bot@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -qm "season tick $(date -u +%FT%TZ)"
-          git push -q
+          git -C ../season-state config user.name "season-bot"
+          git -C ../season-state config user.email "season-bot@users.noreply.github.com"
+          for i in $(seq 1 "$TICKS"); do
+            start=$SECONDS
+            git -C ../season-state pull -q --rebase
+            npx tsx scripts/season.ts > /tmp/season.log 2>&1; code=$?
+            # one redacted line per vault (CI logs are public)
+            grep -E '^\{|unavailable|Error' /tmp/season.log
+            echo "tick $i exit $code"
+            (cd ../season-state && git add -A && { git diff --cached --quiet || git commit -qm "season tick $(date -u +%FT%TZ)"; } \
+              && for t in 1 2 3 4 5; do git pull -q --rebase && git push -q && break; sleep $((t * 5)); done)
+            [ "$i" -lt "$TICKS" ] && sleep $(( 900 - (SECONDS - start) > 0 ? 900 - (SECONDS - start) : 0 ))
+          done
+          exit 0
+      - name: hand over to the next loop
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run season.yml --repo "${{ github.repository }}" --ref master
