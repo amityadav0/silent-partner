@@ -98,6 +98,20 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
   console.log(JSON.stringify(redact(results[results.length - 1])));
 }
 
+// Keep-online check (D-S-11): warn when an account the season spends from has
+// < 10 days of budget left. Balances are public on-chain anyway.
+const DAILY: [string, number][] = [[S.operator, 0.35], ...(((S as any).oracle?.writer ? [[(S as any).oracle.writer, 0.03]] : []) as [string, number][]), ...S.vaults.filter((v) => v.strategy !== "drill").map((v) => [v.id, 0.29] as [string, number])];
+for (const [id, perDay] of DAILY) {
+  try {
+    const r = await fetch(env.rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: id } }) });
+    const a = ((await r.json()) as any).result;
+    const free = Number(BigInt(a.amount)) / 1e24 - a.storage_usage * 1e-5;
+    if (free / perDay < 10) console.log(JSON.stringify({ warning: "low balance: top up from the spare testnet accounts", account: id, free_near: +free.toFixed(2), days_left: +(free / perDay).toFixed(1) }));
+  } catch {
+    /* a missed balance read must not fail the tick */
+  }
+}
+
 /** What may be printed (CI logs are public) or committed in clear: only what the chain shows. */
 function redact(r: TickResult) {
   const sig = r.signal && "hash" in r.signal ? { signal_hash: r.signal.hash, signal_status: r.signal.status } : r.signal ? { signal_error: r.signal.error } : {};

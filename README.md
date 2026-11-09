@@ -1,52 +1,65 @@
 # Silent Partner
 
-**Private copy-trading vaults on NEAR Confidential Intents.** By Scope. Built at the NEAR Hackathon "Build Beyond Boundaries" (tracks: Privacy, DeFi).
+**Private copy-trading vaults on NEAR Confidential Intents.** A leader and their followers share one vault. The vault's funds sit in a confidential NEAR Intents account controlled by an MPC key derived for the contract. Each leader signal is filled once, for the whole pool, at one price. The public sees attested, price-bounded NAV and returns; nobody sees positions.
 
-**Live site: https://amityadav0.github.io/silent-partner/** (testnet paper season: four leader vaults trading every 15 minutes at real 1Click prices, plus the emergency drill).
+Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**What.** A leader and their followers share one vault. The vault's assets sit in a confidential NEAR Intents account. When the leader sends a trade signal, the operator executes it once, for the whole pool, through a single 1Click confidential quote, so everyone gets the same price. The public sees attested NAV and returns; nobody sees positions.
+**Live site: https://amityadav0.github.io/silent-partner/**. It's a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) trade every 15 minutes at real 1Click prices. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
-**Why.** Copy trading on public chains is broken in two ways.
-- **Front-running.** Followers' orders land after the leader's, so the leader (or anyone watching) can front-run them and dump into them.
-- **Exposure.** A good trader's book is visible to the whole market.
+## Try it in 3 minutes
 
-Pooling the funds fixes the first problem: there is one order, so there's no one to dump on. Confidential Intents fixes the second. The remaining risk is custody, and that's what the contract is for.
+Each step says what to do, what you should see, and where it lives.
 
-**How.**
+1. **Open the [leaderboard](https://amityadav0.github.io/silent-partner/leaderboard/).** You see 8 house leaders with AI / Bot / Human badges, risk levels, returns and sparklines, all labelled "paper · testnet". "Attested n/n ✓" means your browser re-verified every NAV signature. Code: [`web/lib/vault.ts`](web/lib/vault.ts) `verifyNavs`.
+2. **Open [Conviction](https://amityadav0.github.io/silent-partner/vault/?id=sp-convict-8952.testnet) and click "Follow with $1,000 (paper)".** No wallet. You see your copy's value and P&L since joining, and a dashed "your copy" line on the chart. Code: [`web/app/vault/paper.tsx`](web/app/vault/paper.tsx); test: `web/e2e/smoke.spec.ts` "paper follow".
+3. **Open [What the chain sees](https://amityadav0.github.io/silent-partner/chain/).** The same vault through three viewers: observer, follower, leader. The leader view is a published fill log, and your browser checks it against every on-chain commitment ("✓ Matches the chain"). Code: [`web/lib/disclosure.ts`](web/lib/disclosure.ts).
+4. **See an operator lie refused.** The operator's own key signed a NAV 20% too high and the contract rejected it: tx [`9sSBzqNo…`](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn). Each post must carry two 1Click-signed quotes, and the NAV must fit NEAR's move. Code: [`contract/src/lib.rs`](contract/src/lib.rs) `check_band`; tests: `contract/src/prop_tests.rs` `quotes_bound_honest_pass_lies_fail`, and [docs/testnet.md](docs/testnet.md#nav-quote-band-after-the-review-fixes-d-h-6-2026-11-09).
+5. **See a follower leave without the operator.** In the [drill vault](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-leader-60270.testnet), the operator was stopped and a follower exited pro rata, paying themselves out through the real intents verifier. Every tx is in [docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09).
+6. **See an AI leader decide privately.** [`season-state/last-run.json`](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/last-run.json) shows, per AI leader and per tick, only the model, a 20-point target bucket and the hash of its rationale. The rationale itself is sealed (AES-GCM) on that branch, and on-chain signals commit to it by hash. Code: [`operator/src/leaders/ai.ts`](operator/src/leaders/ai.ts), [`operator/scripts/season.ts`](operator/scripts/season.ts).
+7. **See the vault key refuse a theft.** A payout to the operator's own account was refused on-chain, and a payout can't be settled twice: [docs/testnet.md](docs/testnet.md) "thief payout refused" and "Settlement check".
+
+## Built during NEAR HACKATHON
+
+- **Time.** The repository's first commit is 2026-11-07 and everything here was written in the hackathon window. There's one diff for the whole submission: `https://github.com/amityadav0/silent-partner/compare/fe316d6...hackathon-submission` (the tag is set at the final commit).
+- **AI-generated code.** Most of the code, tests and docs were written by Claude Code (Anthropic's Claude Opus), working from Amit Yadav's spec. Amit set the requirements, made the product calls and reviewed. Two fresh-context security reviews were also run by Claude agents; their findings and fixes are in [docs/threat-model.md](docs/threat-model.md) §7.
+- **Carried over** (copied, not imported) from Amit's earlier project Scope (`github.com/amityadav0/scope`, a private repository for now), written 2026-11-05 to 11-07, inside the window. Every carried file is in this repo: the 1Click client ([`operator/src/carry/oneclick.ts`](operator/src/carry/oneclick.ts)), canonical hashing and receipts ([`receipt.ts`](operator/src/carry/receipt.ts)), 1Click quote-signature verification ([`signedQuote.ts`](operator/src/carry/signedQuote.ts), ported to Rust in [`contract/src/quote.rs`](contract/src/quote.rs)), the copy-vault probes (`operator/scripts/copyvault-*.ts`, [docs/killtests-copyvault.md](docs/killtests-copyvault.md)) and the wallet-selector setup.
+- **Second project.** Scope (`github.com/amityadav0/scope`) is a separate, independent project by the same author.
+- **Libraries.**
+  - Contract: near-sdk 5.30, cargo-near 0.22.
+  - Operator and web: near-api-js 5.1, @near-wallet-selector 10.1.4 (MyNearWallet, Meteor), Next.js 15, React 19, Tailwind 4, @noble/curves and @noble/hashes, @scure/base, zod, Hono, json-stable-stringify, @defuse-protocol/one-click-sdk-typescript.
+  - Tests: vitest, Playwright, proptest, ed25519-dalek.
+  - Testnet: the defuse 0.2.10 verifier from near/intents releases.
+- **Services.**
+  - NEAR: Chain Signatures MPC (`v1.signer-prod.testnet`, `v1.signer`), NEAR Intents (`intents.near`, `intents.far`), 1Click API, NEAR AI Cloud.
+  - Other: CoinGecko's public price API (testnet season only), GitHub Actions and Pages.
+
+## What it does
+
 - **[contract/](contract/)** (NEAR, Rust):
-  - **Shares.** Deposits mint shares at the last NAV. Withdrawals burn at the next NAV.
-  - **Leader rules.** The leader must hold at least 10% of shares. The leader earns a 20% performance fee above a high-water mark.
-  - **NAV and signals.** NAV is attested by the operator each epoch. Leader signals are recorded by hash.
-  - **Emergency exit.** If no NAV is posted for 24h, holders can exit.
-  - **The vault key.** The vault's intents account is an **MPC key derived for the contract** (Chain Signatures, EdDSA). The contract signs only transfers to a 1Click deposit address, taken from a 1Click-signed quote that pays back into the vault or out to a holder's own claim. The operator chooses trades; it cannot take the money.
-- **[operator/](operator/)** (TypeScript):
-  - verifies leader-signed signals;
-  - sizes each trade against NAV and executes it as one confidential quote;
-  - keeps a hash-chained fill log (1Click history is invite-only, so the vault records its own);
-  - posts signed NAV with the log head;
-  - shields deposits and pays withdrawals.
-- **[web/](web/)** (Next.js static site):
-  - a leaderboard, vault pages with a returns chart, deposit and withdraw, a leader console, and share cards;
-  - your browser re-verifies every NAV signature;
-  - wallets: MyNearWallet and Meteor.
+  - **Shares.** Deposits mint shares at book NAV. A withdrawal is priced at the next NAV post and burned at the one after, at the lower of the two prices.
+  - **Leader rules.** The leader keeps at least 10% of shares and earns 20% of gains above a high-water mark.
+  - **NAV is bounded by public prices.** On mainnet each NAV post carries two 1Click-signed quotes, verified with the same key that binds every trade, and a NAV whose per-share move doesn't fit NEAR's move is rejected. There's a 24h budget, a minimum post interval and strictly fresh prices. Season vaults use a Pyth-compatible mock oracle.
+  - **The vault key.** It is an MPC key derived for the contract. It signs only quote-bound transfers back into the vault, or a claim's payout to the claimant, settled against the verifier's nonce record.
+  - **Emergency.** With no NAV for 24h, or a claim unpaid for 24h, every holder can exit pro rata without the operator.
+- **[operator/](operator/)** (TypeScript): verifies leader-signed signals, sizes and executes one confidential quote per signal, keeps a hash-chained fill log, posts signed NAV with the price quotes, and pays withdrawals.
+- **Leaders** ([`operator/src/leaders/`](operator/src/leaders/)): AI personas on NEAR AI Cloud (a TEE-served model) with enforced weight bounds, rule-based bots, or a human signing in the [leader console](https://amityadav0.github.io/silent-partner/leader/).
+- **[web/](web/)** (Next.js static export): landing page, leaderboard, vault pages (deposit, withdraw, P&L, paper follow, emergency exit), What the chain sees, leader console, create-vault wizard and share cards. Every number is read from NEAR RPC in your browser, which re-verifies each NAV signature.
 
-**Live proof.**
-- **[docs/testnet.md](docs/testnet.md):** the full loop on testnet with real testnet MPC signatures. The real NEAR Intents verifier executes a vault transfer signed by the MPC key, and a payout to the wrong account is refused on-chain.
-- **Paper season (testnet):** four leader vaults: a momentum bot, a mean-reversion bot, an AI leader on NEAR AI Cloud and a manual leader. A GitHub Actions cron runs them every 15 minutes ([season.yml](.github/workflows/season.yml)), with paper fills at real 1Click dry-quote prices and signed NAV posts on testnet. Fill logs and the AI leader's rationales are sealed (AES-GCM) on the `season-state` branch, and signals commit to rationales by hash.
-- **Emergency drill:** with the operator stopped, a follower exited pro rata and paid themselves out from the vault's public intents balance through the real verifier, with no operator and no 1Click ([docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09)).
-- **[What the chain sees](https://amityadav0.github.io/silent-partner/chain/):** observer, follower and leader views of one vault. A disclosed fill log is checked in your browser against every on-chain commitment.
-- **[docs/probes/](docs/probes/):** mainnet `intents.near` accepts an MPC-FROST-signed intent (a read-only simulation).
-- **[docs/mainnet.md](docs/mainnet.md):** mainnet transactions, once run.
-- **[docs/screens/](docs/screens/):** screenshots.
+## Run it
 
-**Run it.**
 ```sh
-make test                                   # contract (38, incl. property tests) + operator (39) + web (20) unit tests
+make test                                   # contract (62, incl. property tests) + operator (48) + web (22) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
-cd web && npm run build && npm run serve    # http://localhost:3000, reads the testnet vault live
+cd web && npm run build && npm run serve    # http://localhost:3000, reads testnet live
 make e2e                                    # Playwright against live testnet (needs the operator running)
 ```
+
+More proof: [docs/testnet.md](docs/testnet.md) (every testnet transaction), [docs/probes/](docs/probes/) (mainnet `intents.near` accepts an MPC-signed intent, a read-only simulation), [docs/mainnet.md](docs/mainnet.md) (mainnet transactions, once run) and [docs/screens/](docs/screens/).
+
+**Roadmap.**
+- **Bring your track record.** A trader proves they own a public Hyperliquid or EVM address by signing a message, and their public stats appear on their private vault's profile. Consent only: nobody is listed without signing.
+- **NAV computed in a TEE** (OutLayer), so the attestation proves the computation itself.
 
 ---
 

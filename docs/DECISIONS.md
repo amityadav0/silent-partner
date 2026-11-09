@@ -189,3 +189,13 @@ Each decision is dated, with its reason.
   - **What it does.** Every vault page has "Follow with $1,000 (paper)". It records the vault's latest attested share price and epoch in localStorage, falling back to memory when storage is blocked. It then shows the simulated value and P&L since joining, at each new NAV and after fees, exactly as a real follower would see them, plus a dashed "your copy" line on the chart.
   - **Privacy.** Nothing is signed and nothing leaves the browser.
   - **Why.** A judge can try the product in ten seconds on the hosted site.
+- **D-S-10 (2026-11-09) Tracks: privacy (primary), defi, agents.** This supersedes the earlier privacy + defi choice. Five AI leaders on NEAR AI Cloud now decide and trade autonomously, which is an agent use case even though the operator stays a deterministic service. One line each is in NEEDS-AMIT §6.
+- **D-S-11 (2026-11-09) The hosted demo stays up through 2026-11-25.**
+  - **What keeps running.** GitHub Pages serves the static site. The season loop re-dispatches itself every ~5h30m, with the cron at :07/:22/:37/:52 as a backup. Public-repo Actions minutes are free.
+  - **Budgets, measured on Nov 9:**
+    - operator ≈ 0.35 NEAR/day against 9.9 NEAR;
+    - each vault ≈ 0.29 NEAR/day of NAV storage against ≥ 4.7 NEAR free;
+    - the price writer ≈ 0.03 NEAR/day against 1 NEAR;
+    - NEAR AI ≈ $0.04/day per AI leader (5 leaders ≈ $0.20/day, about $3.20 to Nov 25).
+  - **Expiry.** Testnet keys don't expire.
+  - **Early warning.** `season.ts` prints a public warning line when the operator, the writer or any vault has less than 10 days of budget left. The fix is a top-up from the spare testnet accounts.

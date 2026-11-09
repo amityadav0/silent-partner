@@ -212,19 +212,22 @@ Fill in the four `<…>` fields, then set `requestId` once with `uuidgen | tr A-
   "leadName": "Amit Yadav",
   "email": "<your email>",
   "size": "1",
-  "tracks": ["privacy", "defi"],
+  "tracks": ["privacy", "defi", "agents"],
   "nearAddress": "<your mainnet account, e.g. amit.near>",
   "projectUrl": "https://github.com/amityadav0/silent-partner",
   "demoUrl": "<URL of your X post>",
-  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account. Each leader signal executes once for the whole pool through a single 1Click confidential quote, so everyone gets the same price and the leader can't dump on followers. The public sees operator-attested NAV and returns (re-verified in the browser), never positions. The vault's intents key is an MPC key derived for the contract (Chain Signatures, EdDSA). The contract signs only transfers bound to a 1Click-signed quote that pays back into the vault or out to a holder's own withdrawal, so the operator can't steal. Shares mint at NAV, burn at the next NAV, the leader keeps at least 10% of shares and earns a high-water-mark fee, and 24h without NAV opens emergency exits.",
+  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price: nobody can trade ahead of the followers. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move, proven by two 1Click-signed quotes the contract verifies, so an operator can't inflate returns. Holders can always exit pro rata without the operator. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash. Live testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
   "consent": true
 }
 ```
 
-Tracks: `privacy` + `defi`. The `agents` track is left out because the operator is a deterministic service, not an AI agent. Your rule was to add agents only if an agent is the operator.
+Tracks (D-S-10):
+- **privacy** (primary): positions never public. Confidential Intents holds the funds, fill logs and AI rationales are sealed, and the chain sees only NAV, hashes and claims.
+- **defi**: a copy-trading vault with share accounting, a high-water-mark fee, a NAV bounded by 1Click-signed prices, and a permissionless emergency exit.
+- **agents**: five AI leaders on NEAR AI Cloud trade autonomously every 15 minutes. Each one's reasoning stays private and is committed on-chain by hash.
 
 Two more rule checks:
-- **Two-project rule.** If you also submit Scope as a separate project, each README must name the other. Tell me and I'll add the line.
+- **Two-project rule.** This README already names Scope as a separate project. If you submit Scope, its README needs one line naming Silent Partner. Scope is a private repo: make it public first (§9) or judges can't open it.
 - **`consent: true`** means you agree to the site's contact notice. Read it on the form before you send.
 
 ## 7. NEAR AI Cloud key for the AI leader (season item 2): DONE (2026-11-09)
@@ -252,3 +255,11 @@ The vault now rejects any NAV whose per-share move doesn't fit NEAR's price move
 2. Put `PYTH_HERMES_KEY=…` in `.env`. The operator (`src/oracle.ts`, `PythPush`) then calls `update_price_feeds` on `pyth-oracle.near` before each epoch. It pays Pyth's update fee from the operator account: a fraction of a cent per update, but it is a mainnet payment, so it starts only with the rest of §3.
 3. A key-free alternative was checked and doesn't work. Burrow's `priceoracle.near` has no fresh prices: every asset reads `null` inside its 90 s window, and the last `wrap.near` report is ~230 days old (D-H-4). So the Pyth key is still needed.
 4. Without a key, mainnet NAV posts are rejected ("no fresh oracle price") and the vault goes stale. Alternatively, deploy with `"nav_oracle": null` in `docs/mainnet-init.json` to run without the bound (back to attested-only NAV).
+
+## 9. Optional: make Scope public (submission rules)
+
+The README names Scope as the source of the carried-over code and as a separate project, but `github.com/amityadav0/scope` is private, so judges can't open it. Every carried file is already copied into this repo, so the submission stands either way. If you want the link to work:
+
+```sh
+gh repo edit amityadav0/scope --visibility public --accept-visibility-change-consequences
+```
