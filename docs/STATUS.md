@@ -65,7 +65,7 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] 1. Self-sustaining season scheduler (15-min loop for ~5h30m, then re-dispatch; cron backup at :07/:22/:37/:52; sealed manual-signal inbox). D-S-8
 - [x] 1b. Loop ticks landed on season-state 15 min apart (05:11:47, 05:26:54 UTC), and a sealed manual signal went inbox → executed (docs/testnet.md)
 - [x] 2. NAV bound from a public price (Pyth-compatible oracle), withdrawals at min(NAV_t, NAV_t+1), property tests, threat-model §7; season vaults migrated (D-H-3)
-- [ ] 2b. Verify bounded posts on the season vaults from the new loop; rebuild the mainnet wasm (NEEDS-AMIT §3)
+- [x] 2b. Bounded posts verified on the season vaults (honest epoch 7 accepted; a +20% lie rejected on-chain, docs/testnet.md); mainnet wasm rebuilt at 72b9614 (D-P5-5)
 
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.

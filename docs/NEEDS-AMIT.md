@@ -85,7 +85,7 @@ Every command is yours to sign. The operator steps (`op.ts`) print what they wil
 
 Replace the placeholders in `docs/mainnet-init.json`. The attestation key in that file is the operator's mainnet NAV key. Its private half is in `operator/data/mainnet-keys.json`, which is gitignored.
 
-**0. Check the artifact.** `contract/target/near/silent_partner.wasm` from `cargo near build reproducible-wasm` should hash to `sha256 = 4cdfb2d4f372dd369827b61116d2fd84ee05286b2b7d4c53853463159d68ed1d` (base58 `6B5prsxWrxAm2Uu8sD1Lv6KgktfcpNtXZKhwMJepgoKi`, 325,666 bytes). It's built from commit `9aed265` (after the season items and the review fixes) with image `sourcescan/cargo-near:0.22.0-rust-1.98.1`. After the deploy, `near contract view-code-hash`, or the account's `code_hash`, must show that base58 value. If Docker's credential helper hangs, set `DOCKER_CONFIG` to a directory containing an empty `config.json`.
+**0. Check the artifact.** `contract/target/near/silent_partner.wasm` from `cargo near build reproducible-wasm` should hash to `sha256 = 9dd5ce0e3e51d6756f9fca64ec3b9fe23b1653481b59651900fa5f7bc49ea676` (base58 `Bd86izePzGzMNVJPGcx813x7T9RaehqhqFPb3dmaoNyK`, 365,462 bytes). It's built from commit `72b9614` (with the review fixes and the Pyth NAV bound; `docs/mainnet-init.json` now sets `nav_oracle` = `pyth-oracle.near`, which needs the Hermes key in §8) with image `sourcescan/cargo-near:0.22.0-rust-1.98.1`. After the deploy, `near contract view-code-hash`, or the account's `code_hash`, must show that base58 value. If Docker's credential helper hangs, set `DOCKER_CONFIG` to a directory containing an empty `config.json`.
 
 **1. Create the accounts.** Two txs:
 ```sh

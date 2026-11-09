@@ -219,3 +219,25 @@ Vault [`settle.sp-lmanual-92991.testnet`](https://testnet.nearblocks.io/address/
 | anyone: settle_payout before the deadline | [`Dj8N6iJRAt…`](https://testnet.nearblocks.io/txns/Dj8N6iJRAtEhbEfEUScCHzvZAsp5CgzfPfmgWes4L5hv) | pending |
 | anyone: settle_payout after the deadline | [`4wMufA7TuH…`](https://testnet.nearblocks.io/txns/4wMufA7TuHFt1cggmbDZd7SbHPxkDmBqjLyURdZXAvV6) | released |
 | operator: pays claim 1 properly (sign, execute, settle) | [`9kDfZ1Rv2f…`](https://testnet.nearblocks.io/txns/9kDfZ1Rv2fjazwkiZAHBM1iJBf3kt2RLxaZZ5bfYthyK) | paid |
+
+## Season scheduler and NAV bound (follow-ups, 2026-11-09)
+
+**Scheduler (D-S-8).** After the change, the season loop's ticks landed on `season-state` 15 minutes apart: `season tick 05:11:47`, `05:26:54`, then, after the switch to the bounded contract, `05:31:49` and `05:46:47` UTC. A manual signal sealed under the season key went through the inbox: the dispatch input was ciphertext, the inbox job queued it at 05:23:45, and the 05:26:54 tick executed it for `sp-manual-92991.testnet` (signal `7b41d122…`, recorded on-chain).
+
+**Oracle and migration (D-H-3).** A Pyth-compatible mock oracle `oracle.sp-lai-92991.testnet` was deployed, written only by `feed.sp-lai-92991.testnet` with CoinGecko's NEAR/USD. The four season vaults were upgraded in place, deploy plus `migrate_v1` in one transaction each, keeping epochs, shares and NAV history.
+
+| Step | Tx |
+|---|---|
+| create oracle.sp-lai-92991.testnet | [`HsQx8n6rkD…`](https://testnet.nearblocks.io/txns/HsQx8n6rkDc8WrNy8MUdZ1nJLsc1chzehfh97tkvj2Ew) |
+| create feed.sp-lai-92991.testnet | [`EM6vfh4Z5g…`](https://testnet.nearblocks.io/txns/EM6vfh4Z5gF6ckax178WwD8eaiaA8g82owWMtziX6Heg) |
+| deploy oracle-mock | [`N4e8aN31vL…`](https://testnet.nearblocks.io/txns/N4e8aN31vLMv6yCNWELojkuTro51yMbnGgjRTZ9vBiG) |
+| init oracle-mock | [`7zhH8sXZT2…`](https://testnet.nearblocks.io/txns/7zhH8sXZT2UhgRa3JLBfS9CUvXDBeaKqA7XCQ5iPCKjD) |
+| writer: set NEAR/USD 3.57 | [`GfsNemvsxF…`](https://testnet.nearblocks.io/txns/GfsNemvsxFsvwEWMyzHzhts88VNLtxUqDSoGV9mKJ174) |
+| upgrade + migrate_v1 sp-momo-92991.testnet | [`BD8293KNvz…`](https://testnet.nearblocks.io/txns/BD8293KNvzZy8b5D3A3t7SUHid4PFhtVy9b23TZeFLyU) |
+| upgrade + migrate_v1 sp-meanrev-92991.testnet | [`B4LTrLgC9T…`](https://testnet.nearblocks.io/txns/B4LTrLgC9TPvJWbD5fF8syW1TGcVrT9F7xDUWYcuk9xh) |
+| upgrade + migrate_v1 sp-ai-92991.testnet | [`AjGPPE5szo…`](https://testnet.nearblocks.io/txns/AjGPPE5szocsHiqtM646DGYKEkiGgBJLoiMQzA6fARK2) |
+| upgrade + migrate_v1 sp-manual-92991.testnet | [`3onyLVFePL…`](https://testnet.nearblocks.io/txns/3onyLVFePLLQnnA3h1C9yReH1ta4TorbGgya6eEABsxU) |
+
+**The bound, on-chain.**
+- **Honest posts pass.** Epoch 6 (05:31:49) recorded the first oracle price. Epoch 7 (05:46:47) was the first checked post, and all four vaults were accepted inside their bands.
+- **A lie is refused.** `operator/scripts/bound-check.ts` had the operator's own attestation key sign a NAV of 973550046 for `sp-meanrev-92991.testnet`, 20% above its book NAV of 811291705, with NEAR at 3.56 USD (moved -19 bps since the last post). The contract read the oracle and rejected it: `share return 2000bps outside [-180, 161]bps (asset -19bps)` ([`GGNWxo6V7h…`](https://testnet.nearblocks.io/txns/GGNWxo6V7hk2H743McPXe4UWZLANF1RZv7iPBjZfjMZr)). The band was [-180, 161] bps, and the vault's epoch and book NAV were unchanged: True.
