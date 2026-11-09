@@ -25,7 +25,7 @@ import { Operator } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
 import { nearUsd, type Series } from "../src/leaders/market.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
-import { aiLeader } from "../src/leaders/ai.js";
+import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
 import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
@@ -91,7 +91,7 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
     // one manual signal per vault per tick; the rest wait for the next tick
     const m = v.strategy === "manual" ? pending.find((p) => p.env?.signal?.vault === v.id) : undefined;
     if (m?.file) consumed.push(m.file);
-    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes) }));
+    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes), minStep: v.strategy === "ai" ? AI_MIN_STEP : undefined }));
   } catch (x) {
     results.push({ vault: v.id, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }
@@ -102,7 +102,8 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
 function redact(r: TickResult) {
   const sig = r.signal && "hash" in r.signal ? { signal_hash: r.signal.hash, signal_status: r.signal.status } : r.signal ? { signal_error: r.signal.error } : {};
   // Token counts and the model are not positions: safe to print (cost tracking).
-  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_tokens: r.decision.usage ?? null } : {};
+  // AI leader: the target as a 20-point bucket and the rationale's hash, never the exact target or the rationale.
+  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_tokens: r.decision.usage ?? null, ai_target_band: weightBucket(r.decision.target), ai_rationale_hash: r.decision.memo_hash ?? null } : {};
   return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...ai, ...(r.error ? { error: r.error } : {}) };
 }
 

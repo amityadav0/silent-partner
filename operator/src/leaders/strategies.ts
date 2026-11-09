@@ -33,9 +33,9 @@ export const STRATEGIES: Record<string, Strategy> = { momentum, "mean-reversion"
 export const MIN_STEP = 0.1;
 
 /** The signal that moves exposure from `current` to `target`, or null. */
-export function rebalance(vault: string, base: string, risk: string, current: number, target: number, nowMs: number, memoHash?: string): Signal | null {
+export function rebalance(vault: string, base: string, risk: string, current: number, target: number, nowMs: number, memoHash?: string, minStep = MIN_STEP): Signal | null {
   const d = target - current;
-  if (Math.abs(d) < MIN_STEP) return null;
+  if (Math.abs(d) < minStep - 1e-9) return null;
   const size_bps = Math.min(10_000, Math.max(1, Math.round(Math.abs(d) * 10_000)));
   // Selling everything of the risk asset: ask for 100% so rounding can't leave dust.
   const full = d < 0 && target === 0;

@@ -9,8 +9,9 @@ import { rebalance } from "../leaders/strategies.js";
 
 export type Decision = { target: number | null; why: string; /** private, never published; only its hash goes in the signal */ rationale?: string; model?: string; usage?: { prompt_tokens: number; completion_tokens: number } };
 export type Decide = (current: number) => Promise<Decision>;
+// minStep: smallest weight change worth a trade for this leader (bots 0.1, AI 0.05).
 
-export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale">; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
+export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale"> & { memo_hash?: string }; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
 
 export async function exposure(op: Operator, risk: string): Promise<{ nav: bigint; current: number }> {
   const n = await op.nav();
@@ -23,7 +24,7 @@ export async function exposure(op: Operator, risk: string): Promise<{ nav: bigin
  * with its full rationale. The public chain sees only the signal hash, which
  * covers `memo_hash = sha256(rationale)`.
  */
-export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number }): Promise<TickResult> {
+export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number; minStep?: number }): Promise<TickResult> {
   const now = o.now ?? Date.now;
   const out: TickResult = { vault: o.vault, exposureBefore: 0 };
   await o.op.shieldPending();
@@ -34,9 +35,9 @@ export async function tick(o: { op: Operator; vault: string; base: string; risk:
     out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: (o.manual as any).signal.size_bps, from: (o.manual as any).signal.from, to: (o.manual as any).signal.to } : { error: r.error };
   } else if (o.decide && o.signalKey) {
     const d = await o.decide(current);
-    out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage };
     const memo = d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
-    const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo);
+    out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage, memo_hash: memo };
+    const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo, o.minStep);
     if (s) {
       const r = await o.op.submitSignal(signSignal(s, KeyPair.fromString(o.signalKey as `ed25519:${string}`)));
       out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: s.size_bps, from: s.from, to: s.to } : { error: r.error };

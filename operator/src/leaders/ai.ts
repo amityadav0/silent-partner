@@ -11,26 +11,39 @@ export const NEARAI_URL = "https://cloud-api.near.ai/v1";
 export const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017";
 
 const SYSTEM = [
-  "You lead a copy-trading vault that holds only USDC and NEAR. Every 15 minutes you set the vault's target NEAR exposure: the share of NAV held in NEAR, from 0 to 0.9.",
-  "You see only the public market summary below. Trading costs about 0.3% per round trip, so change exposure only when you have a reason, and prefer holding.",
-  'Reply with one JSON object and nothing else: {"target_exposure": <number 0..0.9, or null to hold>, "rationale": "<2-4 sentences>"}',
+  "You are an active allocator for a copy-trading vault that holds only USDC and NEAR. Every 15 minutes you choose the vault's target NEAR weight: the share of NAV held in NEAR, from 0 (all USDC) to 1 (all NEAR).",
+  "Decide from the public market summary (recent returns at 1h/6h/24h, EMAs, volatility, range) and your own judgement: lean into momentum when it is strong, cut exposure when volatility spikes against you, and size by conviction.",
+  "Always give a target, even if it equals the current weight. The vault trades only when your target is at least 5 points away from the current weight; nothing forces a trade. A round trip costs about 0.3%.",
+  'Reply with one JSON object and nothing else: {"target_weight": <number 0..1>, "rationale": "<2-4 sentences>"}',
 ].join(" ");
+
+/** The AI trades only on moves of at least this much NAV weight. */
+export const AI_MIN_STEP = 0.05;
+
+/** Public bucket of a target weight (the log shows this, never the exact target). */
+export function weightBucket(w: number | null): string {
+  if (w === null) return "hold";
+  const lo = Math.min(80, Math.floor((w * 100) / 20) * 20);
+  return `${lo}–${lo + 20}%`;
+}
 
 export function prompt(s: Series, current: number) {
   return JSON.stringify({ market: { pair: "NEAR/USD", source: "CoinGecko, 5-minute points, last 24h", ...summary(s) }, vault: { current_near_exposure: +current.toFixed(3) } });
 }
 
-/** Parse the model's reply. Clamped to [0, 0.9], rounded to 0.05; anything unparseable holds. */
+/** Parse the model's reply. Clamped to [0, 1], rounded to 1 point; anything unparseable holds.
+ *  Accepts `target_weight` (current prompt) or `target_exposure` (earlier prompt). */
 export function parseReply(text: string): { target: number | null; rationale: string } {
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) return { target: null, rationale: `unparseable reply: ${text.slice(0, 200)}` };
   try {
-    const j = JSON.parse(m[0]) as { target_exposure?: unknown; rationale?: unknown };
+    const j = JSON.parse(m[0]) as { target_weight?: unknown; target_exposure?: unknown; rationale?: unknown };
     const rationale = typeof j.rationale === "string" ? j.rationale.slice(0, 2000) : "";
-    if (j.target_exposure === null || j.target_exposure === undefined) return { target: null, rationale };
-    const t = Number(j.target_exposure);
+    const raw = j.target_weight ?? j.target_exposure;
+    if (raw === null || raw === undefined) return { target: null, rationale };
+    const t = Number(raw);
     if (!Number.isFinite(t)) return { target: null, rationale };
-    return { target: Math.round(Math.min(0.9, Math.max(0, t)) * 20) / 20, rationale };
+    return { target: Math.round(Math.min(1, Math.max(0, t)) * 100) / 100, rationale };
   } catch {
     return { target: null, rationale: `unparseable reply: ${text.slice(0, 200)}` };
   }

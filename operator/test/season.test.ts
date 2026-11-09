@@ -134,8 +134,9 @@ import { aiLeader, parseReply, prompt, DEFAULT_MODEL } from "../src/leaders/ai.j
 describe("AI leader", () => {
   const s = series((i) => 3 + i * 0.001);
   it("parses, clamps and rounds replies; anything odd holds", () => {
-    expect(parseReply('{"target_exposure": 0.62, "rationale": "trend"}')).toEqual({ target: 0.6, rationale: "trend" });
-    expect(parseReply('sure:\n```json\n{"target_exposure": 1.5, "rationale": "x"}\n```').target).toBe(0.9);
+    expect(parseReply('{"target_weight": 0.624, "rationale": "trend"}')).toEqual({ target: 0.62, rationale: "trend" });
+    expect(parseReply('{"target_exposure": 0.3, "rationale": "old prompt"}').target).toBe(0.3);
+    expect(parseReply('sure:\n```json\n{"target_weight": 1.5, "rationale": "x"}\n```').target).toBe(1);
     expect(parseReply('{"target_exposure": -1, "rationale": "x"}').target).toBe(0);
     expect(parseReply('{"target_exposure": null, "rationale": "wait"}')).toEqual({ target: null, rationale: "wait" });
     expect(parseReply("no json here").target).toBeNull();
@@ -179,5 +180,18 @@ describe("NAV bound plumbing", () => {
     const op = new Operator(chain, new Confidential("https://1click.test", "", fixtureFetch({ "/v0/quote": dryQuotes })), new FillLog("vault.testnet", null), KeyPair.fromRandom("ed25519"), "ed25519:x", { dryRun: true, chainWrites: true, slippageBps: 50, minShield: 1_000_000n, assetMap: {}, decimals: {}, signalMaxAgeMs: 300_000, pollMs: 0, pollTries: 1 }, () => NOW, async () => {});
     await expect(op.epoch()).rejects.toThrow(/NAV rejected/);
     expect(op.log.entries.at(-1)!.data).toMatchObject({ msg: "NAV rejected by the oracle bound", tx: "tx-r" });
+  });
+});
+
+import { AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
+
+describe("AI allocator", () => {
+  it("trades on a 5-point move, not on less", () => {
+    expect(rebalance("v", USDC, WNEAR, 0.4, 0.45, NOW, undefined, AI_MIN_STEP)!.size_bps).toBe(500);
+    expect(rebalance("v", USDC, WNEAR, 0.4, 0.44, NOW, undefined, AI_MIN_STEP)).toBeNull();
+    expect(rebalance("v", USDC, WNEAR, 0.4, 0.45, NOW)).toBeNull(); // bots keep 10 points
+  });
+  it("the public log shows a 20-point bucket, not the target", () => {
+    expect([weightBucket(0), weightBucket(0.19), weightBucket(0.2), weightBucket(0.73), weightBucket(1), weightBucket(null)]).toEqual(["0–20%", "0–20%", "20–40%", "60–80%", "80–100%", "hold"]);
   });
 });

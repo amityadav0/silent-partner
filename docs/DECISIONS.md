@@ -133,3 +133,7 @@ Each decision is dated, with its reason.
   - **Measured cost.** The first live tick (06:21:12 UTC, epoch 10) used 280 prompt and 238 completion tokens. At $0.30 / $1.20 per million that's **≈ $0.00037 per tick**, about **$0.036/day** at 96 ticks. A local probe the same morning answered in 3.9 s.
   - **Visibility.** Model and token counts are printed in the redacted season log (`ai_model`, `ai_tokens`), since they aren't positions. The decision and rationale stay in the sealed notebook.
   - **First decision.** The model chose target 0 (stay flat) while the vault was flat, so there was no trade and no signal. A signal goes on-chain only when the target moves by ≥ 0.1 of NAV.
+- **D-AI-3 (2026-11-09) The AI leader is an active allocator.**
+  - **Instructions.** Each epoch it chooses a target NEAR weight from 0 to 100% (rounded to 1 point), from the public summary (1h/6h/24h returns, EMAs, volatility, range) plus its own reasoning. It must always give a target, sized by conviction.
+  - **When it trades.** Only when |target − current| ≥ 5 points (`AI_MIN_STEP`; the bots keep 10). There are no forced trades.
+  - **Public log.** It shows only the target as a 20-point bucket (`ai_target_band`) and the rationale's hash (`ai_rationale_hash`), plus the model and token counts. The exact target and the rationale stay in the sealed notebook.
