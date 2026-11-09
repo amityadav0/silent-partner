@@ -92,10 +92,10 @@ flowchart LR
 
 What the operator can't do:
 - **It holds no vault key.** The vault key is MPC-derived for the contract, which signs only quote-bound transfers back into the vault, or payouts of a holder's own claim. Each payout is settled against the verifier's on-chain nonce record, so a claim can't be paid twice. The operator **cannot move funds anywhere else**.
-- **One caveat.** The operator signs NAV. If it lies about NAV in the same epoch that its own follower account withdraws, that withdrawal is mispriced, which is a real way to extract value (see the threat model). NAV is attested, not proven.
+- **NAV lies are bounded.** Every NAV post must carry two 1Click-signed quotes (USDC → wNEAR and back), verified with the vault's immutable 1Click key, the same key that binds every trade. The contract rejects any NAV whose per-share move doesn't fit NEAR's move plus costs. Withdrawals pay the lower of two consecutive NAVs.
 
 What you still have to trust it for:
-- **NAV honesty.** NAV is attested, not proven. A lying operator could misprice deposits and withdrawals between posts. The hash-chained fill log pinned on-chain makes that detectable after the fact, not impossible.
+- **NAV honesty, inside the band.** A lie within what NEAR's move allows (for example, claiming full NEAR exposure when the vault held none) still passes. The hash-chained fill log pinned on-chain makes it provable after the fact. v2: NAV computed in a TEE (OutLayer).
 - **Liveness.** If it stops, emergency mode lets holders exit after 24h.
 - **Bad trades.** It could trade badly, within the allowed assets and the 1% slippage cap.
 

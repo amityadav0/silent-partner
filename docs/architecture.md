@@ -66,6 +66,8 @@ All amounts are base-asset units (USDC, 6 decimals). Share price = NAV / shares,
   - the signature must verify under `attestation_key` over `silent-partner/nav/v1|<contract>|<epoch>|<nav>|<ts>|<fills_head>`;
   - fee: if price > HWM, `fee_value = (nav − HWM × shares) × fee_bps`; the leader is minted `fee_value × shares / (nav − fee_value)` shares, and the HWM moves to the post-fee price;
   - then every pending withdrawal burns at the post-fee price and opens a claim.
+- **NAV band.** With `nav_quotes` (mainnet), `post_nav` also takes two 1Click-signed quotes (base → risky and back, ≤ 5 min old), verified with `oneclick_key`. Their bid/ask mid gives the risky asset's return r since the last post. The NAV is rejected unless the per-share return lies in [min(0, r), max(0, r)] ± (max slippage + tolerance + both half-spreads). The testnet season vaults use `nav_oracle` instead: a Pyth-compatible mock read by a cross-contract call.
+- **Withdrawals, two posts.** A request is priced at the next post and burned at the one after, paying min(NAV_t, NAV_t+1).
 - **Leader stake.** A follower deposit is refunded if it would leave the leader under `min_leader_bps`. A leader withdrawal request is refused if it would do the same, unless the leader is the last holder.
 - **Emergency.** It triggers when `now > last_nav + 24h`. It is sticky. Pending withdrawals become claims at the last NAV, and `emergency_exit` burns all of a holder's shares the same way.
 
