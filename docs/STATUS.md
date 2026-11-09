@@ -71,7 +71,8 @@ Deadline: 2026-11-14 18:00 UTC.
 - [x] NEARAI_API_KEY → repo secret; AI leader deciding every tick on NEAR AI Cloud (D-AI-2)
 - [x] AI leader is an active allocator: target weight 0–100%, trades on ≥ 5-point moves, public log = bucket + rationale hash (D-AI-3)
 - [ ] first AI signal on-chain (rationale hash only, rationale sealed); see docs/testnet.md
-- [ ] Price source: 1Click-signed dry quotes for the NAV band (replaces Pyth on mainnet); testnet honest/inflated run; rebuild wasm
+- [x] Price source: 1Click-signed dry quotes for the NAV band (replaces Pyth on mainnet, D-H-5); testnet run: honest posts accepted, +20% rejected
+- [ ] rebuild the reproducible mainnet wasm; update NEEDS-AMIT §3 hash
 
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.

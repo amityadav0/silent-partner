@@ -241,3 +241,29 @@ Vault [`settle.sp-lmanual-92991.testnet`](https://testnet.nearblocks.io/address/
 **The bound, on-chain.**
 - **Honest posts pass.** Epoch 6 (05:31:49) recorded the first oracle price. Epoch 7 (05:46:47) was the first checked post, and all four vaults were accepted inside their bands.
 - **A lie is refused.** `operator/scripts/bound-check.ts` had the operator's own attestation key sign a NAV of 973550046 for `sp-meanrev-92991.testnet`, 20% above its book NAV of 811291705, with NEAR at 3.56 USD (moved -19 bps since the last post). The contract read the oracle and rejected it: `share return 2000bps outside [-180, 161]bps (asset -19bps)` ([`GGNWxo6V7h…`](https://testnet.nearblocks.io/txns/GGNWxo6V7hk2H743McPXe4UWZLANF1RZv7iPBjZfjMZr)). The band was [-180, 161] bps, and the vault's epoch and book NAV were unchanged: True.
+
+## NAV priced by 1Click-signed quotes (D-H-5, 2026-11-09)
+
+Vault [`quotes.sp-lmeanrev-92991.testnet`](https://testnet.nearblocks.io/address/quotes.sp-lmeanrev-92991.testnet) uses the current contract with `oneclick_key` = 1Click's real key and `nav_quotes` = mainnet USDC/wNEAR. Each post carried two real public 1Click dry quotes (10 USDC → wNEAR, then the same wNEAR back), verified on-chain. Script: `operator/scripts/quotes-check.ts`.
+
+| Post | NAV | 1Click quotes (in → out) | Half-spread | Band (bps) | Result |
+|---|---|---|---|---|---|
+| post 1: honest (records the price) | 10000000 | 10.0 USDC → 2.8117 wNEAR; 2.8117 wNEAR → 9.958266 USDC (at 2026-11-09T06:36:42.855Z) | 21 bps | none yet | accepted [`CDBQfJErCE…`](https://testnet.nearblocks.io/txns/CDBQfJErCELJsr6RKuiZCD5yCFun3KKYWj9GPzG39UWS) |
+| post 2: honest | 10000000 | 10.0 USDC → 2.8101 wNEAR; 2.8101 wNEAR → 9.956029 USDC (at 2026-11-09T06:36:48.450Z) | 23 bps | [-194, 198] | accepted [`51hazFysmK…`](https://testnet.nearblocks.io/txns/51hazFysmKAgyT36cFq5TWw86rbUdEiJoE5b6FgThcgg) |
+| post 3: +20% inflated | 12000000 | 10.0 USDC → 2.8101 wNEAR; 2.8101 wNEAR → 9.955961 USDC (at 2026-11-09T06:36:55.068Z) | 23 bps | [-196, 196] | **rejected**: share return 2000bps outside [-196, 196]bps (asset 0bps) [`Dy4XwqPN5q…`](https://testnet.nearblocks.io/txns/Dy4XwqPN5qu4Lbr9AhDYfnNF9ateWkgnn2mkpyjSEvtH) |
+| post 4: honest again | 10000000 | 10.0 USDC → 2.8101 wNEAR; 2.8101 wNEAR → 9.956098 USDC (at 2026-11-09T06:37:01.663Z) | 22 bps | [-195, 195] | accepted [`514hNQZKct…`](https://testnet.nearblocks.io/txns/514hNQZKctrgoAoN4k9f5nksNAXYPBLh5Xynxvchwifs) |
+
+The +20% post was refused on-chain (epoch stayed 2), and the next honest post was accepted.
+
+<details><summary>Setup transactions</summary>
+
+| Step | Tx |
+|---|---|
+| deploy | [`Du6SqNEkac…`](https://testnet.nearblocks.io/txns/Du6SqNEkacHbH3znpMztVqEjbSKqVbu6F2LLyQmzQn6t) |
+| init (oneclick_key = 1Click's real key) | [`EFfMHrzmhW…`](https://testnet.nearblocks.io/txns/EFfMHrzmhWBuxi7KogjAJXB1p67gyBqdz1Eb757bmvqW) |
+| activate (MPC) | [`Aitz1ERepe…`](https://testnet.nearblocks.io/txns/Aitz1ERepe1ko5M6Ufbtm9oLcE57AbJYCarRHWgEPoDm) |
+| storage on fake USDC | [`24BQAR3gGB…`](https://testnet.nearblocks.io/txns/24BQAR3gGB6xRZzka3hEtJmSMVETXV2cnDnqfbos3Hxr) |
+| leader: mint 10 USDC | [`8EPCsyBJpQ…`](https://testnet.nearblocks.io/txns/8EPCsyBJpQLfm7umHTzMXahVXzDnnkUoG54uatXpoLst) |
+| leader: deposit 10 USDC | [`7zaBJEjAy3…`](https://testnet.nearblocks.io/txns/7zaBJEjAy3GxZPck2cw8o7mrT9658boLk7FJzoWnmoRW) |
+
+</details>
