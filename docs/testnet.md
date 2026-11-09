@@ -297,3 +297,11 @@ Checked for [Contrarian](https://testnet.nearblocks.io/address/sp-contra-8952.te
 | Checks | signal hashes to the on-chain hash ✓ · recorded on-chain with the leader's signature ✓ · sha256(rationale) = memo_hash ✓ |
 
 The rationale was never published. The chain holds its hash inside the leader-signed signal, so the leader can disclose it later and anyone can check it.
+
+## Follow from any chain, and copy stop-loss (2026-11-09)
+
+The four AI vaults were upgraded in place to the current contract: deploy plus `migrate_v3` in one transaction each (`operator/scripts/upgrade-v3.ts`). That adds deposits for a named beneficiary and copy stop-losses; epochs and shares are unchanged.
+
+- **Deposit for someone else** (what 1Click's `customRecipientMsg` does when a follower deposits from Base, Arbitrum, Ethereum or Solana). `sp-follower-60270.testnet` sent 25 test USDC to [`sp-convict-8952.testnet`](https://testnet.nearblocks.io/address/sp-convict-8952.testnet) with `msg = sp-fund-61557.testnet`. The follower's shares went 250000000 → 275028069, and the relayer got none ([`3XC6JgvfD9…`](https://testnet.nearblocks.io/txns/3XC6JgvfD9J1d73ocJVcgoqZxtsvxBqwjaMd8MD8quB5)).
+- **Copy stop-loss.** The follower set a 5% stop ([`HXfCxK4V7S…`](https://testnet.nearblocks.io/txns/HXfCxK4V7S7GDzjDdDCspNbPqntuZ2LaUpsUwLTvpSg2)). The contract stored the reference price 0.998878 and the trigger 0.948935, and checks it at every NAV post. The firing path (queued at the post that reaches it, paid at the lower of two prices) is covered by `contract/src/tests.rs` `stop_loss_fires_at_the_post_that_reaches_it` and by the random-sequence property test.
+- **Real cross-chain quotes** (dry, from the browser on the vault page): 100 USDC from Base, Arbitrum, Ethereum or Solana arrives as 99.98–99.99 USDC on NEAR in 20–45 s. On testnet, arrival is simulated as a paper follow, because the vault is a testnet account and 1Click has no testnet.

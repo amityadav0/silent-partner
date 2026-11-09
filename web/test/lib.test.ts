@@ -204,3 +204,13 @@ describe("paper follow", () => {
     expect(copyLine(navs, f2)[0].r).toBe(0);
   });
 });
+
+import { CHAINS, crossQuoteBody, NEAR_USDC } from "../lib/crosschain";
+
+describe("follow from any chain", () => {
+  it("asks 1Click for USDC on the origin chain → USDC on NEAR into the vault, crediting the follower", () => {
+    const b = crossQuoteBody({ chain: CHAINS[0], usdc: 25.5, vault: "vault.near", beneficiary: "me.near", refundTo: "0xabc", dry: true, nowMs: 0 });
+    expect(b).toMatchObject({ originAsset: CHAINS[0].asset, destinationAsset: NEAR_USDC, amount: "25500000", depositType: "ORIGIN_CHAIN", recipientType: "DESTINATION_CHAIN", recipient: "vault.near", customRecipientMsg: "me.near", refundTo: "0xabc", dry: true });
+    expect(CHAINS.map((c) => c.name)).toEqual(["Base", "Arbitrum", "Ethereum", "Solana"]);
+  });
+});

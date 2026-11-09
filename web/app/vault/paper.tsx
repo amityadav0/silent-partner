@@ -9,8 +9,8 @@ export function usePaper(id: string) {
   useEffect(() => setF(loadPaper(id)), [id]);
   return {
     follow: f,
-    start: (latest: NavPost | undefined) => {
-      const p = startPaper(id, 1000, latest);
+    start: (latest: NavPost | undefined, usd = 1000) => {
+      const p = startPaper(id, usd, latest);
       savePaper(p, id);
       setF(p);
     },
@@ -41,7 +41,7 @@ export function PaperFollowPanel({ navs, paper }: { navs: NavPost[]; paper: Retu
   const since = navs.filter((n) => n.epoch > f.entry_epoch).length;
   return (
     <div className="panel" data-testid="paper-follow">
-      <h2 className="font-semibold">Your paper copy</h2>
+      <h2 className="font-semibold">Your paper copy ({usd(f.usd)} in)</h2>
       <div className="mt-2 grid grid-cols-3 gap-2 text-sm tabular-nums">
         <div>
           <div className="muted text-xs">Value</div>

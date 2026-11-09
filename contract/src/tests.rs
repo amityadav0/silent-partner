@@ -1528,3 +1528,119 @@ fn large_quotes_do_not_overflow() {
     assert_eq!(math::mul_div(u128::MAX, 2, 4), Some(u128::MAX / 2));
     assert_eq!(math::mul_div(u128::MAX, 2, 1), None);
 }
+
+// ---------------- deposits for a beneficiary (follow from any chain) ----------------
+
+#[test]
+fn deposit_can_name_the_account_it_is_for() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    // a relayer (1Click delivering a cross-chain deposit) sends; the follower gets the shares
+    ctx("usdc.testnet", T0_MS);
+    let r = v.ft_on_transfer(acc("relayer.testnet"), U128(8_000_000), "follower.testnet".into());
+    assert!(matches!(r, PromiseOrValue::Value(U128(0))));
+    assert_eq!(shares(&v, "follower.testnet"), 8_000_000);
+    assert_eq!(shares(&v, "relayer.testnet"), 0);
+    assert_eq!(v.get_position(acc("follower.testnet")).deposited.0, 8_000_000);
+    // a message that isn't an account id is refunded
+    ctx("usdc.testnet", T0_MS);
+    assert!(matches!(
+        v.ft_on_transfer(acc("relayer.testnet"), U128(1_000_000), "{\"x\":1}".into()),
+        PromiseOrValue::Value(U128(1_000_000))
+    ));
+    // the leader still seeds first, whoever pays
+    let mut e = vault();
+    ctx("usdc.testnet", T0_MS);
+    assert!(matches!(
+        e.ft_on_transfer(acc("leader.testnet"), U128(1_000_000), "follower.testnet".into()),
+        PromiseOrValue::Value(U128(1_000_000))
+    ));
+}
+
+// ---------------- copy stop-loss ----------------
+
+#[test]
+fn stop_loss_rules() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    ctx("leader.testnet", T0_MS);
+    assert!(panics(|| v.set_stop_loss(1500, acc("leader.testnet"))).contains("leader"));
+    ctx("nobody.testnet", T0_MS);
+    assert!(panics(|| v.set_stop_loss(1500, acc("nobody.testnet"))).contains("no shares"));
+    ctx("follower.testnet", T0_MS);
+    assert!(panics(|| v.set_stop_loss(50, acc("exit.testnet"))).contains("1%..90%"));
+    let s = v.set_stop_loss(1500, acc("exit.testnet"));
+    assert_eq!((s.ref_price.0, s.trigger_price.0), (math::PRICE_SCALE, math::PRICE_SCALE * 85 / 100));
+    v.cancel_stop_loss();
+    assert_eq!(v.get_stop_loss(acc("follower.testnet")), None);
+}
+
+#[test]
+fn stop_loss_fires_at_the_post_that_reaches_it() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    ctx("follower.testnet", T0_MS);
+    v.set_stop_loss(1500, acc("exit.testnet")); // −15% from 1.00
+    post(&mut v, 1, 9_000_000, T0_MS + 1); // −10%: nothing
+    assert!(v.get_maturing().is_empty() && v.get_stop_loss(acc("follower.testnet")).is_some());
+    post(&mut v, 2, 8_400_000, T0_MS + 2); // −16%: fires, priced at 0.84
+    let m = v.get_maturing();
+    assert_eq!((m.len(), m[0].request.shares.0, m[0].priced_epoch), (1, 8_000_000, 2));
+    assert_eq!(v.get_stop_loss(acc("follower.testnet")), None);
+    assert_eq!(v.get_shares(acc("follower.testnet")).1 .0, 8_000_000, "shares locked");
+    // the next post burns them at min(0.84, next): a rebound doesn't overpay, a further drop pays less
+    post(&mut v, 3, 9_000_000, T0_MS + 3);
+    let c = &v.get_claims(0, 10)[0];
+    assert_eq!(
+        (c.account.as_str(), c.exit_account.as_str(), c.amount.0),
+        ("follower.testnet", "exit.testnet", 8_000_000 * 84 / 100)
+    );
+    assert_eq!(shares(&v, "follower.testnet"), 0);
+}
+
+#[test]
+fn migrates_v3_state_adding_stops() {
+    let v = vault();
+    let mut v = v;
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 8_000_000, T0_MS);
+    // write the same state in the v3 layout (no stops), then migrate
+    let o = crate::migrate::VaultV3 {
+        cfg: v.cfg.clone(),
+        vault_account: v.vault_account.clone(),
+        shares: LookupMap::new(b"s"),
+        locked: LookupMap::new(b"l"),
+        total_shares: v.total_shares,
+        book_nav: v.book_nav,
+        hwm: v.hwm,
+        last_nav_ms: v.last_nav_ms,
+        epoch: v.epoch,
+        emergency: v.emergency,
+        navs: Vector::new(b"n"),
+        pending: IterableMap::new(b"p"),
+        next_request: v.next_request,
+        claims: Vector::new(b"c"),
+        signals: Vector::new(b"g"),
+        signal_key: v.signal_key.clone(),
+        basis: LookupMap::new(b"b"),
+        used_deposits: LookupSet::new(b"u"),
+        signal_hashes: LookupSet::new(b"h"),
+        maturing: IterableMap::new(b"m"),
+        band_ref: None,
+        band_anchor: None,
+        trades_since_anchor: 0,
+        posting_since_ms: 0,
+    };
+    v.shares.flush();
+    v.basis.flush();
+    env::state_write(&o);
+    ctx("vault.testnet", T0_MS);
+    let mut m = Vault::migrate_v3();
+    assert_eq!((m.total_shares, m.book_nav), (10_000_000, 10_000_000));
+    assert_eq!(m.get_shares(acc("follower.testnet")).0 .0, 8_000_000, "maps keep their storage");
+    ctx("follower.testnet", T0_MS);
+    m.set_stop_loss(1500, acc("follower.testnet"));
+    assert!(m.get_stop_loss(acc("follower.testnet")).is_some());
+}

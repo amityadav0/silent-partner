@@ -9,6 +9,7 @@ import { metaOf } from "@/lib/vaults";
 import { EmergencyBanner } from "./emergency";
 import { PositionDetails } from "./position";
 import { PaperFollowPanel, usePaper } from "./paper";
+import { CrossChainDeposit } from "./crosschain";
 import { copyLine, type PaperFollow } from "@/lib/paper";
 
 /** Chart overlay for a paper follow: index into [inception, ...navs] where it starts. */
@@ -103,6 +104,9 @@ export default function VaultPage() {
 
       <div className="mt-5"><ReturnsChart points={returns(navs)} copy={copyOverlay(navs, paper.follow)} /></div>
       <div className="mt-3"><PaperFollowPanel navs={navs} paper={paper} /></div>
+      <div className="mt-3">
+        <CrossChainDeposit vault={data.id} bookPrice={priceOf(vault.price)} onSimulate={(usdc) => paper.start(navs.at(-1), Math.round(usdc * 100) / 100)} />
+      </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div className="panel">

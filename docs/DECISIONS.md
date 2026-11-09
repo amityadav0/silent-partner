@@ -199,3 +199,12 @@ Each decision is dated, with its reason.
     - NEAR AI ≈ $0.04/day per AI leader (5 leaders ≈ $0.20/day, about $3.20 to Nov 25).
   - **Expiry.** Testnet keys don't expire.
   - **Early warning.** `season.ts` prints a public warning line when the operator, the writer or any vault has less than 10 days of budget left. The fix is a top-up from the spare testnet accounts.
+- **D-F-1 (2026-11-09) Follow from any chain.** A follower sends USDC on Base, Arbitrum, Ethereum or Solana. 1Click delivers USDC on NEAR into the vault with `ft_transfer_call(msg = <their NEAR account>)` (`customRecipientMsg`), and the vault mints the shares to that account.
+  - **Contract.** `ft_on_transfer` accepts `msg` = the account to credit; empty still means the sender.
+  - **Vault page.** A chain picker gets a real 1Click quote from the browser (CORS is open) and shows arrival, fee, ETA and shares at book price. On mainnet "Get my deposit address" takes a live quote; it's gated to `NETWORK=mainnet` and needs a refund address on the origin chain. On testnet "Simulate arrival" starts a paper follow with the amount that would arrive, because the vault is a testnet account and 1Click has no testnet.
+  - **Rejected alternatives:**
+    1. Deliver to the follower's own NEAR account, then a second deposit transaction: two steps.
+    2. A router contract that receives and re-deposits: an extra contract to trust.
+    3. Bridging UIs: they're the multi-step flow this replaces.
+- **D-F-2 (2026-11-09) Copy stop-loss.** `set_stop_loss(drawdown_bps, exit_account)`: 1–90% below the book price when set; not for the leader, who must keep the stake; at most 100 per vault, to bound the gas of each post. At every NAV post the contract checks all stops against the post-fee price. One that's reached queues all of that follower's free shares straight into the withdrawal queue, priced at this post and paid at the next at the lower of the two prices, so a rebound doesn't overpay. Tests: unit tests, and the random-sequence property test with stops (conservation holds, and no live stop sits at or above a post's price).
+- **D-F-3 (2026-11-09) In-place upgrades for f97e5c0-layout vaults.** `migrate_v3` (`#[private]`, the vault account only) adds the empty `stops` map. The four AI season vaults were upgraded with deploy plus migrate in one transaction each.

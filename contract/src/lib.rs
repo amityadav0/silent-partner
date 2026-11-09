@@ -38,6 +38,8 @@ pub const NAV_STALE_MS: u64 = 24 * 60 * 60 * 1000;
 pub const NAV_STALE_MS: u64 = 5 * 60 * 1000;
 pub const MAX_INTENT_AHEAD_MS: u64 = 60 * 60 * 1000;
 pub const MAX_PENDING_WITHDRAWALS: u32 = 100;
+/// Stop-losses per vault (each is checked at every NAV post).
+pub const MAX_STOPS: u32 = 100;
 /// A claim the operator hasn't paid within this long lets anyone trigger emergency.
 pub const CLAIM_GRACE_MS: u64 = NAV_STALE_MS;
 /// Payout payloads must stay valid at least this long (no instantly-dead reservations).
@@ -366,6 +368,21 @@ pub struct Vault {
     trades_since_anchor: u32,
     /// A post waiting for its oracle callback (block ms), 0 when none.
     posting_since_ms: u64,
+    /// Followers' copy stop-losses, checked at every NAV post.
+    stops: IterableMap<AccountId, StopLoss>,
+}
+
+/// A follower's auto-exit: when a post's share price falls to `trigger_price`,
+/// all their free shares are queued for withdrawal, priced at that post.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StopLoss {
+    pub drawdown_bps: u16,
+    /// Share price (× 1e18) when set: the stop is measured from here.
+    pub ref_price: U128,
+    pub trigger_price: U128,
+    pub exit_account: AccountId,
+    pub set_ms: u64,
 }
 
 #[near]
@@ -428,6 +445,7 @@ impl Vault {
             band_anchor: None,
             trades_since_anchor: 0,
             posting_since_ms: 0,
+            stops: IterableMap::new(b"t"),
         }
     }
 
@@ -461,9 +479,20 @@ impl Vault {
     /// NEP-141 receiver. `msg` must be empty. Returns the refund (unused) amount.
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> PromiseOrValue<U128> {
         require!(env::predecessor_account_id() == self.cfg.base_token, "only the base token");
-        match self.try_deposit(&sender_id, amount.0, &msg) {
-            Ok(minted) => {
-                env::log_str(&format!("silent-partner.deposit account={sender_id} amount={} shares={minted}", amount.0));
+        // `msg` may name the account the shares are for: deposits that arrive through
+        // 1Click from another chain (`customRecipientMsg`) are sent by a relayer.
+        let beneficiary = if msg.is_empty() {
+            Ok(sender_id.clone())
+        } else {
+            msg.trim().parse::<AccountId>().map_err(|_| "msg must be empty or the account to credit")
+        };
+        let result = beneficiary.and_then(|b| self.try_deposit(&b, amount.0).map(|m| (b, m)));
+        match result {
+            Ok((who, minted)) => {
+                env::log_str(&format!(
+                    "silent-partner.deposit account={who} sender={sender_id} amount={} shares={minted}",
+                    amount.0
+                ));
                 if let (Some(intents), Some(vault)) = (self.cfg.intents_contract.clone(), self.vault_account.clone()) {
                     // Credit the vault's public intents account; the operator shields it.
                     let _ = ext_ft::ext(self.cfg.base_token.clone())
@@ -539,6 +568,40 @@ impl Vault {
         require!(r.account == env::predecessor_account_id(), "not yours");
         self.pending.remove(&id);
         self.locked.insert(r.account.clone(), self.locked_of(&r.account) - r.shares.0);
+    }
+
+    // ---------- copy stop-loss ----------
+
+    /// Follower: auto-exit if the share price falls `drawdown_bps` below today's
+    /// book price. Checked by the contract at every NAV post; when it fires, all
+    /// free shares are queued for withdrawal to `exit_account`, priced at that post.
+    pub fn set_stop_loss(&mut self, drawdown_bps: u16, exit_account: AccountId) -> StopLoss {
+        let who = env::predecessor_account_id();
+        require!(who != self.cfg.leader, "the leader keeps a minimum stake: no stop-loss");
+        require!((100..=9000).contains(&drawdown_bps), "drawdown must be 1%..90%");
+        require!(self.balance(&who) > 0, "no shares");
+        require!(
+            self.stops.contains_key(&who) || self.stops.len() < MAX_STOPS,
+            "too many stop-losses on this vault"
+        );
+        let ref_price = math::price(self.book_nav, self.total_shares);
+        let stop = StopLoss {
+            drawdown_bps,
+            ref_price: U128(ref_price),
+            trigger_price: U128(ref_price * (math::BPS - drawdown_bps as u128) / math::BPS),
+            exit_account,
+            set_ms: now_ms(),
+        };
+        self.stops.insert(who, stop.clone());
+        stop
+    }
+
+    pub fn cancel_stop_loss(&mut self) {
+        self.stops.remove(&env::predecessor_account_id());
+    }
+
+    pub fn get_stop_loss(&self, account_id: AccountId) -> Option<StopLoss> {
+        self.stops.get(&account_id).cloned()
     }
 
     // ---------- NAV ----------
@@ -1201,6 +1264,7 @@ impl Vault {
                 },
             );
         }
+        self.trigger_stops(price, epoch);
         self.book_nav = nav_left;
         self.epoch = epoch;
         self.last_nav_ms = timestamp_ms;
@@ -1222,6 +1286,47 @@ impl Vault {
             nav.0
         ));
         post
+    }
+
+    /// Stop-losses whose trigger the post-fee price reached: queue all free shares,
+    /// priced at this post (they burn at the next one, at the lower of the two).
+    fn trigger_stops(&mut self, price: u128, epoch: u64) {
+        let hit: Vec<(AccountId, StopLoss)> = self
+            .stops
+            .iter()
+            .filter(|(_, s)| price <= s.trigger_price.0)
+            .map(|(a, s)| (a.clone(), s.clone()))
+            .collect();
+        for (who, stop) in hit {
+            self.stops.remove(&who);
+            let free = self.free_shares(&who);
+            if free == 0 || self.pending.len() + self.maturing.len() >= MAX_PENDING_WITHDRAWALS {
+                env::log_str(&format!("silent-partner.stop_skipped account={who} free={free}"));
+                continue;
+            }
+            self.locked.insert(who.clone(), self.locked_of(&who) + free);
+            let id = self.next_request;
+            self.next_request += 1;
+            let request = WithdrawRequest {
+                id,
+                account: who.clone(),
+                shares: U128(free),
+                exit_account: stop.exit_account,
+                requested_ms: now_ms(),
+            };
+            self.maturing.insert(
+                id,
+                Maturing {
+                    request,
+                    priced_at: U128(price),
+                    priced_epoch: epoch,
+                },
+            );
+            env::log_str(&format!(
+                "silent-partner.stop_loss account={who} shares={free} price={price} trigger={}",
+                stop.trigger_price.0
+            ));
+        }
     }
 
     fn public_verifier(&self) -> String {
@@ -1248,10 +1353,7 @@ impl Vault {
         self.balance(a) - self.locked_of(a)
     }
 
-    fn try_deposit(&mut self, who: &AccountId, amount: u128, msg: &str) -> Result<u128, &'static str> {
-        if !msg.is_empty() {
-            return Err("msg must be empty");
-        }
+    fn try_deposit(&mut self, who: &AccountId, amount: u128) -> Result<u128, &'static str> {
         if self.vault_account.is_none() {
             return Err("not active");
         }

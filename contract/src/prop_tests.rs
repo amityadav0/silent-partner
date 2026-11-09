@@ -27,6 +27,8 @@ enum Op {
     Post(i32),
     Emergency,
     Exit(usize),
+    /// follower (1..4), drawdown bps
+    Stop(usize, u16),
 }
 
 fn op() -> impl Strategy<Value = Op> {
@@ -37,6 +39,7 @@ fn op() -> impl Strategy<Value = Op> {
         4 => (-600i32..=600).prop_map(Op::Post),
         1 => Just(Op::Emergency),
         2 => (0usize..4).prop_map(Op::Exit),
+        2 => (1usize..4, 100u16..=3000).prop_map(|(w, d)| Op::Stop(w, d)),
     ]
 }
 
@@ -140,6 +143,12 @@ fn run(ops: Vec<Op>) -> Result<(), TestCaseError> {
                     v.trigger_emergency(None);
                 }
             }
+            Op::Stop(w, d) => {
+                if !v.emergency && bal(&v, WHO[w]) > 0 {
+                    ctx(WHO[w], t);
+                    v.set_stop_loss(d, acc(WHO[w]));
+                }
+            }
             Op::Exit(w) => {
                 if v.emergency && bal(&v, WHO[w]) > 0 {
                     ctx(WHO[w], t);
@@ -148,6 +157,21 @@ fn run(ops: Vec<Op>) -> Result<(), TestCaseError> {
             }
         }
         check(&v, &m, i, o)?;
+        // after a post, no live stop sits at or above the post's price (it would have fired)
+        if let (Op::Post(_), Some(p)) = (o, v.navs.get(v.navs.len().saturating_sub(1))) {
+            if !v.emergency && !v.navs.is_empty() && p.epoch == v.epoch {
+                for (who, s) in v.stops.iter() {
+                    prop_assert!(
+                        s.trigger_price.0 < p.price.0,
+                        "step {}: stop for {} at {} not fired at price {}",
+                        i,
+                        who,
+                        s.trigger_price.0,
+                        p.price.0
+                    );
+                }
+            }
+        }
         m.hwm = v.hwm;
     }
     Ok(())

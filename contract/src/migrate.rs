@@ -109,6 +109,75 @@ impl Vault {
             band_anchor: None,
             trades_since_anchor: 0,
             posting_since_ms: 0,
+            stops: IterableMap::new(b"t"),
+        }
+    }
+}
+
+/// Layout of vaults deployed at commit f97e5c0 (the four AI season vaults and
+/// the quotes demo): everything current except `stops`.
+#[near(serializers = [borsh])]
+pub struct VaultV3 {
+    pub cfg: Config,
+    pub vault_account: Option<String>,
+    pub shares: LookupMap<AccountId, u128>,
+    pub locked: LookupMap<AccountId, u128>,
+    pub total_shares: u128,
+    pub book_nav: u128,
+    pub hwm: u128,
+    pub last_nav_ms: u64,
+    pub epoch: u64,
+    pub emergency: bool,
+    pub navs: Vector<NavPost>,
+    pub pending: IterableMap<u64, WithdrawRequest>,
+    pub next_request: u64,
+    pub claims: Vector<Claim>,
+    pub signals: Vector<Signal>,
+    pub signal_key: Option<String>,
+    pub basis: LookupMap<AccountId, Basis>,
+    pub used_deposits: LookupSet<String>,
+    pub signal_hashes: LookupSet<String>,
+    pub maturing: IterableMap<u64, Maturing>,
+    pub band_ref: Option<BandRef>,
+    pub band_anchor: Option<BandRef>,
+    pub trades_since_anchor: u32,
+    pub posting_since_ms: u64,
+}
+
+#[near]
+impl Vault {
+    /// f97e5c0 layout → current: adds copy stop-losses (empty). Nothing else changes.
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate_v3() -> Self {
+        let o: VaultV3 = env::state_read().unwrap_or_else(|| env::panic_str("no v3 state"));
+        env::log_str("silent-partner.migrated from=v3");
+        Self {
+            cfg: o.cfg,
+            vault_account: o.vault_account,
+            shares: o.shares,
+            locked: o.locked,
+            total_shares: o.total_shares,
+            book_nav: o.book_nav,
+            hwm: o.hwm,
+            last_nav_ms: o.last_nav_ms,
+            epoch: o.epoch,
+            emergency: o.emergency,
+            navs: o.navs,
+            pending: o.pending,
+            next_request: o.next_request,
+            claims: o.claims,
+            signals: o.signals,
+            signal_key: o.signal_key,
+            basis: o.basis,
+            used_deposits: o.used_deposits,
+            signal_hashes: o.signal_hashes,
+            maturing: o.maturing,
+            band_ref: o.band_ref,
+            band_anchor: o.band_anchor,
+            trades_since_anchor: o.trades_since_anchor,
+            posting_since_ms: o.posting_since_ms,
+            stops: IterableMap::new(b"t"),
         }
     }
 }

@@ -18,6 +18,42 @@ function Track({ at, testid }: { at: WState; testid?: string }) {
   );
 }
 
+type Stop = { drawdown_bps: number; ref_price: string; trigger_price: string; exit_account: string; set_ms: number };
+
+/** Copy stop-loss: the contract queues your exit at the first NAV post at or below the trigger. */
+function StopLoss({ id, viewer, vault, cfg, refresh, onDone }: { id: string; viewer: string; vault: VaultView; cfg: Config; refresh: unknown; onDone: () => void }) {
+  const { accountId, call } = useWallet();
+  const [stop, setStop] = useState<Stop | null | "n/a">(null);
+  const [pct, setPct] = useState("15");
+  useEffect(() => {
+    view<Stop | null>(id, "get_stop_loss", { account_id: viewer }).then(setStop, () => setStop("n/a"));
+  }, [id, viewer, refresh]);
+  if (stop === "n/a" || viewer === cfg.leader || vault.emergency) return null;
+  const price = (p: string) => (Number(BigInt(p)) / 1e18).toFixed(4);
+  const mine = accountId === viewer;
+  return (
+    <div className="mt-4 text-sm" data-testid="stop-loss">
+      <h3 className="font-semibold">Copy stop-loss</h3>
+      {stop ? (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <span className="tabular-nums">
+            Exit if the share price falls {stop.drawdown_bps / 100}% from {price(stop.ref_price)} to <b>{price(stop.trigger_price)}</b>, to <code>{stop.exit_account}</code>
+          </span>
+          {mine && <button className="btn ml-auto text-xs" onClick={() => call({ receiverId: id, method: "cancel_stop_loss", args: {}, gas: 20n * TGAS }).then(onDone)}>Cancel</button>}
+        </div>
+      ) : (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <span>Auto-exit at</span>
+          <input aria-label="Stop-loss drawdown" className="w-16" inputMode="decimal" value={pct} onChange={(e) => setPct(e.target.value)} />
+          <span>% below today&apos;s price</span>
+          <button className="btn ml-auto text-xs" disabled={!mine} onClick={() => call({ receiverId: id, method: "set_stop_loss", args: { drawdown_bps: Math.round(Number(pct) * 100), exit_account: viewer }, gas: 30n * TGAS }).then(onDone)}>Set stop-loss</button>
+        </div>
+      )}
+      <p className="muted text-xs">The contract checks it at every NAV post. When the price reaches it, all your free shares are queued, priced at that post, and paid at the next at the lower of the two prices.</p>
+    </div>
+  );
+}
+
 export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refresh, onDone }: { id: string; viewer: string; vault: VaultView; cfg: Config; dec: number; sym: string; claims: Claim[]; refresh: unknown; onDone: () => void }) {
   const { accountId, call } = useWallet();
   const [pos, setPos] = useState<Position | null | "n/a">(null);
@@ -42,6 +78,7 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
         </div>
       )}
       {pos === "n/a" && <p className="muted text-xs">P&amp;L needs per-holder cost basis, which this vault&apos;s contract version predates.</p>}
+      <StopLoss id={id} viewer={viewer} vault={vault} cfg={cfg} refresh={refresh} onDone={onDone} />
       {(pending.length > 0 || maturing.length > 0 || claims.length > 0) && <h3 className="mt-4 text-sm font-semibold">Withdrawals</h3>}
       <ul className="mt-1 space-y-3 text-xs">
         {pending.map((r) => (

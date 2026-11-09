@@ -140,3 +140,18 @@ test("leaderboard: every house leader has a badge and a style", async ({ page })
   await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("badge")).toHaveText("AI");
   await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveText("high risk");
 });
+
+test("follow from any chain: a real 1Click quote from Base into the vault, then a simulated arrival", async ({ page }) => {
+  await page.goto("/vault/?id=sp-convict-8952.testnet");
+  await page.getByTestId("cc-chain").selectOption("base");
+  await page.getByTestId("cc-quote").click();
+  await expect(page.getByTestId("cc-result")).toContainText(/USDC on Base → .* USDC into the vault in ~\d+ s/, { timeout: 30_000 });
+  await page.getByTestId("cc-simulate").click();
+  await expect(page.getByTestId("paper-value")).toBeVisible();
+});
+
+test("copy stop-loss control on an upgraded vault, as a follower", async ({ page }) => {
+  await page.goto("/vault/?id=sp-convict-8952.testnet&as=sp-follower-60270.testnet");
+  await expect(page.getByTestId("stop-loss")).toContainText("Copy stop-loss");
+  await expect(page.getByRole("button", { name: "Set stop-loss" })).toBeDisabled(); // read-only view
+});
