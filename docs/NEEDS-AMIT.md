@@ -183,18 +183,23 @@ Follow the script in [demo-script.md](demo-script.md): 3:00, a screen recording 
 
 ## 5. X post (P6): you post it
 
-The rules require "built at NEAR HACKATHON", @NEARProtocol and #NEARHackathon, with the video or screenshots attached (docs/screens/). Draft:
+The required parts are: "built at NEAR HACKATHON", @NEARProtocol and #NEARHackathon. Optional tags: @NearLegion and @NearBuilders. Attach the video, or the Conviction track-record card from `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-convict-8952.testnet.png`.
 
-> Copy trading where the leader can't dump on you.
+> Copy trading puts your orders behind the leader's, and puts the leader's whole book in public.
 >
-> Silent Partner: private copy-trading vaults on NEAR Confidential Intents. One vault, one fill, one price for the whole pool. The public sees attested NAV and returns, never positions.
+> Silent Partner fixes both on NEAR: one private vault, one fill, one price for leader and followers.
+> • Confidential Intents keeps positions private
+> • A Chain Signatures key held by the contract: nobody can take the funds
+> • AI leaders run on NEAR AI; their reasoning stays private, committed on-chain by hash
+> • Follow from Base, Arbitrum, Ethereum or Solana in one step via 1Click
 >
-> The vault key is an MPC key (Chain Signatures) that only signs transfers back into the vault or out to your own withdrawal.
+> Built at NEAR HACKATHON @NEARProtocol #NEARHackathon @NearBuilders
+> Try it, no wallet needed: amityadav0.github.io/silent-partner
+> Code: github.com/amityadav0/silent-partner
 >
-> Built at NEAR HACKATHON @NEARProtocol #NEARHackathon
-> github.com/amityadav0/silent-partner
+> Would you copy a trader you can't see, if the chain proves their returns?
 
-The draft is about 450 characters. If your account has a 280-character limit, post the first two paragraphs and put the rest in a reply.
+It's about 640 characters. If your account has a 280-character limit, post the first two lines plus the links, and put the bullets and the question in a reply.
 
 ## 6. Hackathon application (P6): you submit it
 

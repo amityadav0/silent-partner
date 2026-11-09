@@ -1,34 +1,39 @@
-# Demo video script (3:00)
+# Demo video script (2:30)
 
-**Format.** Screen recording with a voiceover. **[S]** marks what's on screen; **[V]** is the voiceover.
+Amit's own voice. 30 seconds on camera at the start, then screen. **[S]** is what's on screen, **[V]** is what you say. Everything runs on the hosted site: https://amityadav0.github.io/silent-partner/
 
-**Before you record:**
-- Start the testnet operator: `cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts`.
-- Serve the site: `cd web && npm run build && npm run serve`.
-- If the mainnet run is done, have docs/mainnet.md open in a tab.
+**Before you record (2 minutes):**
+- Open these tabs:
+  - the [Conviction vault](https://amityadav0.github.io/silent-partner/vault/?id=sp-convict-8952.testnet), an AI leader that is always invested;
+  - [What the chain sees](https://amityadav0.github.io/silent-partner/chain/);
+  - the [drill vault as the follower](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-follower-60270.testnet);
+  - the [rejected lie on NearBlocks](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn).
+- If a paper copy is already showing on the Conviction page, click "Stop following", so the follow happens on camera.
+- Have [the season log](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/last-run.json) open for the AI leader's last decision (target bucket + rationale hash).
 
 ---
 
-**0:00 to 0:20: the problem**
-- [S] Leaderboard (`/`).
-- [V] "Copy trading has a dirty secret. When a leader trades, their followers' orders arrive after, so the leader can dump on them. And the leader's whole book is public. Silent Partner fixes both, on NEAR."
+**0:00–0:30: you, on camera**
+- [V] "I'm Amit. Copy trading has two problems. Your orders land after the leader's, so you get the worse price, or the leader dumps on you. And a good trader's whole book is public, so they stop sharing. Silent Partner fixes both, on NEAR."
 
-**0:20 to 0:50: the idea**
-- [S] The leaderboard row, then the "One fill, one price" card.
-- [V] "A leader and their followers share one vault. Its funds sit in a NEAR Confidential Intents account. When the leader signals a trade, it's executed once, for the whole pool, through a single 1Click confidential quote. Everyone gets the same price. The public sees attested NAV and returns, and nobody sees positions."
+**0:30–1:30: one complete moment**
+- [S] Conviction vault. Point at the **AI** badge and the "paper · testnet" chip.
+- [V] "This vault is led by an AI on NEAR AI Cloud. Followers and the leader share one vault, and every trade fills once, for the whole pool, at one price."
+- [S] "Deposit from another chain": pick **Base**, 100 USDC, then **Get a quote**. Real 1Click numbers appear: ~99.99 USDC into the vault in ~35 s.
+- [V] "I follow from Base. One step, no bridging: NEAR Intents routes it and the vault mints my shares." Click **Simulate arrival (paper)**. Your copy appears.
+- [S] Scroll to the chart (the dashed line is your copy), then to "Recorded signals" and the latest NAV post, with **Attested n/n ✓**.
+- [V] "Every 15 minutes the AI decides. Its reasoning stays private: only a hash of it goes on-chain, inside the leader-signed signal. Then the NAV is posted, signed, and my browser re-checks every signature."
+- [S] What the chain sees: the Observer column.
+- [V] "And this is what everyone else sees: totals and returns. Not one position, not one trade before it happens."
 
-**0:50 to 1:25: send a signal**
-- [S] `/leader/`. The signal key shows "ready". Set 5% of NAV, USDC → wNEAR, market, then click "Sign and send". The result reads "Executed for the whole vault". Reload: a new row appears under Recorded signals.
-- [V] "The leader signs a signal in the browser with a key their NEAR account registered on the vault. The operator checks it, sizes it against NAV, gets one confidential quote, and records the signal hash on-chain, where the contract checks the leader's signature again. The trade itself stays private."
+**1:30–1:50: the exit, without the operator**
+- [S] The drill vault as the follower: the red emergency banner, then Claim #0 with its track at **Paid**.
+- [V] "If the operator disappears, anyone can switch the vault to emergency, and every holder exits pro rata. Here the operator was stopped and a follower paid themselves out, with no operator and no 1Click."
 
-**1:25 to 2:05: why the operator can't steal**
-- [S] docs/testnet.md, the "Real NEAR Intents verifier" section, then the "Thief payout refused" line.
-- [V] "Here's the important part. The vault's intents account belongs to an MPC key derived for the contract, through Chain Signatures on the EdDSA domain. No one holds it, us included. The contract only asks MPC to sign a transfer that a 1Click-signed quote binds back into the vault, or out to a holder's own withdrawal. Here the real NEAR Intents verifier executes a vault transfer signed by MPC, and here the contract refuses a payout aimed at the operator's own account."
+**1:50–2:05: the operator can't lie about returns**
+- [S] The NearBlocks tx: the log reads `nav_rejected … share return 2000bps outside [-187, 74]bps`.
+- [V] "The operator signed a NAV 20% too high. The contract checked it against two 1Click-signed price quotes, saw NEAR didn't move, and refused it."
 
-**2:05 to 2:35: attested returns**
-- [S] `/vault/?id=…`. Show the chart and the Attested 4/4 tile. Scroll to NAV posts and the fill-log heads. Then open `/s/?id=…`.
-- [V] "Every epoch the operator posts NAV, signed, pinned to the head of a hash-chained fill log. Your browser re-verifies every signature. Deposits mint at NAV. Withdrawals burn at the next NAV. The leader keeps at least 10% of the vault and earns a fee only above the high-water mark. If NAV stops for 24 hours, anyone can trigger emergency exits."
-
-**2:35 to 3:00: proof and next**
-- [S] docs/mainnet.md with its transaction links, or docs/testnet.md if mainnet isn't done. Then the README.
-- [V] "It's live on testnet with real MPC signatures, and on mainnet with real money: a deposit, a trade, a NAV post and a withdrawal. Next: NAV computed in a TEE, so you don't have to trust the operator for pricing either. Silent Partner, by Scope. Built at the NEAR Hackathon."
+**2:05–2:30: what NEAR does here**
+- [S] The landing page, then the README.
+- [V] "Confidential Intents keeps the positions private. A Chain Signatures key held by the contract means nobody, us included, can take the money. NEAR AI runs the AI leaders privately. And 1Click lets you follow from any chain. Silent Partner. Built at the NEAR Hackathon."
