@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ASSETS } from "@/lib/config";
+import { seasonUrl } from "@/lib/vault";
 import { aumBucket, cardUrl, drawdownWindow, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
 import { useState } from "react";
 import { Redact, Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
@@ -58,6 +59,7 @@ export default function Share() {
         <p className="muted mt-1 text-xs">Positions are private. The vault trades through NEAR Confidential Intents, and only NAV is published.</p>
       </div>
       <ShareImage id={data.id} name={metaOf(data.id).name} ret={m.ret} />
+      <Badge id={data.id} dd={m.dd} epochs={data.navs.length} />
       <p className="mt-3 text-center text-sm"><Link href={`/vault/?id=${data.id}`}>Open the vault</Link></p>
     </section>
   );
@@ -75,8 +77,26 @@ function ShareImage({ id, name, ret }: { id: string; name: string; ret: number }
       <img src={url} alt={`${name} track-record card`} className="w-full rounded" onError={() => setOk(false)} />
       <p className="mt-2 flex flex-wrap gap-3 text-sm">
         <a href={url} download={`${id}.png`}>Open the image</a>
-        <a href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(typeof window === "undefined" ? "" : window.location.href)}`}>Post on X</a>
+        <a href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(`https://amityadav0.github.io/silent-partner/v/${id}/`)}`}>Post on X</a>
       </p>
+    </div>
+  );
+}
+
+/** An embeddable badge (rendered by the season each tick) and a line for an X bio. */
+function Badge({ id, dd, epochs }: { id: string; dd: number; epochs: number }) {
+  const link = `https://amityadav0.github.io/silent-partner/v/${id}/`;
+  const img = seasonUrl(`badges/${id}.png`);
+  const bio = `Leading on Silent Partner ✓ ${dd === 0 ? "0%" : `−${(dd * 100).toFixed(1)}%`} worst DD · ${epochs} epochs · positions sealed`;
+  const md = `[![Silent Partner](${img})](${link})`;
+  const [ok, setOk] = useState(true);
+  return (
+    <div className="panel mt-3 flex flex-col gap-3" data-testid="badge-embed">
+      <h2>Badge</h2>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {ok && <img src={img} alt="Silent Partner badge" style={{ height: 28, width: "auto", alignSelf: "flex-start" }} onError={() => setOk(false)} />}
+      <label className="flex flex-col gap-1 text-sm"><span className="muted">For a site or a README</span><input readOnly value={md} onFocus={(e) => e.target.select()} /></label>
+      <label className="flex flex-col gap-1 text-sm"><span className="muted">For your X bio ({bio.length} characters)</span><input readOnly value={bio} onFocus={(e) => e.target.select()} data-testid="bio" /></label>
     </div>
   );
 }

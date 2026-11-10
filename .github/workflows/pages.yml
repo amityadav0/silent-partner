@@ -6,6 +6,9 @@ on:
   push:
     branches: [master]
     paths: ["web/**", ".github/workflows/pages.yml"]
+  # rebuild so new community vaults get their own shareable /v/<vault>/ page
+  schedule:
+    - cron: "40 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +36,7 @@ jobs:
         working-directory: web
         env:
           NEXT_PUBLIC_BASE_PATH: /silent-partner
+          NEXT_PUBLIC_TELEGRAM_BOT: ${{ vars.NEXT_PUBLIC_TELEGRAM_BOT }}
           NEXT_TELEMETRY_DISABLED: "1"
       - uses: actions/upload-pages-artifact@v3
         with:

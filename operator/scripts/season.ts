@@ -29,7 +29,7 @@ import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
 import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
-import { cardPng, cardSvg } from "../src/season/card.js";
+import { badgeSvg, cardPng, cardSvg } from "../src/season/card.js";
 import { viewCall } from "../src/intents.js";
 import { communityKeys, communityPersona, unseal, type Launch } from "../src/season/community.js";
 import { ackSignals, launches, operatorAccount, pendingSignals, provision } from "../src/season/provision.js";
@@ -221,6 +221,7 @@ const STYLE: Record<string, [string, string]> = {
   "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
 };
 mkdirSync(join(sealed, "cards"), { recursive: true });
+mkdirSync(join(sealed, "badges"), { recursive: true });
 const cardVaults = [...S.vaults.filter((v) => v.strategy !== "drill"), ...community.map((l) => ({ id: l.vault!, strategy: `community-${l.kind}`, name: l.name, style: l.style }))];
 for (const v of cardVaults) {
   try {
@@ -232,6 +233,8 @@ for (const v of cardVaults) {
     }
     const g = await viewCall<{ leader_shares: string; total_shares: string }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
     const [badge, style] = STYLE[v.strategy] ?? [v.strategy === "community-ai" ? "AI" : "Human", (v as { style?: string }).style ?? ""];
+    const bsvg = badgeSvg({ navs });
+    writeFileSync(join(sealed, "badges", `${v.id}.png`), cardPng(bsvg, 2 * Number(bsvg.match(/width="([\d.]+)"/)![1])));
     writeFileSync(join(sealed, "cards", `${v.id}.png`), cardPng(cardSvg({ name: v.name, badge, style, vault: v.id, navs, leaderShares: g.leader_shares, totalShares: g.total_shares, asOf: new Date() })));
   } catch (x) {
     console.log(JSON.stringify({ card_error: v.id, error: String((x as Error).message).slice(0, 120) }));

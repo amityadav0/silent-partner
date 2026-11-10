@@ -237,7 +237,7 @@ describe("house AI leaders", () => {
   });
 });
 
-import { sharpeLike, trackRecord, cardSvg, cardPng } from "../src/season/card.js";
+import { sharpeLike, trackRecord, cardSvg, cardPng, badgeSvg } from "../src/season/card.js";
 
 describe("track-record card", () => {
   const E18 = 10n ** 18n;
@@ -260,5 +260,10 @@ describe("track-record card", () => {
     expect(svg).toContain("SEALED");
     expect(svg).toContain("#F5F0E6"); // paper, the light theme
     expect(cardPng(svg).subarray(0, 4).toString("hex")).toBe("89504e47");
+  });
+  it("badge: worst drawdown and epochs, nothing else", () => {
+    const b = badgeSvg({ navs: [nav(0, 1.1), nav(1, 0.99), nav(2, 1.05)] });
+    expect(b).toContain("−10.0% worst DD · 3 epochs");
+    expect(cardPng(b, 400).subarray(0, 4).toString("hex")).toBe("89504e47");
   });
 });

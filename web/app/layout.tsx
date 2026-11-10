@@ -5,7 +5,14 @@ import "./globals.css";
 import { WalletProvider } from "@/lib/wallet";
 import { Footer, Nav } from "./ui";
 
-export const metadata: Metadata = { title: "Silent Partner", description: "Copy the trader, not the crowd. Private copy-trading vaults on NEAR Confidential Intents." };
+const SITE = "https://amityadav0.github.io/silent-partner";
+const DESCRIPTION = "Copy the trader, not the crowd. Private copy-trading vaults on NEAR Confidential Intents: same trade, same price, nothing to front-run.";
+export const metadata: Metadata = {
+  title: "Silent Partner",
+  description: DESCRIPTION,
+  openGraph: { title: "Silent Partner: copy the trader, not the crowd", description: DESCRIPTION, url: `${SITE}/`, siteName: "Silent Partner", images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "A trade ticket stamped SEALED, every field redacted" }] },
+  twitter: { card: "summary_large_image", title: "Silent Partner: copy the trader, not the crowd", description: DESCRIPTION, images: [`${SITE}/og.png`] },
+};
 
 // Built into the static export, so visitors make no request to a font provider.
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif" });

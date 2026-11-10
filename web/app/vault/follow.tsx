@@ -63,6 +63,18 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
   }, [id, accountId, shares, stopSupported]);
 
   const showStop = stopSupported && accountId !== cfg.leader;
+  // Invite credit (D-G-7): kept in this browser only, first touch wins.
+  const [ref, setRef] = useState<string | null>(null);
+  useEffect(() => {
+    const k = `sp.ref.${id}`;
+    try {
+      const q = new URLSearchParams(window.location.search).get("ref");
+      if (q && !localStorage.getItem(k)) localStorage.setItem(k, q);
+      setRef(localStorage.getItem(k));
+    } catch {
+      setRef(new URLSearchParams(window.location.search).get("ref"));
+    }
+  }, [id]);
 
   async function follow() {
     setMsg(null);
@@ -120,6 +132,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
   return (
     <aside className="vault-aside" data-testid="follow-panel">
       <h2>Follow {name}</h2>
+      {ref && <span className="muted -mt-3 text-[13px]" data-testid="invited-by">Invited by {ref}</span>}
 
       <div className="flex flex-col gap-2">
         <label htmlFor="follow-amount" className="muted text-sm">Amount</label>

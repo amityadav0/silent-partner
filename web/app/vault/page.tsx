@@ -26,6 +26,19 @@ function copyOverlay(navs: { epoch: number; timestamp_ms: number; price: string 
   return { fromIndex: k + 1, r: copyLine(navs, f).map((p) => p.r) };
 }
 
+const SITE = "https://amityadav0.github.io/silent-partner";
+
+/** "Invite to this vault": a link that previews with the vault's card and credits its leader. */
+function InviteButton({ id, leader }: { id: string; leader: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${SITE}/v/${id}/?ref=${encodeURIComponent(leader)}`;
+  return (
+    <button className="quiet" data-testid="invite" data-url={url} onClick={() => navigator.clipboard?.writeText(url).then(() => setCopied(true), () => window.prompt("Copy this invite link", url))}>
+      {copied ? "Invite link copied" : "Invite to this vault"}
+    </button>
+  );
+}
+
 export default function VaultPage() {
   const id = useQueryParam("id");
   const { data, error, reload } = useVault(id);
@@ -90,6 +103,7 @@ export default function VaultPage() {
               <ModeChip id={data.id} meta={meta} />
               {st !== "active" && <StatusChip s={st} />}
               <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
+              <InviteButton id={data.id} leader={cfg.leader} />
             </div>
             <h1>{meta.name}</h1>
             <p className="max-w-2xl text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>{meta.style}. What it holds right now is sealed.</p>

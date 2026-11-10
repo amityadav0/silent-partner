@@ -92,9 +92,22 @@ export function cardSvg(o: { name: string; badge: string; style: string; vault: 
 </svg>`;
 }
 
+/** A small badge for a leader's site or profile: "Silent Partner ✓ | −4.1% worst DD · 58 epochs". */
+export function badgeSvg(o: { navs: NavPoint[] }): string {
+  const t = trackRecord(o.navs, "0", "0");
+  const right = `${t.maxDrawdown === 0 ? "0%" : `−${(t.maxDrawdown * 100).toFixed(1)}%`} worst DD · ${t.epochs} epochs`;
+  const lw = 36 + 16 * 7.9 + 12, rw = right.length * 7.9 + 24, W = lw + rw, H = 28;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" rx="6" fill="${C.ink}"/><rect x="${lw}" width="${rw}" height="${H}" rx="6" fill="${C.accent}"/><rect x="${lw}" width="8" height="${H}" fill="${C.accent}"/>
+  <rect x="10" y="10" width="11" height="8" rx="1.5" fill="${C.paper}"/><rect x="23" y="10" width="5" height="8" rx="1.5" fill="${C.accent}"/>
+  <text x="36" y="19" font-family="${MONO}" font-size="13" fill="${C.paper}">Silent Partner ✓</text>
+  <text x="${lw + 12}" y="19" font-family="${MONO}" font-size="13" fill="#FFFFFF">${esc(right)}</text>
+</svg>`;
+}
+
 // Bundled so the card looks the same on the season runner as anywhere else.
 const font = (f: string) => fileURLToPath(new URL(`../../assets/fonts/${f}`, import.meta.url));
 
-export function cardPng(svg: string): Buffer {
-  return Buffer.from(new Resvg(svg, { fitTo: { mode: "width", value: 1200 }, font: { loadSystemFonts: false, fontFiles: [font("InstrumentSerif-Regular.ttf"), font("JetBrainsMono-Regular.ttf")], defaultFontFamily: MONO } }).render().asPng());
+export function cardPng(svg: string, width = 1200): Buffer {
+  return Buffer.from(new Resvg(svg, { fitTo: { mode: "width", value: width }, font: { loadSystemFonts: false, fontFiles: [font("InstrumentSerif-Regular.ttf"), font("JetBrainsMono-Regular.ttf")], defaultFontFamily: MONO } }).render().asPng());
 }

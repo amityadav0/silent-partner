@@ -234,6 +234,18 @@ test("my partners: a follower's vaults as one portfolio, and a simulated blend w
   await expect(page.getByTestId("simulated").locator(".row-kv")).toHaveCount(3);
 });
 
+test("share loops: a vault link with its own preview, invite credit, badge and bio line", async ({ page }) => {
+  await page.goto("/v/sp-momo-92991.testnet/?ref=sp-lmomo-92991.testnet");
+  await expect(page).toHaveURL(/\/vault\/\?id=sp-momo-92991\.testnet&ref=sp-lmomo-92991\.testnet/);
+  await expect(page.getByTestId("invited-by")).toHaveText("Invited by sp-lmomo-92991.testnet");
+  await expect(page.getByTestId("invite")).toHaveAttribute("data-url", "https://amityadav0.github.io/silent-partner/v/sp-momo-92991.testnet/?ref=sp-lmomo-92991.testnet");
+  const html = await (await page.request.get("/v/sp-momo-92991.testnet/")).text();
+  expect(html).toContain('property="og:image" content="https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-momo-92991.testnet.png"');
+  expect(html).toContain('name="twitter:card" content="summary_large_image"');
+  await page.goto("/s/?id=sp-momo-92991.testnet");
+  await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst DD · \d+ epochs · positions sealed$/);
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");
