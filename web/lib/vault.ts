@@ -209,4 +209,5 @@ export function sharpeLike(navs: NavPost[]): number | null {
 }
 
 /** The season job's pre-rendered track-record card for a vault (public, on-chain data only). */
-export const cardUrl = (vault: string) => `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/${vault}.png`;
+export const seasonUrl = (file: string) => `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/${file}`;
+export const cardUrl = (vault: string) => seasonUrl(`cards/${vault}.png`);

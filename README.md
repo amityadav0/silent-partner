@@ -1,10 +1,15 @@
 # Silent Partner
 
-**Private copy-trading vaults on NEAR Confidential Intents.** A leader and their followers share one vault. The vault's funds sit in a confidential NEAR Intents account controlled by an MPC key derived for the contract. Each leader signal is filled once, for the whole pool, at one price. The public sees attested, price-bounded NAV and returns; nobody sees positions.
+> **Try it in 60 s**
+> 1. Flip the trade ticket from public to sealed: https://amityadav0.github.io/silent-partner/#ticket
+> 2. An AI leader's latest trade, matched in your browser to the hash of its sealed reasoning: https://amityadav0.github.io/silent-partner/vault/?id=sp-contra-8952.testnet#ai
+> 3. A follower paid out with the operator stopped (exit drill): https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ
+
+**Private copy-trading vaults on NEAR Confidential Intents.** A leader and their followers share one vault. The vault's funds sit in a confidential NEAR Intents account controlled by an MPC key derived for the contract. Each leader signal is filled once, for the whole pool, at one price. The public sees attested, price-bounded NAV and returns. Positions are never published; only the operator that executes the trades sees them.
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**Live site: https://amityadav0.github.io/silent-partner/**. It's a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) trade every 15 minutes at real 1Click prices. NAVs and signals are real testnet transactions; the funds are testnet tokens.
+**Live site: https://amityadav0.github.io/silent-partner/**. It's a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
 ![Silent Partner landing page: a trade ticket stamped SEALED, with every field redacted](docs/screens/landing.png)
 
@@ -19,7 +24,7 @@ Each step says what to do, what you should see, and where it lives.
 5. **See a follower leave without the operator.** In the [drill vault](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-leader-60270.testnet), the operator was stopped and a follower exited pro rata, paying themselves out through the real intents verifier. Every tx is in [docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09).
 6. **See an AI leader decide privately.** [`season-state/last-run.json`](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/last-run.json) shows, per AI leader and per tick, only the model, a 20-point target bucket and the hash of its rationale. The rationale itself is sealed (AES-GCM) on that branch, and on-chain signals commit to it by hash. Code: [`operator/src/leaders/ai.ts`](operator/src/leaders/ai.ts), [`operator/scripts/season.ts`](operator/scripts/season.ts).
 7. **Follow from another chain, or lead from chat.** On the vault page, pick Base, Arbitrum, Ethereum or Solana under "From" and click "Follow privately" to get a real 1Click quote (USDC into the vault, 20–45 s). [`extension/`](extension/) is an IronClaw tool: "move the vault to 40% NEAR" was executed this way on testnet ([docs/testnet.md](docs/testnet.md) "Trade from chat").
-8. **See the vault key refuse a theft.** A payout to the operator's own account was refused on-chain, and a payout can't be settled twice: [docs/testnet.md](docs/testnet.md) "thief payout refused" and "Settlement check".
+8. **See the vault key refuse a theft.** A payout to the operator's own account was refused on-chain, and a payout can't be settled twice: [docs/testnet.md](docs/testnet.md#what-happened) item 6, "Thief payout refused", and [Settlement check](docs/testnet.md#settlement-check-review-finding-1-2026-11-09).
 
 ## Built during NEAR HACKATHON
 
@@ -45,18 +50,22 @@ Each step says what to do, what you should see, and where it lives.
   - **The vault key.** It is an MPC key derived for the contract. It signs only quote-bound transfers back into the vault, or a claim's payout to the claimant, settled against the verifier's nonce record.
   - **Emergency.** With no NAV for 24h, or a claim unpaid for 24h, every holder can exit pro rata without the operator.
 - **[operator/](operator/)** (TypeScript): verifies leader-signed signals, sizes and executes one confidential quote per signal, keeps a hash-chained fill log, posts signed NAV with the price quotes, and pays withdrawals.
-- **Leaders** ([`operator/src/leaders/`](operator/src/leaders/)): AI personas on NEAR AI Cloud (a TEE-served model) with enforced weight bounds, rule-based bots, or a human signing in the [leader console](https://amityadav0.github.io/silent-partner/leader/).
+- **Leaders** ([`operator/src/leaders/`](operator/src/leaders/)): AI personas on NEAR AI Cloud (NEAR AI serves the model from TEE infrastructure; this repo doesn't verify that attestation) with enforced weight bounds, rule-based bots, or a human signing in the [leader console](https://amityadav0.github.io/silent-partner/leader/).
 - **[web/](web/)** (Next.js static export): landing page, leaderboard, vault pages (deposit, withdraw, P&L, paper follow, emergency exit), What the chain sees, leader console, create-vault wizard and share cards. Every number is read from NEAR RPC in your browser, which re-verifies each NAV signature.
 
 ## Run it
 
+Needs Node 22, Rust (the version in `contract/rust-toolchain.toml` installs itself), `cargo-near` 0.22 for `make build`, and Python 3 for the static server. npm dependencies install on first use.
+
 ```sh
-make test                                   # contract (66, incl. property tests) + operator (53) + web (24) unit tests
+make test                                   # contract (66, incl. property tests) + operator (54) + web (29) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
 cd web && npm run build && npm run serve    # http://localhost:3000, reads testnet live
-make e2e                                    # Playwright against live testnet (needs the operator running)
+make e2e                                    # Playwright against live testnet
 ```
+
+The operator step needs the testnet operator's keys, which aren't in git. Without them everything else runs, and `make e2e` skips only the leader-signing test (22 pass, 1 skipped on a fresh clone). The fresh-clone run, and where every claim here is backed by code, a test or a transaction, are in [docs/reproducibility.md](docs/reproducibility.md).
 
 More proof: [docs/testnet.md](docs/testnet.md) (every testnet transaction), [docs/probes/](docs/probes/) (mainnet `intents.near` accepts an MPC-signed intent, a read-only simulation), [docs/mainnet.md](docs/mainnet.md) (mainnet transactions, once run) and [docs/screens/](docs/screens/).
 
@@ -164,4 +173,6 @@ The 1Click partner JWT (`ONECLICK_JWT` in `.env`) is only needed for real 1Click
 - [Testnet](docs/testnet.md)
 - [Mainnet](docs/mainnet.md)
 - [Demo script](docs/demo-script.md)
+- [Reproducibility](docs/reproducibility.md)
+- [Keeping the demo online](docs/keep-online.md)
 - [1Click kill tests](docs/killtests-copyvault.md)

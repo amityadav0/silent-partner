@@ -30,7 +30,7 @@ function Ticket() {
     </div>
   );
   return (
-    <div className="hero-side" data-testid="ticket">
+    <div className="hero-side" id="ticket" data-testid="ticket">
       <div className="seg self-start" role="group" aria-label="Compare where the trade is copied">
         <button aria-pressed={!sealed} onClick={() => setSealed(false)} data-testid="ticket-public">On a public platform</button>
         <button aria-pressed={sealed} onClick={() => setSealed(true)} data-testid="ticket-sealed">On Silent Partner</button>
@@ -62,6 +62,14 @@ function Ticket() {
   );
 }
 
+const SITE = "https://amityadav0.github.io/silent-partner";
+const DRILL_TX = "https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ";
+const TOUR: [string, string, string, string][] = [
+  ["Flip the ticket", "The same trade on a public platform and on Silent Partner: exposed, then sealed.", "#ticket", `${SITE}/#ticket`],
+  ["Check an AI trade", "Contrarian's latest trade on chain, matched in your browser to the hash of its sealed reasoning.", `${SITE}/vault/?id=sp-contra-8952.testnet#ai`, `${SITE}/vault/?id=sp-contra-8952.testnet#ai`],
+  ["See an exit without us", "The drill: a follower's payout executed on the intents verifier with the operator stopped.", DRILL_TX, DRILL_TX],
+];
+
 const CARDS: [string, string, string][] = [
   ["Same fill as the leader", "0.00% copy slippage vs the leader", "There's no copy order to arrive late. The vault trades once, and your share is inside that trade."],
   ["Positions sealed", "Nothing to front-run", "The vault trades through NEAR Confidential Intents. Wallet trackers and bots can't read what it holds or when it moves."],
@@ -90,7 +98,7 @@ export default function Landing() {
           <p className="lede">Everywhere else, a copied trade is a public trade: bots see it first and you fill last. Here you and the trader share one sealed vault. One trade, one price, and nothing for anyone to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/leaderboard/" className="btn btn-primary btn-lg">Follow a leader privately</Link>
-            <a href="#why" className="btn btn-lg">See what others expose</a>
+            <a href="#tour" className="btn btn-lg" data-testid="tour-button">Try it in 60 s</a>
           </div>
         </div>
         <Ticket />
@@ -103,6 +111,20 @@ export default function Landing() {
           <div><b>24 h</b><span>to an exit that doesn&apos;t need us</span></div>
           <div><b>0</b><span>positions on the public chain</span></div>
         </div>
+      </section>
+
+      <section id="tour" className="wrap pt-14" data-testid="tour">
+        <span className="eyebrow">Try it in 60 seconds</span>
+        <ol className="cards mt-4">
+          {TOUR.map(([t, d, href, label], i) => (
+            <li className="card" key={t}>
+              <span className="card-n">0{i + 1}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+              <a href={href} className="break-all text-sm">{label}</a>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section id="why" className="wrap sect">

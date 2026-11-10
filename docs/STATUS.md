@@ -88,9 +88,16 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Two themes, redaction motif, trade-ticket landing, risk-first leaderboard and vault page, follow panel, private-desk leader console, light X card (D-U-3 to D-U-5)
 - [x] Every page checked at 375px and 1440px in both themes (`web/e2e/layout.spec.ts`)
 
+## Judge-proofing (Nov 10)
+- [x] Fresh-clone dry run; Makefile installs dependencies; claim → evidence table in docs/reproducibility.md (D-J-1)
+- [x] Uptime guard: health.yml every 30 min, reruns the season, one `uptime` issue (D-J-2); thresholds and top-ups in docs/keep-online.md (D-J-5)
+- [x] "Try it in 60 s" at the top of the README and on the landing page; AI decisions panel with the browser hash check (D-J-4)
+- [x] Scope README line ready: docs/scope-readme-line.md (not applied)
+- [ ] NEAR AI key fails since 2026-11-09 22:30 UTC: AI leaders hold, shown on the site (D-J-3). Waiting on Amit, NEEDS-AMIT §10
+
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- Waiting on Amit: §10 the NEAR AI key (AI leaders hold until then), §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.

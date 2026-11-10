@@ -11,6 +11,7 @@ import { PositionDetails } from "./position";
 import { usePaper } from "./paper";
 import { FollowPanel } from "./follow";
 import { WhoSeesWhat } from "./whosees";
+import { AiDecisions } from "./ai";
 import { LinkedTrackRecord } from "./linked";
 import { copyLine, type PaperFollow } from "@/lib/paper";
 
@@ -103,6 +104,8 @@ export default function VaultPage() {
               </div>
             }
           />
+
+          {meta.leaderKind === "ai" && <AiDecisions id={data.id} />}
 
           <WhoSeesWhat id={data.id} viewer={viewer} shares={mine?.shares ?? null} vault={vault} dec={m.dec} sym={m.sym} />
 

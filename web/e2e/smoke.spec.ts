@@ -165,6 +165,20 @@ test("vault page: risk first, drawdown shaded, who sees what, follow panel order
   expect(at("Follow privately")).toBeLessThan(at("Try it with $1,000 simulated"));
 });
 
+test("AI vault: latest on-chain trade and the season-log hash check", async ({ page }) => {
+  await page.goto("/vault/?id=sp-contra-8952.testnet#ai");
+  await expect(page.getByTestId("ai-latest")).toContainText(/signal #\d+/);
+  await expect(page.getByTestId("ai-last-tick")).toContainText(/decided|unavailable/);
+  await expect(page.getByTestId("ai-hash-check")).toContainText(/same hash|no log entry/);
+});
+
+test("landing: 60-second tour with plain links", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("tour-button").click();
+  await expect(page.getByTestId("tour").locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("tour")).toContainText("https://testnet.nearblocks.io/txns/");
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");

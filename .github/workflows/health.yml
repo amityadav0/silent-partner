@@ -1,0 +1,33 @@
+# Uptime guard for the hosted demo through 2026-11-25 (INBOX judge-proofing item 2).
+# Every 30 minutes: Pages site, season tick age, one vault's NAV over testnet RPC,
+# NEAR AI availability and low balances. A stale tick reruns season.yml once;
+# anything still wrong opens or updates one issue labelled "uptime". See .github/health.sh.
+name: health
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+concurrency:
+  group: health
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+      - name: check the demo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/health.sh

@@ -221,7 +221,7 @@ Fill in the four `<…>` fields, then set `requestId` once with `uuidgen | tr A-
   "nearAddress": "<your mainnet account, e.g. amit.near>",
   "projectUrl": "https://github.com/amityadav0/silent-partner",
   "demoUrl": "<URL of your X post>",
-  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price: nobody can trade ahead of the followers. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move, proven by two 1Click-signed quotes the contract verifies, so an operator can't inflate returns. Holders can always exit pro rata without the operator. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash. Live testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
+  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price, so there is no follower order for anyone to trade ahead of. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move (on mainnet, proven by two 1Click-signed quotes the contract verifies; the testnet season uses a mock price feed), so an operator can't inflate returns beyond that band. If the operator stops for 24 hours, holders exit pro rata without it. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash. Live testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
   "consent": true
 }
 ```
@@ -268,3 +268,15 @@ The README names Scope as the source of the carried-over code and as a separate 
 ```sh
 gh repo edit amityadav0/scope --visibility public --accept-visibility-change-consequences
 ```
+
+## 10. NEAR AI key stopped working (2026-11-10): your NEAR AI account
+
+Since about 2026-11-09 22:30 UTC, NEAR AI Cloud answers the season's key with HTTP 500 "Failed to validate API key". A made-up key gets a clean 401, so this is our key's account (credits used up, or the key disabled or expired), not an outage. The same key in your local `.env` fails the same way. Until it's fixed, the five AI leaders hold and don't trade. Everything else keeps running, and the site says "NEAR AI unavailable: holding" instead of pretending they decided. The `uptime` issue from `health.yml` tracks it.
+
+1. At https://cloud.near.ai: check the credit balance (top up if it's empty; about $0.20/day for the five leaders), then create a new API key.
+2. Install it for the season and locally (paste the key at the prompt, so it stays out of your shell history):
+   ```sh
+   gh secret set NEARAI_API_KEY -R amityadav0/silent-partner
+   ```
+   Then replace the `NEARAI_API_KEY=` line in `~/silent-partner/.env`.
+3. Nothing else is needed: the next tick (within 15 minutes) uses it, and the uptime issue closes itself once the AI leaders answer.

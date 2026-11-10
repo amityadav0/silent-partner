@@ -82,18 +82,30 @@ export function parseReply(text: string): { target: number | null; rationale: st
   }
 }
 
-export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string }): Promise<Decision> {
+/** One retry for a server error or a network failure, so a blip doesn't cost a tick's decision. */
+async function withRetry(call: () => Promise<Response>, retryMs: number): Promise<Response> {
+  try {
+    const r = await call();
+    if (r.status < 500) return r;
+  } catch {
+    /* network: retry below */
+  }
+  await new Promise((ok) => setTimeout(ok, retryMs));
+  return call();
+}
+
+export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string; retryMs?: number }): Promise<Decision> {
   const persona = PERSONAS[o.persona ?? "ai"] ?? PERSONAS.ai;
   if (!o.apiKey) return { target: null, why: "NEARAI_API_KEY not set: holding" };
   const model = o.model || DEFAULT_MODEL;
   const f = o.fetchImpl ?? fetch;
   try {
-    const r = await f(`${NEARAI_URL}/chat/completions`, {
+    const r = await withRetry(() => f(`${NEARAI_URL}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${o.apiKey}` },
       body: JSON.stringify({ model, messages: [{ role: "system", content: systemPrompt(persona) }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 }),
-    });
-    const j = (await r.json()) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } };
+    }), o.retryMs ?? 3000);
+    const j = (await r.json().catch(() => ({}))) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } };
     if (!r.ok) return { target: null, why: `NEAR AI ${r.status}: holding`, model };
     const parsed = parseReply(j.choices?.[0]?.message?.content ?? "");
     const target = parsed.target === null ? null : Math.min(persona.max, Math.max(persona.min, parsed.target));

@@ -126,12 +126,17 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
 // Keep-online check (D-S-11): warn when an account the season spends from has
 // < 10 days of budget left. Balances are public on-chain anyway.
 const DAILY: [string, number][] = [[S.operator, 0.35], ...(((S as any).oracle?.writer ? [[(S as any).oracle.writer, 0.03]] : []) as [string, number][]), ...S.vaults.filter((v) => v.strategy !== "drill").map((v) => [v.id, 0.29] as [string, number])];
+const warnings: Record<string, unknown>[] = [];
 for (const [id, perDay] of DAILY) {
   try {
     const r = await fetch(env.rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: id } }) });
     const a = ((await r.json()) as any).result;
     const free = Number(BigInt(a.amount)) / 1e24 - a.storage_usage * 1e-5;
-    if (free / perDay < 10) console.log(JSON.stringify({ warning: "low balance: top up from the spare testnet accounts", account: id, free_near: +free.toFixed(2), days_left: +(free / perDay).toFixed(1) }));
+    if (free / perDay < 10) {
+      const w = { warning: "low balance: top up from the spare testnet accounts", account: id, free_near: +free.toFixed(2), days_left: +(free / perDay).toFixed(1) };
+      warnings.push(w);
+      console.log(JSON.stringify(w));
+    }
   } catch {
     /* a missed balance read must not fail the tick */
   }
@@ -142,7 +147,9 @@ function redact(r: TickResult) {
   const sig = r.signal && "hash" in r.signal ? { signal_hash: r.signal.hash, signal_status: r.signal.status } : r.signal ? { signal_error: r.signal.error } : {};
   // Token counts and the model are not positions: safe to print (cost tracking).
   // AI leader: the target as a 20-point bucket and the rationale's hash, never the exact target or the rationale.
-  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_tokens: r.decision.usage ?? null, ai_target_band: weightBucket(r.decision.target), ai_rationale_hash: r.decision.memo_hash ?? null } : {};
+  // ai_status says whether NEAR AI answered, so an outage never reads as a "hold" decision.
+  const down = r.decision?.model && !r.decision.usage && /^NEAR AI|NEARAI_API_KEY/.test(r.decision.why ?? "");
+  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_status: down ? "unavailable" : "ok", ...(down ? { ai_error: String(r.decision.why).slice(0, 80) } : {}), ai_tokens: r.decision.usage ?? null, ai_target_band: weightBucket(r.decision.target), ai_rationale_hash: r.decision.memo_hash ?? null } : {};
   return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...ai, ...(r.error ? { error: r.error } : {}) };
 }
 
@@ -151,5 +158,20 @@ for (const p of pending) if (p.file && !manualIds.has(p.env?.signal?.vault)) con
 sealDir(plain, join(sealed, "state"), files, stateKey);
 for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
-writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt: new Date().toISOString(), marketData: !!market, oracle, results: results.map(redact) }, null, 2) + "\n");
+const ranAt = new Date().toISOString();
+writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, results: results.map(redact) }, null, 2) + "\n");
+// Recent signals per vault (hashes only), so the vault page can match a trade to its on-chain record.
+const recentFile = join(sealed, "recent-signals.json");
+let recent: Record<string, Record<string, unknown>[]> = {};
+try {
+  recent = JSON.parse(readFileSync(existsSync(recentFile) ? recentFile : new URL("../season/recent-signals.seed.json", import.meta.url), "utf8"));
+} catch {
+  /* first run without a seed */
+}
+for (const r of results.map(redact) as Record<string, any>[]) {
+  if (!r.signal_hash || r.signal_status === "rejected") continue;
+  const keep = { ranAt, epoch: r.epoch, signal_hash: r.signal_hash, signal_status: r.signal_status, ai_target_band: r.ai_target_band ?? null, ai_rationale_hash: r.ai_rationale_hash ?? null };
+  recent[r.vault] = [...(recent[r.vault] ?? []), keep].slice(-20);
+}
+writeFileSync(recentFile, JSON.stringify(recent, null, 2) + "\n");
 if (results.some((r) => r.error)) process.exitCode = 1;

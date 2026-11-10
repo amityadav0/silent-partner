@@ -162,7 +162,13 @@ describe("AI leader", () => {
     expect(d.why).not.toContain("EMAs");
     expect(JSON.parse(d.rationale!)).toEqual({ chat_id: "chatcmpl-1", model: DEFAULT_MODEL, rationale: "EMAs crossed up" });
     const err = (async () => new Response("{}", { status: 500 })) as unknown as typeof fetch;
-    expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: err })).target).toBeNull();
+    expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: err, retryMs: 0 })).target).toBeNull();
+  });
+  it("retries once after a server error, then decides", async () => {
+    let n = 0;
+    const flaky = (async () => (n++ === 0 ? new Response('{"error":{"message":"Failed to validate API key"}}', { status: 500 }) : new Response(JSON.stringify({ choices: [{ message: { content: '{"target_exposure": 0.4, "rationale": "r"}' } }] })))) as unknown as typeof fetch;
+    expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: flaky, retryMs: 0 })).target).toBe(0.4);
+    expect(n).toBe(2);
   });
 });
 
