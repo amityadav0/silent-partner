@@ -101,6 +101,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] G3 alerts (D-G-4) · G4 My partners (D-G-5) · G5 partner letters (D-G-6) · G6 share loops (D-G-7) · G7 first-run sheet (D-G-8)
 
 ## Next
+- Season loop picks up the open-season, alerts and badge code at its next self-handover (~2026-11-10 05:21 UTC): check that `last-run.json` shows `community` and a result for `c0.sp-sop-92991.testnet`, that `alerts.json` and `badges/` appear on season-state, and that Calm Owl's card renders. `health.yml` reports a stale tick.
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
