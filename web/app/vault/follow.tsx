@@ -168,6 +168,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
         <button className="btn btn-primary btn-lg w-full" disabled={busy || (!c && !active)} onClick={follow} data-testid="follow-cta">{busy ? "Working…" : "Follow privately"}</button>
         {!c && !active && <span className="muted text-[13px]">Deposits are closed on this vault.</span>}
         <PaperFollowPanel navs={navs} paper={paper} />
+        <a href="../partners/" className="quiet">All your partners, or blend several →</a>
       </div>
 
       {q && c && (

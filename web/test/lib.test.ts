@@ -316,3 +316,35 @@ import { ntfyTopic } from "../lib/community";
 describe("alerts", () => {
   it("ntfy topic matches the season's", () => expect(ntfyTopic("c0.sp-sop-92991.testnet")).toBe("silent-partner-c0-sp-sop-92991-testnet"));
 });
+
+import { blendPick, mixDrawdown, split } from "../lib/portfolio";
+describe("my partners", () => {
+  const E12 = 10n ** 12n;
+  const n = (x: number, t: number) => ({ price: (BigInt(Math.round(x * 1e6)) * E12).toString(), timestamp_ms: t });
+  it("drawdown of today's mix follows each vault's own history", () => {
+    // A falls 10% then recovers; B rises 5% at the same time: the mix falls 2.5%.
+    const a = { units: 100, navs: [n(1, 1), n(0.9, 2), n(1, 3)] };
+    const b = { units: 100, navs: [n(1, 1), n(1.05, 2), n(1, 3)] };
+    expect(mixDrawdown([a])).toBeCloseTo(0.1);
+    expect(mixDrawdown([a, b])).toBeCloseTo(0.025);
+    // a vault that starts later counts at price 1 before its first post
+    expect(mixDrawdown([{ units: 50, navs: [n(1, 1), n(1, 3)] }, { units: 50, navs: [n(0.8, 2)] }])).toBeCloseTo(0.1);
+  });
+  it("blend picks by band, skipping inactive or new leaders", () => {
+    const rows = [
+      { id: "a", ret: 0.01, dd: 0.01, epochs: 50, active: true },
+      { id: "b", ret: 0.05, dd: 0.04, epochs: 50, active: true },
+      { id: "c", ret: 0.02, dd: 0.005, epochs: 50, active: true },
+      { id: "d", ret: 0.09, dd: 0.12, epochs: 50, active: true },
+      { id: "e", ret: 0.5, dd: 0, epochs: 3, active: true },
+      { id: "f", ret: 0.4, dd: 0, epochs: 50, active: false },
+    ];
+    expect(blendPick(rows, "calm")).toEqual(["c", "a", "b"]);
+    expect(blendPick(rows, "balanced")).toEqual(["c", "b", "a"]);
+    expect(blendPick(rows, "bold", 2)).toEqual(["d", "b"]);
+  });
+  it("splits exactly", () => {
+    expect(split(100_000_001n, 3)).toEqual([33_333_335n, 33_333_333n, 33_333_333n]);
+    expect(split(10n, 0)).toEqual([]);
+  });
+});

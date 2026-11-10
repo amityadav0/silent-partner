@@ -10,6 +10,7 @@ const PAGES: [string, string][] = [
   ["/leader/?id=sp-convict-8952.testnet", "desk"],
   ["/create/", "create"],
   ["/create/ai/", "create-ai"],
+  ["/partners/?as=sp-follower-60270.testnet", "partners"],
   ["/track/", "track"],
 ];
 

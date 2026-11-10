@@ -62,6 +62,7 @@ export function Nav() {
           <details className="wallet-menu">
             <summary className="btn" data-testid="account"><span className="max-w-[9rem] truncate">{accountId}</span></summary>
             <div className="wallet-menu-list">
+              <Link href="/partners/">My partners</Link>
               <Link href="/leader/">Leader console</Link>
               <button onClick={() => signOut()}>Sign out</button>
             </div>
@@ -80,6 +81,7 @@ export function Footer() {
       <div className="wrap">
         <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
         <span className="flex flex-wrap gap-4">
+          <Link href="/partners/">My partners</Link>
           <Link href="/chain/">What the chain sees</Link>
           <Link href="/leader/">Leader console</Link>
           <a href={`${REPO}#readme`}>Docs</a>

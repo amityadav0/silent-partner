@@ -19,9 +19,11 @@ type Ctx = {
   call: (c: OwnerCall) => Promise<string | null>;
   /** Several function calls to one contract in one transaction (one wallet confirmation). */
   callMany: (receiverId: string, calls: Omit<OwnerCall, "receiverId">[]) => Promise<string | null>;
+  /** Several transactions, confirmed once in the wallet and sent in order. */
+  sendMany: (txs: { receiverId: string; calls: Omit<OwnerCall, "receiverId">[] }[]) => Promise<string[]>;
 };
 
-const WalletCtx = createContext<Ctx>({ ready: false, accountId: null, signIn: () => {}, signOut: async () => {}, call: async () => null, callMany: async () => null });
+const WalletCtx = createContext<Ctx>({ ready: false, accountId: null, signIn: () => {}, signOut: async () => {}, call: async () => null, callMany: async () => null, sendMany: async () => [] });
 export const useWallet = () => useContext(WalletCtx);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -77,6 +79,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [selector],
   );
 
+  const sendMany = useCallback(
+    async (txs: { receiverId: string; calls: Omit<OwnerCall, "receiverId">[] }[]) => {
+      if (!selector) throw new Error("wallet not ready");
+      const [{ actionCreators }] = await Promise.all([import("@near-wallet-selector/core")]);
+      const wallet = await selector.wallet();
+      const out = await wallet.signAndSendTransactions({
+        transactions: txs.map((t) => ({ receiverId: t.receiverId, actions: t.calls.map((c) => actionCreators.functionCall(c.method, c.args, c.gas ?? 50n * TGAS, c.deposit ?? 0n)) })),
+      });
+      return ((out ?? []) as { transaction?: { hash?: string } }[]).map((o) => o.transaction?.hash ?? "");
+    },
+    [selector],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       ready: Boolean(selector),
@@ -87,8 +102,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       },
       call,
       callMany,
+      sendMany,
     }),
-    [selector, modal, accountId, call, callMany],
+    [selector, modal, accountId, call, callMany, sendMany],
   );
   return <WalletCtx.Provider value={value}>{children}</WalletCtx.Provider>;
 }

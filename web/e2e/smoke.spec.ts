@@ -217,6 +217,19 @@ test("alerts panel: vault-level only, ntfy topic, browser notifications", async 
   await expect(page.getByTestId("alert-list")).not.toContainText("Reading");
 });
 
+test("my partners: a follower's vaults as one portfolio, and a simulated blend without a wallet", async ({ page }) => {
+  await page.goto("/partners/?as=sp-follower-60270.testnet");
+  await expect(page.getByTestId("total")).toContainText("USDC", { timeout: 40_000 });
+  await expect(page.getByTestId("holding-sp-manual-92991.testnet")).toBeVisible();
+  expect(await page.locator("[data-testid^=holding-]").count()).toBeGreaterThan(2);
+  await expect(page.getByTestId("mix-dd")).toContainText("−");
+  await page.getByTestId("blend-calm").click();
+  await expect(page.getByTestId("blend-pick")).toHaveCount(3);
+  await page.getByTestId("blend-go").click();
+  await expect(page.getByTestId("simulated")).toBeVisible();
+  await expect(page.getByTestId("simulated").locator(".row-kv")).toHaveCount(3);
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");
