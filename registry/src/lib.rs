@@ -15,6 +15,32 @@ pub const STORAGE_RESERVE: NearToken = NearToken::from_millinear(100);
 /// A posted signal pays its own storage.
 pub const SIGNAL_DEPOSIT: NearToken = NearToken::from_millinear(10);
 pub const MAX_PENDING_SIGNALS_PER_VAULT: u32 = 3;
+/** A reading key or a letter pays its own storage. */
+pub const READER_DEPOSIT: NearToken = NearToken::from_millinear(10);
+pub const LETTER_DEPOSIT: NearToken = NearToken::from_millinear(200);
+pub const MAX_READERS_PER_VAULT: usize = 200;
+pub const MAX_LETTER: usize = 16_000;
+
+/// A follower's public reading key for a vault's letters (X25519, base64url).
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Reader {
+    pub account: AccountId,
+    pub key: String,
+    pub registered_ms: U64,
+}
+
+/// A partner letter: encrypted once, its key wrapped for each current follower. Only the
+/// plaintext's sha256 is in clear.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Letter {
+    pub id: u32,
+    pub posted_ms: U64,
+    pub text_hash: String,
+    pub readers: u32,
+    pub sealed: String,
+}
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Debug, PartialEq)]
@@ -73,6 +99,23 @@ pub struct Registry {
     min_deposit: NearToken,
     signals: Vector<SealedSignal>,
     signals_acked: u64,
+    readers: LookupMap<AccountId, Vec<Reader>>,
+    letters: LookupMap<AccountId, Vec<Letter>>,
+}
+
+/// The state before letters (deployed 2026-11-10), for `migrate`.
+#[near(serializers = [borsh])]
+pub struct RegistryV1 {
+    owner: AccountId,
+    funder: AccountId,
+    launches: Vector<Launch>,
+    per_leader: LookupMap<AccountId, u8>,
+    by_vault: LookupMap<AccountId, u32>,
+    max_total: u32,
+    max_per_leader: u8,
+    min_deposit: NearToken,
+    signals: Vector<SealedSignal>,
+    signals_acked: u64,
 }
 
 fn valid_name(s: &str) -> bool {
@@ -101,7 +144,54 @@ impl Registry {
             min_deposit,
             signals: Vector::new(b"s"),
             signals_acked: 0,
+            readers: LookupMap::new(b"r"),
+            letters: LookupMap::new(b"t"),
         }
+    }
+
+    /// Adds letters to a registry deployed before them.
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate() -> Self {
+        let o: RegistryV1 = env::state_read().unwrap_or_else(|| env::panic_str("no state"));
+        Self { owner: o.owner, funder: o.funder, launches: o.launches, per_leader: o.per_leader, by_vault: o.by_vault, max_total: o.max_total, max_per_leader: o.max_per_leader, min_deposit: o.min_deposit, signals: o.signals, signals_acked: o.signals_acked, readers: LookupMap::new(b"r"), letters: LookupMap::new(b"t") }
+    }
+
+    fn live_launch(&self, vault: &AccountId) -> Launch {
+        let id = *self.by_vault.get(vault).unwrap_or_else(|| env::panic_str("not a community vault"));
+        let l = self.launches.get(id).unwrap().clone();
+        require!(l.status == "live", "the vault isn't live");
+        l
+    }
+
+    /// A follower registers (or replaces) their reading key for a vault's letters. The leader's
+    /// browser wraps each letter only for registered readers who hold shares at that moment.
+    #[payable]
+    pub fn register_reader(&mut self, vault: AccountId, key: String) {
+        require!(env::attached_deposit() >= READER_DEPOSIT, "attach 0.01 NEAR for storage");
+        require!(key.len() == 43 && key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_'), "key: 32 bytes, base64url");
+        self.live_launch(&vault);
+        let who = env::predecessor_account_id();
+        let mut list = self.readers.get(&vault).cloned().unwrap_or_default();
+        list.retain(|r| r.account != who);
+        require!(list.len() < MAX_READERS_PER_VAULT, "this vault has the most readers it can hold");
+        list.push(Reader { account: who, key, registered_ms: U64(env::block_timestamp_ms()) });
+        self.readers.insert(vault, list);
+    }
+
+    /// The vault's leader posts a letter, already sealed in their browser.
+    #[payable]
+    pub fn post_letter(&mut self, vault: AccountId, text_hash: String, readers: u32, sealed: String) -> u32 {
+        require!(env::attached_deposit() >= LETTER_DEPOSIT, "attach 0.2 NEAR for storage");
+        let l = self.live_launch(&vault);
+        require!(env::predecessor_account_id() == l.leader, "only the vault's leader");
+        require!(valid_hash(&text_hash), "text_hash: 64 lowercase hex characters");
+        require!(!sealed.is_empty() && sealed.len() <= MAX_LETTER && sealed.bytes().all(|b| b.is_ascii_graphic()), "sealed: 1-16000 printable characters");
+        let mut list = self.letters.get(&vault).cloned().unwrap_or_default();
+        let id = list.len() as u32;
+        list.push(Letter { id, posted_ms: U64(env::block_timestamp_ms()), text_hash, readers, sealed });
+        self.letters.insert(vault, list);
+        id
     }
 
     /// File a launch. The deposit (minus a storage reserve) goes to the season
@@ -180,6 +270,12 @@ impl Registry {
     }
     pub fn launch_of_vault(&self, vault: AccountId) -> Option<Launch> {
         self.by_vault.get(&vault).and_then(|i| self.launches.get(*i).cloned())
+    }
+    pub fn get_readers(&self, vault: AccountId) -> Vec<Reader> {
+        self.readers.get(&vault).cloned().unwrap_or_default()
+    }
+    pub fn get_letters(&self, vault: AccountId) -> Vec<Letter> {
+        self.letters.get(&vault).cloned().unwrap_or_default()
     }
     /// Signals the operator hasn't acknowledged yet.
     pub fn pending_signals(&self) -> Vec<SealedSignal> {
@@ -289,5 +385,38 @@ mod tests {
         ctx(1, SIGNAL_DEPOSIT);
         r.post_signal("c0.sop.testnet".parse().unwrap(), sealed());
         assert_eq!(r.get_info().signals.0, 4);
+    }
+
+    #[test]
+    fn readers_and_letters() {
+        let mut r = reg();
+        ctx(1, NearToken::from_near(5));
+        ai(&mut r);
+        ctx(0, NearToken::from_near(0));
+        let v: AccountId = "c0.sop.testnet".parse().unwrap();
+        r.set_status(0, "live".into(), Some(v.clone()), None);
+        let key = "A".repeat(43);
+        // anyone may register a reading key; re-registering replaces it
+        ctx(2, READER_DEPOSIT);
+        r.register_reader(v.clone(), key.clone());
+        r.register_reader(v.clone(), "B".repeat(43));
+        assert_eq!(r.get_readers(v.clone()).len(), 1);
+        assert_eq!(r.get_readers(v.clone())[0].key, "B".repeat(43));
+        ctx(2, READER_DEPOSIT);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| r.register_reader(v.clone(), "short".into()))).is_err());
+        // only the leader posts, with the storage deposit
+        ctx(2, LETTER_DEPOSIT);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| r.post_letter(v.clone(), HASH.into(), 1, "{}".into()))).is_err());
+        ctx(1, READER_DEPOSIT);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| r.post_letter(v.clone(), HASH.into(), 1, "{}".into()))).is_err());
+        ctx(1, LETTER_DEPOSIT);
+        assert_eq!(r.post_letter(v.clone(), HASH.into(), 1, "{\"ct\":\"x\"}".into()), 0);
+        assert_eq!(r.post_letter(v.clone(), HASH.into(), 1, "{\"ct\":\"y\"}".into()), 1);
+        let ls = r.get_letters(v.clone());
+        assert_eq!((ls.len(), ls[1].id, ls[1].readers), (2, 1, 1));
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| r.post_letter(v.clone(), HASH.into(), 1, "x".repeat(MAX_LETTER + 1)))).is_err());
+        // not for a vault that isn't in the registry
+        ctx(2, READER_DEPOSIT);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| r.register_reader("other.testnet".parse().unwrap(), key.clone()))).is_err());
     }
 }

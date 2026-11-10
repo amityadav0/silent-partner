@@ -348,3 +348,18 @@ describe("my partners", () => {
     expect(split(10n, 0)).toEqual([]);
   });
 });
+
+import { newReadingKey, openLetter, sealLetter } from "../lib/community";
+describe("partner letters", () => {
+  it("only the followers it was sealed for can read it", async () => {
+    const a = newReadingKey(), b = newReadingKey(), c = newReadingKey();
+    const { sealed, text_hash } = await sealLetter("Why I cut risk this week.", "c0.sop.testnet", [{ account: "a.testnet", key: a.pk }, { account: "b.testnet", key: b.pk }]);
+    expect(text_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(sealed).not.toContain("cut risk");
+    expect(await openLetter(sealed, "c0.sop.testnet", "a.testnet", a.sk)).toBe("Why I cut risk this week.");
+    expect(await openLetter(sealed, "c0.sop.testnet", "b.testnet", b.sk)).toBe("Why I cut risk this week.");
+    expect(await openLetter(sealed, "c0.sop.testnet", "c.testnet", c.sk)).toBeNull();
+    await expect(openLetter(sealed, "c0.sop.testnet", "a.testnet", c.sk)).rejects.toThrow();
+    await expect(openLetter(sealed, "c1.sop.testnet", "a.testnet", a.sk)).rejects.toThrow();
+  });
+});

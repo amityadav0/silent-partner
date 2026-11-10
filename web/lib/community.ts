@@ -93,3 +93,45 @@ export function communityMeta(l: Launch): VaultMeta {
 
 /** Public ntfy.sh topic for a vault's alerts (same as operator/src/season/alerts.ts). */
 export const ntfyTopic = (vault: string) => `silent-partner-${vault.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}`;
+
+/** Open something sealed to an X25519 secret key (the reader's side of `seal`). */
+export async function unseal(sealed: string, sk: Uint8Array, context: string): Promise<string> {
+  const b = base64urlnopad.decode(sealed);
+  const epk = b.subarray(0, 32), iv = b.subarray(32, 44), ct = b.subarray(44);
+  const pk = x25519.getPublicKey(sk);
+  const raw = hkdf(sha256, x25519.getSharedSecret(sk, epk), new Uint8Array([...epk, ...pk]), te.encode("silent-partner/seal/v1"), 32);
+  const key = await crypto.subtle.importKey("raw", ab(raw), "AES-GCM", false, ["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ab(iv), additionalData: te.encode(context) }, key, ab(ct)));
+}
+
+// Partner letters: one AES key per letter, wrapped for each current follower's reading key.
+export type Reader = { account: string; key: string; registered_ms: string };
+export type Letter = { id: number; posted_ms: string; text_hash: string; readers: number; sealed: string };
+type Sealed = { v: 1; iv: string; ct: string; wraps: Record<string, string> };
+
+export function newReadingKey(): { sk: string; pk: string } {
+  const sk = x25519.utils.randomPrivateKey();
+  return { sk: base64urlnopad.encode(sk), pk: base64urlnopad.encode(x25519.getPublicKey(sk)) };
+}
+export const readingPk = (skB64: string) => base64urlnopad.encode(x25519.getPublicKey(base64urlnopad.decode(skB64)));
+
+export async function sealLetter(text: string, vault: string, readers: Pick<Reader, "account" | "key">[]): Promise<{ sealed: string; text_hash: string }> {
+  const k = crypto.getRandomValues(new Uint8Array(32));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await crypto.subtle.importKey("raw", ab(k), "AES-GCM", false, ["encrypt"]);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: ab(iv), additionalData: te.encode(`letter:${vault}`) }, key, te.encode(text)));
+  const wraps: Record<string, string> = {};
+  for (const r of readers) wraps[r.account] = await seal(base64urlnopad.encode(k), `letter:${vault}`, r.key);
+  const body: Sealed = { v: 1, iv: base64urlnopad.encode(iv), ct: base64urlnopad.encode(ct), wraps };
+  return { sealed: JSON.stringify(body), text_hash: promptHash(text) };
+}
+
+/** The letter's text for `account`, or null if it wasn't sealed for them. */
+export async function openLetter(sealedJson: string, vault: string, account: string, skB64: string): Promise<string | null> {
+  const body = JSON.parse(sealedJson) as Sealed;
+  const wrap = body.wraps[account];
+  if (!wrap) return null;
+  const k = base64urlnopad.decode(await unseal(wrap, base64urlnopad.decode(skB64), `letter:${vault}`));
+  const key = await crypto.subtle.importKey("raw", ab(k), "AES-GCM", false, ["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ab(base64urlnopad.decode(body.iv)), additionalData: te.encode(`letter:${vault}`) }, key, ab(base64urlnopad.decode(body.ct))));
+}

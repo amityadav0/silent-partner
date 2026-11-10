@@ -204,6 +204,10 @@ test("open season: the community vault is on the leaderboard with its badge, and
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calm Owl");
   await expect(page.getByTestId("community")).toBeVisible();
   await expect(page.getByTestId("about")).toContainText("strategy is sealed");
+  // partner letters: the public sees that they exist, redacted
+  await expect(page.getByTestId("letter-count")).toHaveText(/[1-9]\d* letters?/);
+  await expect(page.getByTestId("letter-0").getByTestId("redacted")).toBeVisible();
+  await expect(page.getByTestId("letters")).not.toContainText("USDC");
 });
 
 test("alerts panel: vault-level only, ntfy topic, browser notifications", async ({ page, context }) => {

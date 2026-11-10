@@ -7,6 +7,7 @@ import { newSignalKey, publicKeyOf, randomNonce, signSignal, type Signal } from 
 import { Redact, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
 import { REGISTRY, launchOfVault, seal, type Launch } from "@/lib/community";
+import { WriteLetter } from "../vault/letters";
 
 const KEY_STORE = (vault: string) => `sp.signal-key.${vault}`;
 const sym = (id: string) => ASSETS[id]?.symbol ?? id.replace(/^nep141:/, "");
@@ -171,6 +172,8 @@ export default function LeaderConsole() {
         {out && <p className={`mt-2 text-sm ${out.ok ? "pos" : "neg"}`} role="status">{out.text}</p>}
         {preview && <details className="mt-2 text-xs"><summary className="muted">Signed envelope</summary><pre className="scroll-x">{preview}</pre></details>}
       </div>
+
+      {launch && accountId === launch.leader && <WriteLetter vault={id} />}
 
       <h2 className="mt-8">Recorded signals</h2>
       <p className="muted text-xs">Hashes only, recorded after execution. The trades themselves stay private.</p>

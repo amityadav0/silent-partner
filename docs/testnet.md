@@ -337,3 +337,7 @@ Anyone can file a vault launch with the registry contract [`registry.sp-sop-9299
 
 The vault is on the leaderboard with a Community badge. From the season run that starts after this code landed, each tick decides for it with NEAR AI, inside its enforced 0–60% band, and posts its NAV. While NEAR AI rejects the season key (NEEDS-AMIT §10), it holds like the house AI leaders.
 
+### Partner letters (G5, 2026-11-10)
+
+The registry was upgraded in place (`migrate`, tx [`7QMkpExr…`](https://testnet.nearblocks.io/txns/7QMkpExrzpaXnrNBbonfpzzYd7fG7oRN9jRPBVxtRMRj); wasm sha256 `46ea4ebf…c3c1`) with reading keys and letters. Calm Owl's leader, also its only holder, registered a reading key ([`7oa9bMTB…`](https://testnet.nearblocks.io/txns/7oa9bMTBAheCoomdoHe2qemppR96wZ9wNt7cQoS8JT2V)) and posted a letter sealed for current holders ([`E36puJsw…`](https://testnet.nearblocks.io/txns/E36puJswRcD8QWarnbyRvT7MUmDiEwDQLq94qxUVvDn2)). Read back from the chain, the ciphertext doesn't contain the text. The reading key opens it, and for any other account `openLetter` returns null. The vault page shows "1 letter", redacted.
+
