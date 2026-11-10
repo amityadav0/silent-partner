@@ -335,7 +335,7 @@ Anyone can file a vault launch with the registry contract [`registry.sp-sop-9299
 | leader: `set_signal_key` = the season's community signer | `sp-owl-0749.testnet` | [`DevMrq3j…`](https://testnet.nearblocks.io/txns/DevMrq3jyiJNTLPUJVjzaaU1Y5xbDe7jDy873XUqRfpg) |
 | leader: USDC storage, mint 100 test USDC, deposit (100 shares, the whole vault) | `sp-owl-0749.testnet` | [`4Pb21Z9G…`](https://testnet.nearblocks.io/txns/4Pb21Z9GQiLjkPjZURgqgaAHsDjZC4kkkSh9bBWJAVFF), [`24Yrt6Ma…`](https://testnet.nearblocks.io/txns/24Yrt6Maa1rDyuSPsKzK83XiPhd7S7jt5dwTKN1Xy8BQ), [`Fk4yqv6o…`](https://testnet.nearblocks.io/txns/Fk4yqv6oAYAbqoeYGdDKFP3aYD24jrvC8umjhCYw6QNZ) |
 
-The vault is on the leaderboard with a Community badge. From the season run that starts after this code landed, each tick decides for it with NEAR AI, inside its enforced 0–60% band, and posts its NAV. While NEAR AI rejects the season key (NEEDS-AMIT §10), it holds like the house AI leaders.
+The vault is on the leaderboard with a Community badge. From the season run that starts after this code landed, each tick decides for it with NEAR AI, inside its enforced 0–60% band, and posts its NAV. While NEAR AI Cloud inference is paused (a security incident on their side, NEEDS-AMIT §10), it holds like the house AI leaders.
 
 ### Partner letters (G5, 2026-11-10)
 
