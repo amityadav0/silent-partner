@@ -12,8 +12,8 @@ const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["nor
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
-// Runs before first paint: the stored choice, else the system preference, else light.
-const THEME_BOOT = `(function(){var t;try{t=localStorage.getItem("sp.theme")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)})()`;
+// Runs before first paint: the stored choice, else light (the stronger look, and it matches the X cards).
+const THEME_BOOT = `(function(){var t;try{t=localStorage.getItem("sp.theme")}catch(e){}document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")})()`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

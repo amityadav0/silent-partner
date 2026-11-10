@@ -30,11 +30,11 @@ test("theme: light by default, the toggle switches and is remembered", async ({ 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
-test("theme: a first visit follows the system preference", async ({ browser }) => {
+test("theme: a first visit is light even when the system prefers dark", async ({ browser }) => {
   const ctx = await browser.newContext({ colorScheme: "dark", baseURL: "http://localhost:3000" });
   const page = await ctx.newPage();
   await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await ctx.close();
 });
 
@@ -47,7 +47,6 @@ test("leaderboard lists the vault with attested NAVs and no positions", async ({
   await expect(page.getByTestId("leaderboard")).not.toContainText(/wNEAR|USDC/);
   await expect(row.getByTestId("redacted")).toBeVisible();
   await expect(page.getByTestId("honesty")).toContainText("paper · testnet");
-  await expect(page.getByTestId("row-sp-momo-92991.testnet").getByTestId("mode")).toHaveText("paper · testnet");
 });
 
 test("vault page: chart, every NAV signature verified, deposit and withdraw controls", async ({ page }) => {
@@ -150,7 +149,7 @@ test("vault page: risk first, drawdown shaded, who sees what, follow panel order
   const who = page.getByTestId("who-sees");
   await expect(who.getByTestId("redacted")).toHaveCount(2);
   await expect(page.getByTestId("who-follows")).toHaveText("not shown");
-  await expect(who).toContainText("can be read on chain");
+  await expect(who).toContainText("balances are visible on chain");
   await page.getByTestId("who-you").click();
   await expect(who.getByTestId("redacted")).toHaveCount(2);
   await expect(page.getByTestId("your-shares")).toBeVisible();
@@ -226,7 +225,7 @@ test("leaderboard: every house leader has a badge and a style", async ({ page })
     await expect(page.getByTestId(`row-${id}`).getByTestId("badge")).toBeVisible();
   }
   await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("badge")).toHaveText("AI");
-  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveText("Risk · high");
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("risk")).toHaveAttribute("aria-label", "high risk");
 });
 
 test("follow from any chain: a real 1Click quote from Base into the vault, then a simulated arrival", async ({ page }) => {

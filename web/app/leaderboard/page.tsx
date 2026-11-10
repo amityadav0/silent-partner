@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { VAULTS } from "@/lib/config";
 import { leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, type VaultData } from "@/lib/vault";
 import { metaOf } from "@/lib/vaults";
-import { LeaderChips, ModeChip, Redact, Ret, StatusChip } from "../ui";
+import { Redact, Ret, RiskDots, StatusChip } from "../ui";
+import { useRouter } from "next/navigation";
+import { badgeOf } from "@/lib/vaults";
 
 type Row = { d: VaultData; ret: number; dd: number; stake: number; ok: number; bad: number };
 type Key = "dd" | "stake" | "ret";
@@ -17,13 +19,15 @@ const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
 // The drill and first test vaults barely traded, so they can't rank above real leaders.
 const rank = (r: Row) => (metaOf(r.d.id).season ? 0 : 1);
 
-const TINTS = ["#2F3FD8", "#B9401F", "#7A5C00", "#2E7D6B"];
-const tint = (name: string) => TINTS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % TINTS.length];
+// Avatar colour by who leads, so the kind reads at a glance.
+const KIND_TINT = { ai: "#2F3FD8", bot: "#2E7D6B", human: "#7A5C00", drill: "#655D50" } as const;
 
 export default function Leaderboard() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [sort, setSort] = useState<Key>("dd");
+  const router = useRouter();
+  const worst = useMemo(() => Math.max(0.0001, ...(rows ?? []).map((r) => r.dd)), [rows]);
   const sorted = useMemo(() => (rows ? [...rows].sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
   useEffect(() => {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then((rs) => {
@@ -46,7 +50,7 @@ export default function Leaderboard() {
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex max-w-2xl flex-col gap-3">
           <h1>Leaders</h1>
-          <p className="text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>Calmest first. Every number comes from a signed price post your browser re-checks. <span className="mark">Nobody&apos;s positions are published, including theirs.</span></p>
+          <p className="text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>Calmest first. Every number is checked by your browser, and no one&apos;s positions are published, not even to followers.</p>
         </div>
         <div className="seg flex-wrap" role="group" aria-label="Sort leaders" style={{ borderRadius: 24 }}>
           {(Object.keys(SORTS) as Key[]).map((k) => (
@@ -66,18 +70,21 @@ export default function Leaderboard() {
             {sorted?.map((r) => {
               const m = metaOf(r.d.id), st = status(r.d.vault);
               return (
-                <tr key={r.d.id} data-testid={`row-${r.d.id}`}>
+                <tr key={r.d.id} data-testid={`row-${r.d.id}`} data-href={`/vault/?id=${r.d.id}`} onClick={(e) => { if (!(e.target as HTMLElement).closest("a")) router.push(`/vault/?id=${r.d.id}`); }}>
                   <td className="lb-who">
                     <div className="who">
-                      <span className="tile-initial" style={{ background: tint(m.name) }} aria-hidden="true">{m.name.charAt(0)}</span>
+                      <span className="tile-initial" style={{ background: KIND_TINT[m.leaderKind] }} aria-hidden="true">{m.name.charAt(0)}</span>
                       <div className="flex min-w-0 flex-col gap-1">
                         <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
                         <span className="muted text-sm">{m.style}</span>
-                        <div className="who-chips"><LeaderChips id={r.d.id} /><ModeChip id={r.d.id} />{st !== "active" && <StatusChip s={st} />}</div>
+                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge">{badgeOf(m)}</span><RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
                       </div>
                     </div>
                   </td>
-                  <td className={`num text-[17px] ${r.dd > 0 ? "neg" : ""}`} data-label="Worst drawdown" data-testid="dd">{r.dd === 0 ? "0%" : `−${(r.dd * 100).toFixed(2)}%`}</td>
+                  <td className="num text-[17px]" data-label="Worst drawdown">
+                    <span data-testid="dd">{r.dd === 0 ? "0%" : `−${(r.dd * 100).toFixed(2)}%`}</span>
+                    <span className="dd-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, (r.dd / worst) * 100)}%` }} /></span>
+                  </td>
                   <td className="num text-[17px]" data-label="Return" data-testid="ret"><Ret r={r.ret} /></td>
                   <td className="num" data-label="Own money in" data-testid="stake">
                     <span className="pos">{(r.stake * 100).toFixed(1)}%</span>
@@ -87,7 +94,7 @@ export default function Leaderboard() {
                   <td className="num text-sm" data-label="Verified" title="NAV signatures verified in your browser against the operator's attestation key" style={{ color: "var(--ink-2)" }}>
                     {r.bad > 0 ? <span className="neg">✗ {r.ok}/{r.d.navs.length}</span> : <>✓ {r.ok}/{r.d.navs.length}</>}
                   </td>
-                  <td className="lb-view"><Link href={`/vault/?id=${r.d.id}`} className="pill-view" aria-label={`View ${m.name}`}>View</Link></td>
+                  <td className="lb-view"><Link href={`/vault/?id=${r.d.id}`} className="view-link" aria-label={`View ${m.name}`}>View →</Link></td>
                 </tr>
               );
             })}

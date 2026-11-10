@@ -26,7 +26,7 @@ function Ticket() {
   const row = (k: string, v: string, bar: number) => (
     <div className="row-kv">
       <span>{k}</span>
-      {sealed ? <span><Redact widths={[bar]} h={16} /></span> : <span>{v}</span>}
+      {sealed ? <span><Redact widths={[bar]} h={16} /></span> : <span className={/\d/.test(v) ? "num" : undefined}>{v}</span>}
     </div>
   );
   return (
@@ -36,12 +36,7 @@ function Ticket() {
         <button aria-pressed={sealed} onClick={() => setSealed(true)} data-testid="ticket-sealed">On Silent Partner</button>
       </div>
       <div className="ticket">
-        <div className="ticket-head"><span>Trade ticket</span><span>Illustration</span></div>
-        {sealed ? (
-          <span className="stamp" style={{ color: "var(--accent)" }} data-testid="stamp">SEALED</span>
-        ) : (
-          <span className="stamp" style={{ color: "var(--warn)" }} data-testid="stamp">EXPOSED</span>
-        )}
+        <div className="ticket-head"><span>Trade ticket</span><span>Example</span></div>
         {row("Side", "LONG", 64)}
         {row("Asset", "NEAR", 72)}
         {row("Size", "42,000", 104)}
@@ -49,12 +44,18 @@ function Ticket() {
         {sealed ? (
           <>
             <div className="row-kv"><span>Your price</span><span className="pos">the same one</span></div>
-            <p className="ticket-note">Bots see nothing to trade against. One vault, one trade, one price for everyone in it, and with one shared book the leader has no copiers to sell into.</p>
+            <div className="note-wrap">
+              <p className="ticket-note">Same trade, same price for everyone in the vault. Bots see nothing, and the leader has no copiers to sell into.</p>
+              <span className="stamp" style={{ color: "var(--accent)" }} data-testid="stamp">SEALED</span>
+            </div>
           </>
         ) : (
           <>
-            <div className="row-kv"><span>Your copy&apos;s price</span><span className="neg">2.470 · after bots</span></div>
-            <p className="ticket-note warn">The leader&apos;s LONG is visible. Bots front-run it, your copy fills worse, and the leader can sell into the copiers who follow.</p>
+            <div className="row-kv"><span>Your copy&apos;s price</span><span className="neg"><span className="num">2.470</span> · after bots</span></div>
+            <div className="note-wrap">
+              <p className="ticket-note warn">The leader&apos;s LONG is visible. Bots front-run it, your copy fills worse, and the leader can sell into the copiers who follow.</p>
+              <span className="stamp" style={{ color: "var(--warn)" }} data-testid="stamp">EXPOSED</span>
+            </div>
           </>
         )}
       </div>
@@ -73,14 +74,14 @@ const TOUR: [string, string, string, string][] = [
 const CARDS: [string, string, string][] = [
   ["Same fill as the leader", "0.00% copy slippage vs the leader", "There's no copy order to arrive late. The vault trades once, and your share is inside that trade."],
   ["Positions sealed", "Nothing to front-run", "The vault trades through NEAR Confidential Intents. Wallet trackers and bots can't read what it holds or when it moves."],
-  ["The leader's money is in it", "≥ 10%, enforced by the contract", "One shared book, and at least 10% of it is the leader's own. Their losses are your losses, and theirs."],
+  ["The leader's money is in it", "≥ 10%, enforced by the contract", "At least 10% of the vault is the leader's own money, so every loss hits them too."],
   ["An exit that doesn't need us", "24 h without the operator", "If no price is posted for 24 hours, anyone can switch the vault to emergency and each holder can exit pro rata."],
   ["Verified, not screenshotted", "Signed and re-checked", "Every share price is signed and bounded by public prices, checked on chain. Your browser re-checks the signature."],
   ["Paid only for new highs", "Fee above high-water mark", "Performance fees apply only above the high-water mark. Climbing back from a loss earns the leader nothing."],
 ];
 
 const COMPARE: [string, string, string, string, string][] = [
-  ["Positions visible to others", "Yes", "Yes", "That's the product", "Not public (operator only)"],
+  ["Positions visible to others", "Yes", "Yes", "That's the product", "Hidden from the market*"],
   ["Your price vs the leader's", "Later, usually worse", "Same", "Later, often much worse", "Same trade, same price"],
   ["Leader's money at stake", "Not required", "Sometimes", "Not required", "≥ 10%, enforced"],
   ["If the platform stops", "Platform decides", "Contract", "You're on your own", "Contract exit, 24 h"],
@@ -95,7 +96,7 @@ export default function Landing() {
         <div className="hero-copy">
           <span className="hero-tag">Confidential copy trading · NEAR Intents</span>
           <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
-          <p className="lede">Everywhere else, a copied trade is a public trade: bots see it first and you fill last. Here you and the trader share one sealed vault. One trade, one price, and nothing for anyone to front-run.</p>
+          <p className="lede">On other platforms your copy is a public trade: bots see it first, you fill last. Here you share one sealed vault with the trader. Same trade, same price, nothing to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/leaderboard/" className="btn btn-primary btn-lg">Follow a leader privately</Link>
             <a href="#tour" className="btn btn-lg" data-testid="tour-button">Try it in 60 s</a>
@@ -133,11 +134,10 @@ export default function Landing() {
           <h2>If you can see the trade, so can everyone faster than you.</h2>
         </div>
         <div className="cards" data-testid="proof-cards">
-          {CARDS.map(([t, fact, d], i) => (
+          {CARDS.map(([t, , d], i) => (
             <div className="card" key={t}>
               <span className="card-n">0{i + 1}</span>
               <h3>{t}</h3>
-              <span className="card-fact">{fact}</span>
               <p>{d}</p>
             </div>
           ))}
@@ -173,6 +173,7 @@ export default function Landing() {
               ))}
             </tbody>
           </table>
+          <p className="foot-note">*Only the operator that executes trades sees positions.</p>
         </div>
       </section>
 

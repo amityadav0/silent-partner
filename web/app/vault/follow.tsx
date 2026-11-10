@@ -147,9 +147,9 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
       )}
 
       <div data-testid="follow-facts">
-        <div className="row-kv"><span>You enter at</span><span>{price.toFixed(4)} / share</span></div>
-        <div className="row-kv"><span>Copy slippage vs leader</span><span className="pos">0.00%</span></div>
-        <div className="row-kv"><span>Performance fee</span><span>{cfg.perf_fee_bps / 100}% above HWM</span></div>
+        <div className="row-kv"><span>You enter at</span><span className="num">{price.toFixed(4)} / share</span></div>
+        <div className="row-kv"><span>Copy slippage vs leader</span><span className="num pos">0.00%</span></div>
+        <div className="row-kv"><span>Performance fee</span><span><span className="num">{cfg.perf_fee_bps / 100}%</span> above HWM</span></div>
         <div className="row-kv"><span>Withdrawal</span><span>2 epochs, fair price</span></div>
         <div className="row-kv"><span>If we disappear</span><span>exit in 24 h</span></div>
       </div>

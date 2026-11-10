@@ -232,7 +232,7 @@ Tracks (D-S-10):
 - **agents**: five AI leaders on NEAR AI Cloud trade autonomously every 15 minutes. Each one's reasoning stays private and is committed on-chain by hash.
 
 Two more rule checks:
-- **Two-project rule.** This README already names Scope as a separate project. If you submit Scope, its README needs one line naming Silent Partner. Scope is a private repo: make it public first (§9) or judges can't open it.
+- **Two-project rule.** Not applicable: only Silent Partner is submitted. The README credits Scope as the source of the carried code.
 - **`consent: true`** means you agree to the site's contact notice. Read it on the form before you send.
 
 ## 7. NEAR AI Cloud key for the AI leader (season item 2): DONE (2026-11-09)
@@ -261,7 +261,7 @@ The vault now rejects any NAV whose per-share move doesn't fit NEAR's price move
 3. A key-free alternative was checked and doesn't work. Burrow's `priceoracle.near` has no fresh prices: every asset reads `null` inside its 90 s window, and the last `wrap.near` report is ~230 days old (D-H-4). So the Pyth key is still needed.
 4. Without a key, mainnet NAV posts are rejected ("no fresh oracle price") and the vault goes stale. Alternatively, deploy with `"nav_oracle": null` in `docs/mainnet-init.json` to run without the bound (back to attested-only NAV).
 
-## 9. Optional: make Scope public (submission rules)
+## 9. ~~Optional: make Scope public~~: not needed, Scope isn't being submitted (2026-11-10)
 
 The README names Scope as the source of the carried-over code and as a separate project, but `github.com/amityadav0/scope` is private, so judges can't open it. Every carried file is already copied into this repo, so the submission stands either way. If you want the link to work:
 

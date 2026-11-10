@@ -27,12 +27,12 @@ export function WhoSeesWhat({ id, viewer, shares, vault, dec, sym }: { id: strin
       <div>
         <div className="row-kv"><span>Holdings</span><span><Redact widths={[72, 40]} label="Holdings redacted" /></span></div>
         <div className="row-kv"><span>Trades</span><span><Redact widths={[110]} label="Trades redacted" /></span></div>
-        <div className="row-kv"><span>Share price</span><span>{price} ✓</span></div>
+        <div className="row-kv"><span>Share price</span><span className="num">{price} ✓</span></div>
         {you ? (
           viewer && shares !== null ? (
             <>
-              <div className="row-kv"><span>Your shares</span><span className="pos" data-testid="your-shares">{shares.toLocaleString()}</span></div>
-              <div className="row-kv"><span>Your value</span><span className="pos">{fmtUnits((shares * BigInt(vault.price)) / 10n ** 18n, dec)} {sym}</span></div>
+              <div className="row-kv"><span>Your shares</span><span className="num pos" data-testid="your-shares">{shares.toLocaleString()}</span></div>
+              <div className="row-kv"><span>Your value</span><span className="num pos">{fmtUnits((shares * BigInt(vault.price)) / 10n ** 18n, dec)} {sym}</span></div>
               <div className="row-kv"><span>Your stop-loss</span><span className="pos" data-testid="your-stop">{stop === "n/a" ? "not on this vault" : stop ? `exit at −${stop.drawdown_bps / 100}%` : "none set"}</span></div>
             </>
           ) : (
@@ -42,7 +42,7 @@ export function WhoSeesWhat({ id, viewer, shares, vault, dec, sym }: { id: strin
           <div className="row-kv"><span>Who follows</span><span data-testid="who-follows">not shown</span></div>
         )}
       </div>
-      <p className="muted text-sm leading-normal">The vault&apos;s positions stay with the operator that executes them. This site lists no followers, but deposits are ordinary NEAR transfers, so an account&apos;s deposit and share balance can be read on chain. <a href="../chain/">What the chain sees</a></p>
+      <p className="muted text-sm leading-normal">Only the operator that executes trades sees positions. Deposits are ordinary NEAR transfers, so balances are visible on chain. <a href="../chain/">What the chain sees →</a></p>
     </div>
   );
 }

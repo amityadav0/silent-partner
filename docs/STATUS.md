@@ -92,7 +92,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Fresh-clone dry run; Makefile installs dependencies; claim → evidence table in docs/reproducibility.md (D-J-1)
 - [x] Uptime guard: health.yml every 30 min, reruns the season, one `uptime` issue (D-J-2); thresholds and top-ups in docs/keep-online.md (D-J-5)
 - [x] "Try it in 60 s" at the top of the README and on the landing page; AI decisions panel with the browser hash check (D-J-4)
-- [x] Scope README line ready: docs/scope-readme-line.md (not applied)
+- [x] Scope README line: not needed, Amit isn't submitting Scope (2026-11-10)
 - [ ] NEAR AI key fails since 2026-11-09 22:30 UTC: AI leaders hold, shown on the site (D-J-3). Waiting on Amit, NEEDS-AMIT §10
 
 ## Next

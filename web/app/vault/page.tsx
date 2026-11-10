@@ -34,6 +34,7 @@ export default function VaultPage() {
   const [mine, setMine] = useState<{ shares: bigint; locked: bigint; claims: Claim[] } | null>(null);
   const [wShares, setWShares] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [allNavs, setAllNavs] = useState(false);
 
   useEffect(() => {
     if (!id || !viewer) return setMine(null);
@@ -82,7 +83,7 @@ export default function VaultPage() {
               <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
             </div>
             <h1>{meta.name}</h1>
-            <p className="max-w-2xl text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>{meta.style}. <span className="mark">What it holds right now is sealed.</span></p>
+            <p className="max-w-2xl text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>{meta.style}. What it holds right now is sealed.</p>
           </div>
           <EmergencyBanner id={data.id} vault={vault} cfg={cfg} shares={mine?.shares ?? 0n} dec={m.dec} sym={m.sym} onDone={reload} />
 
@@ -90,7 +91,7 @@ export default function VaultPage() {
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
             <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
-            <Stat label="Verified epochs" value={`${m.v.ok} / ${navs.length}`} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
+            <Stat label="Verified price posts" value={`${m.v.ok} / ${navs.length}`} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>
 
           <ReturnsChart
@@ -147,7 +148,7 @@ export default function VaultPage() {
         <table className="t" data-testid="nav-table">
           <thead><tr><th>Epoch</th><th>Time</th><th>Share price</th><th>Positions</th><th>Fee shares</th><th>Withdrawn</th><th>Fill log head</th><th>Sig</th></tr></thead>
           <tbody>
-            {[...navs].reverse().map((n) => (
+            {[...navs].reverse().slice(0, allNavs ? undefined : 20).map((n) => (
               <tr key={n.epoch}>
                 <td>{n.epoch}</td>
                 <td>{new Date(n.timestamp_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
@@ -162,6 +163,9 @@ export default function VaultPage() {
           </tbody>
         </table>
       </div>
+      {navs.length > 20 && (
+        <button className="quiet mt-2" onClick={() => setAllNavs(!allNavs)} data-testid="nav-all">{allNavs ? "Show the latest 20" : `Show all ${navs.length} posts`}</button>
+      )}
       <p className="muted mt-3 break-words text-xs">
         Contract <a href={`${NEAR_EXPLORER}/address/${data.id}`}>{data.id}</a> · confidential account (MPC-derived) <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
       </p>

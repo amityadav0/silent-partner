@@ -12,7 +12,8 @@ const REPO = "https://github.com/amityadav0/silent-partner";
 /** Redaction bar: where a position, trade, size or follower list would be. */
 export function Redact({ widths, h = 15, label = "Redacted" }: { widths: number[]; h?: number; label?: string }) {
   return (
-    <span className="redacted" role="img" aria-label={label} data-testid="redacted">
+    <span className="redacted" role="img" aria-label={label} title="sealed" data-testid="redacted">
+      <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="4.5" width="7" height="5" rx="1" fill="currentColor" /><path d="M3 4.5V3.2a2 2 0 0 1 4 0v1.3" fill="none" stroke="currentColor" strokeWidth="1.2" /></svg>
       {widths.map((w, i) => <span key={i} className="redact" style={{ width: w, height: h }} />)}
     </span>
   );
@@ -51,19 +52,20 @@ export function Nav() {
       <Link href="/" className="brand"><Logo />Silent Partner</Link>
       <nav className="site-links" aria-label="Main">
         {link("/leaderboard/", "Leaders")}
-        <Link href="/#why">Why private</Link>
-        {link("/chain/", "What the chain sees")}
-        {link("/leader/", "Leader console")}
-        {link("/create/", "Create")}
+        <Link href="/#why">How it works</Link>
+        {link("/create/", "Lead a vault")}
       </nav>
       <div className="site-tools">
         {NETWORK === "testnet" && <span className="chip">testnet</span>}
         <ThemeToggle />
         {accountId ? (
-          <>
-            <span className="muted max-w-[9rem] truncate text-sm" data-testid="account">{accountId}</span>
-            <button className="btn" onClick={() => signOut()}>Sign out</button>
-          </>
+          <details className="wallet-menu">
+            <summary className="btn" data-testid="account"><span className="max-w-[9rem] truncate">{accountId}</span></summary>
+            <div className="wallet-menu-list">
+              <Link href="/leader/">Leader console</Link>
+              <button onClick={() => signOut()}>Sign out</button>
+            </div>
+          </details>
         ) : (
           <button className="btn" disabled={!ready} onClick={signIn}>Connect wallet</button>
         )}
@@ -78,13 +80,15 @@ export function Footer() {
       <div className="wrap">
         <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
         <span className="flex flex-wrap gap-4">
+          <Link href="/chain/">What the chain sees</Link>
+          <Link href="/leader/">Leader console</Link>
           <a href={`${REPO}#readme`}>Docs</a>
           <a href={`${REPO}/blob/master/docs/architecture.md`}>Architecture</a>
           <a href={`${REPO}/blob/master/docs/threat-model.md`}>Threat model</a>
           <a href={`${REPO}/blob/master/docs/testnet.md`}>Testnet record</a>
           <Link href="/track/">Bring your track record</Link>
         </span>
-        <span className="num">Testnet paper season · not investment advice</span>
+        <span>Testnet paper season · not investment advice</span>
       </div>
     </footer>
   );
@@ -122,9 +126,20 @@ export function Stat({ label, value, hint, testid, risk }: { label: string; valu
   );
 }
 
-/** Returns stay ink unless negative: no green and red scoreboard. */
+/** Returns stay ink: the sign is the only signal, no green and red scoreboard. */
 export function Ret({ r }: { r: number }) {
-  return <span className={r < 0 ? "neg" : undefined}>{pct(r)}</span>;
+  return <span>{pct(r)}</span>;
+}
+
+/** Risk as a 3-dot meter, with the word for screen readers. */
+export function RiskDots({ risk }: { risk?: "low" | "med" | "high" }) {
+  if (!risk) return null;
+  const n = { low: 1, med: 2, high: 3 }[risk];
+  return (
+    <span className="risk-dots" role="img" aria-label={`${RISK_WORD[risk]} risk`} title={`${RISK_WORD[risk]} risk`} data-testid="risk">
+      {[1, 2, 3].map((i) => <i key={i} className={i <= n ? "on" : undefined} />)}
+    </span>
+  );
 }
 
 /** Honest provenance label: "paper · testnet" or "live · mainnet". */
