@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { WalletProvider } from "@/lib/wallet";
 import { Footer, Nav } from "./ui";
+import { Welcome } from "./welcome";
 
 const SITE = "https://amityadav0.github.io/silent-partner";
 const DESCRIPTION = "Copy the trader, not the crowd. Private copy-trading vaults on NEAR Confidential Intents: same trade, same price, nothing to front-run.";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Nav />
           <main className="pb-16 pt-2">{children}</main>
           <Footer />
+          <Welcome />
         </WalletProvider>
       </body>
     </html>

@@ -74,8 +74,8 @@ export default function Leaderboard() {
             <tr><th>Leader</th><th>Worst drawdown</th><th>Return</th><th>Own money in</th><th>Holdings</th><th>Verified</th><th><span className="sr-only">Open</span></th></tr>
           </thead>
           <tbody>
-            {rows === null && <tr><td colSpan={7} className="muted">Reading vaults from NEAR…</td></tr>}
-            {rows?.length === 0 && <tr><td colSpan={7} className="muted">No vaults yet.</td></tr>}
+            {rows === null && <tr><td colSpan={7} className="muted">Reading every leader&apos;s signed prices from NEAR…</td></tr>}
+            {rows?.length === 0 && <tr><td colSpan={7} className="muted">No leaders yet. The first one could be you: <Link href="/create/ai/">lead a vault</Link>.</td></tr>}
             {sorted?.map((r) => {
               const m = r.m, st = status(r.d.vault);
               return (

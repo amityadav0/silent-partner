@@ -182,7 +182,7 @@ export function ReturnsChart({ points, height = 220, copy, drawdown, title, note
     return () => ro.disconnect();
   }, [points.length]);
   const H = height, L = 48, R = 12, T = 12, B = 26;
-  if (points.length === 0) return <div className="panel muted text-sm">No NAV posted yet.</div>;
+  if (points.length === 0) return <div className="panel muted text-sm">No price posted yet. The first one lands at the next tick, signed.</div>;
   const all = [{ t: points[0].t, r: 0 }, ...points];
   const rs = [...all.map((p) => p.r), ...(copy?.r ?? [])];
   let lo = Math.min(0, ...rs), hi = Math.max(0, ...rs);

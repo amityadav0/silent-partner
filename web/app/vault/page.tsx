@@ -74,7 +74,7 @@ export default function VaultPage() {
 
   if (id === null) return <p>Missing <code>?id=</code>. Pick a vault on the <Link href="/leaderboard/">leaderboard</Link>.</p>;
   if (error) return <p className="neg">{error}</p>;
-  if (!data || !m) return <p className="muted">Reading vault from NEAR…</p>;
+  if (!data || !m) return <p className="muted">Reading the vault&apos;s signed prices from NEAR…</p>;
   const { vault, cfg, navs } = data;
 
   async function withdraw() {
@@ -145,7 +145,7 @@ export default function VaultPage() {
             <h2>Your position</h2>
             {!accountId && asParam && <p className="muted text-xs">Viewing <code>{asParam}</code> read-only.</p>}
             {!viewer ? (
-              <p className="muted mt-1 text-sm">Connect a wallet to see your shares.</p>
+              <p className="muted mt-1 text-sm">Connect a wallet to see your shares. Only you and the chain know them; the leader never sees a list.</p>
             ) : !mine ? (
               <p className="muted mt-1 text-sm">Reading…</p>
             ) : (

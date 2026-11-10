@@ -246,6 +246,31 @@ test("share loops: a vault link with its own preview, invite credit, badge and b
   await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst DD · \d+ epochs · positions sealed$/);
 });
 
+test("first visit: three steps, skippable, remembered", async ({ browser }) => {
+  const ctx = await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined });
+  const page = await ctx.newPage();
+  await page.goto("/");
+  const w = page.getByTestId("welcome");
+  await expect(w).toContainText("What's sealed");
+  await expect(w.getByTestId("redacted")).toBeVisible();
+  await page.getByTestId("welcome-next").click();
+  await expect(w).toContainText("What you see");
+  await page.getByTestId("welcome-next").click();
+  await expect(w).toContainText("Your exit");
+  await page.getByTestId("welcome-done").click();
+  await expect(page).toHaveURL(/leaderboard/);
+  await expect(w).toHaveCount(0);
+  await page.goto("/");
+  await expect(page.getByTestId("welcome")).toHaveCount(0);
+  // a second visitor skips it with Escape
+  const p2 = await (await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined })).newPage();
+  await p2.goto("/leaderboard/");
+  await expect(p2.getByTestId("welcome")).toBeVisible();
+  await p2.keyboard.press("Escape");
+  await expect(p2.getByTestId("welcome")).toHaveCount(0);
+  await ctx.close();
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");

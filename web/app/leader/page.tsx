@@ -181,7 +181,7 @@ export default function LeaderConsole() {
         <table className="t" data-testid="signals-table">
           <thead><tr><th>#</th><th>Trade</th><th>Signal hash</th><th>Fill record</th><th>Executed</th><th>Epoch</th></tr></thead>
           <tbody>
-            {signals.length === 0 && <tr><td colSpan={6} className="muted">None yet.</td></tr>}
+            {signals.length === 0 && <tr><td colSpan={6} className="muted">No trades yet. When you trade, its hash lands here, and only its hash.</td></tr>}
             {[...signals].reverse().map((s) => (
               <tr key={s.index}><td>{s.index}</td><td><Redact widths={[56, 28]} h={12} label="Trade sealed" /></td><td><code className="text-xs">{short(s.hash, 8)}</code></td><td><code className="text-xs">{short(s.fill_hash, 8)}</code></td><td>{new Date(s.executed_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{s.epoch}</td></tr>
             ))}

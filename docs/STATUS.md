@@ -98,7 +98,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 ## Open season and polish (Nov 10)
 - [x] P0 polish: typography, copy, light default, calmer leaderboard (02b7081)
 - [x] G1 AI leader builder (/create/ai), G2 open season: registry contract, season provisioning, sealed strategies and signals, Community badge, calmest return (D-G-1 to D-G-3); Calm Owl launched end to end on testnet
-- [ ] G3 alerts · G4 My partners · G5 partner letters · G6 share loops · G7 first-run sheet
+- [x] G3 alerts (D-G-4) · G4 My partners (D-G-5) · G5 partner letters (D-G-6) · G6 share loops (D-G-7) · G7 first-run sheet (D-G-8)
 
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
