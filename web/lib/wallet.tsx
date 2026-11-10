@@ -17,9 +17,11 @@ type Ctx = {
   signOut: () => Promise<void>;
   /** Sends one owner call. Browser-redirect wallets (MyNearWallet) navigate away and come back with ?transactionHashes=. */
   call: (c: OwnerCall) => Promise<string | null>;
+  /** Several function calls to one contract in one transaction (one wallet confirmation). */
+  callMany: (receiverId: string, calls: Omit<OwnerCall, "receiverId">[]) => Promise<string | null>;
 };
 
-const WalletCtx = createContext<Ctx>({ ready: false, accountId: null, signIn: () => {}, signOut: async () => {}, call: async () => null });
+const WalletCtx = createContext<Ctx>({ ready: false, accountId: null, signIn: () => {}, signOut: async () => {}, call: async () => null, callMany: async () => null });
 export const useWallet = () => useContext(WalletCtx);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -64,6 +66,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [selector],
   );
 
+  const callMany = useCallback(
+    async (receiverId: string, calls: Omit<OwnerCall, "receiverId">[]) => {
+      if (!selector) throw new Error("wallet not ready");
+      const [{ actionCreators }] = await Promise.all([import("@near-wallet-selector/core")]);
+      const wallet = await selector.wallet();
+      const out = await wallet.signAndSendTransaction({ receiverId, actions: calls.map((c) => actionCreators.functionCall(c.method, c.args, c.gas ?? 50n * TGAS, c.deposit ?? 0n)) });
+      return (out as { transaction?: { hash?: string } } | undefined)?.transaction?.hash ?? null;
+    },
+    [selector],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       ready: Boolean(selector),
@@ -73,8 +86,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (selector) await (await selector.wallet()).signOut();
       },
       call,
+      callMany,
     }),
-    [selector, modal, accountId, call],
+    [selector, modal, accountId, call, callMany],
   );
   return <WalletCtx.Provider value={value}>{children}</WalletCtx.Provider>;
 }

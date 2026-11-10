@@ -5,7 +5,8 @@ import { ASSETS, NEAR_EXPLORER, TGAS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, drawdownWindow, fmtUnits, leaderStake, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
 import { LeaderChips, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
-import { metaOf } from "@/lib/vaults";
+import { META, metaOf, type VaultMeta } from "@/lib/vaults";
+import { communityMeta, launchOfVault } from "@/lib/community";
 import { EmergencyBanner } from "./emergency";
 import { PositionDetails } from "./position";
 import { usePaper } from "./paper";
@@ -35,6 +36,12 @@ export default function VaultPage() {
   const [wShares, setWShares] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [allNavs, setAllNavs] = useState(false);
+  // Community vaults get their name and style from the open season registry.
+  const [cmeta, setCmeta] = useState<VaultMeta | null>(null);
+  useEffect(() => {
+    if (!id || META[id]) return;
+    launchOfVault(id).then((l) => setCmeta(l ? communityMeta(l) : null), () => setCmeta(null));
+  }, [id]);
 
   useEffect(() => {
     if (!id || !viewer) return setMine(null);
@@ -70,15 +77,15 @@ export default function VaultPage() {
 
   const st = status(vault);
   const free = mine ? mine.shares - mine.locked : 0n;
-  const meta = metaOf(data.id);
+  const meta = cmeta ?? metaOf(data.id);
   return (
     <section>
       <div className="vault-grid">
         <div className="vault-main">
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <LeaderChips id={data.id} />
-              <ModeChip id={data.id} />
+              <LeaderChips id={data.id} meta={meta} />
+              <ModeChip id={data.id} meta={meta} />
               {st !== "active" && <StatusChip s={st} />}
               <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
             </div>

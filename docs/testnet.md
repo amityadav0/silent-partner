@@ -318,3 +318,22 @@ egress_calls=2 denied=0
 ```
 
 The operator turned the target into one trade for the vault (fill `fdeb6dc3…`), and the contract recorded signal #7 with hash `20a14329…` after re-checking the leader's signature (`get_signals`). Without a key in the workspace, the same call returns a `needs_signature` card with a one-tap link to the leader console (`/leader/?id=…&target=40`).
+
+## Open season: a community AI leader launched from the site (2026-11-10)
+
+Anyone can file a vault launch with the registry contract [`registry.sp-sop-92991.testnet`](https://testnet.nearblocks.io/address/registry.sp-sop-92991.testnet) (`registry/`, wasm sha256 `94bdb84b88f942916e6ac0c68e355f86809fef503ade023898a205d7a0ddcc4f`). The season operator deploys the vault from `operator/season/vault.wasm` (sha256 `5195977e…192f`, the same code as the mainnet artifact, D-P5-8). This run used a fresh faucet account, `sp-owl-0749.testnet`, as the leader, the same way the website files a launch (D-G-1).
+
+| Step | Account | Tx |
+|---|---|---|
+| create the registry account | `sp-sop-92991.testnet` | [`3VQqX77C…`](https://testnet.nearblocks.io/txns/3VQqX77CbHyt8eMzhMFDcyBLAV5r7WCxYv3DRstpjjcN) |
+| deploy and init the registry (12 launches, 2 per account, 5 NEAR deposit) | `registry.sp-sop-92991.testnet` | [`5RnKsbUy…`](https://testnet.nearblocks.io/txns/5RnKsbUyGCweThQapXxz7nVXAQiyuvz2Lt9VVixnJFUz) |
+| leader: `launch` "Calm Owl", AI, medium risk; the strategy sealed to the season key, its sha256 `2543a8a4…ebc2` in clear | `sp-owl-0749.testnet` | [`8EFyv3wA…`](https://testnet.nearblocks.io/txns/8EFyv3wA3u7oNg8VAnaKgDH2xHiBk6QKAK8dwePQyiBv) |
+| season: create `c0.sp-sop-92991.testnet`, fund it, deploy, `new` (leader = the requester) | `sp-sop-92991.testnet` | [`AkaVWtBR…`](https://testnet.nearblocks.io/txns/AkaVWtBRYMPorgYecdW4MXNfceeQ4kQ7vFWAxjQosqFM) |
+| season: `activate` (MPC-derived vault account) | `sp-sop-92991.testnet` | [`4ZK6iZFH…`](https://testnet.nearblocks.io/txns/4ZK6iZFHp8KiZLwR7pyPLtQ1j62KHZpzfbNb5oHnXSSS) |
+| season: USDC storage for the vault | `sp-sop-92991.testnet` | [`Gs1yo1yC…`](https://testnet.nearblocks.io/txns/Gs1yo1yC3qjLn3B5HA6eSkuJbzBUGbTCgPsztCAW4Wcc) |
+| season: registry `set_status(0, live)` | `sp-sop-92991.testnet` | [`HHjQCKYP…`](https://testnet.nearblocks.io/txns/HHjQCKYPsmGacbmio26zz9jDE9U7Zi42FyP1VNHXu92w) |
+| leader: `set_signal_key` = the season's community signer | `sp-owl-0749.testnet` | [`DevMrq3j…`](https://testnet.nearblocks.io/txns/DevMrq3jyiJNTLPUJVjzaaU1Y5xbDe7jDy873XUqRfpg) |
+| leader: USDC storage, mint 100 test USDC, deposit (100 shares, the whole vault) | `sp-owl-0749.testnet` | [`4Pb21Z9G…`](https://testnet.nearblocks.io/txns/4Pb21Z9GQiLjkPjZURgqgaAHsDjZC4kkkSh9bBWJAVFF), [`24Yrt6Ma…`](https://testnet.nearblocks.io/txns/24Yrt6Maa1rDyuSPsKzK83XiPhd7S7jt5dwTKN1Xy8BQ), [`Fk4yqv6o…`](https://testnet.nearblocks.io/txns/Fk4yqv6oAYAbqoeYGdDKFP3aYD24jrvC8umjhCYw6QNZ) |
+
+The vault is on the leaderboard with a Community badge. From the season run that starts after this code landed, each tick decides for it with NEAR AI, inside its enforced 0–60% band, and posts its NAV. While NEAR AI rejects the season key (NEEDS-AMIT §10), it holds like the house AI leaders.
+

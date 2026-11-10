@@ -90,6 +90,23 @@ export function drawdownWindow(navs: Pick<NavPost, "price">[]): { peak: number; 
   return best;
 }
 
+/** Return and worst drawdown since `sinceMs`, from the share price (the price just before the window is the start). */
+export function windowStats(navs: Pick<NavPost, "price" | "timestamp_ms">[], sinceMs: number): { ret: number; dd: number; posts: number } | null {
+  const inside = navs.filter((n) => n.timestamp_ms >= sinceMs);
+  if (inside.length < 2) return null;
+  const before = navs.filter((n) => n.timestamp_ms < sinceMs).at(-1);
+  const prices = [before ? priceOf(before.price) : 1, ...inside.map((n) => priceOf(n.price))];
+  let peak = prices[0], dd = 0;
+  for (const p of prices) {
+    peak = Math.max(peak, p);
+    dd = Math.max(dd, (peak - p) / peak);
+  }
+  return { ret: prices[prices.length - 1] / prices[0] - 1, dd, posts: inside.length };
+}
+
+/** Calmest return: return per unit of worst drawdown (a floor of 0.05% keeps a flat week from dividing by zero). */
+export const calmScore = (s: { ret: number; dd: number }) => s.ret / Math.max(s.dd, 0.0005);
+
 /** The leader's share of the vault, as a fraction: their own money at stake. */
 export const leaderStake = (v: Pick<VaultView, "leader_shares" | "total_shares">): number => (BigInt(v.total_shares) === 0n ? 0 : Number((BigInt(v.leader_shares) * 1_000_000n) / BigInt(v.total_shares)) / 1_000_000);
 

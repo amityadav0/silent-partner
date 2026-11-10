@@ -261,3 +261,53 @@ describe("risk metrics", () => {
     expect(feeEarned([{ fee_shares: "100", price: (2n * E18).toString() }, { fee_shares: "0", price: E18.toString() }, { fee_shares: "50", price: E18.toString() }])).toBe(250n);
   });
 });
+
+import { bounds, promptHash, seal, suggestStyle, NAME_RE } from "../lib/community";
+import { calmScore, windowStats } from "../lib/vault";
+
+describe("open season", () => {
+  // Shared with operator/test/community.test.ts: the site seals exactly as the season expects.
+  it("seals to the shared vector", async () => {
+    const fixed = { esk: new Uint8Array(32).fill(7), iv: new Uint8Array(12).fill(9) };
+    expect(await seal("vector text", "launch", "vpEgRfuoiMBgE0qM8LoKNCCKuYps4kaMvpbNZNzGVAo", fixed)).toBe("E75P6uryBMf9M1j8nAByGIHRdCeBKCJ-xnTzf3_pe20JCQkJCQkJCQkJCQk0aqaB_xRjjZNkVtNFFe6voQoUlxCXQFJMsuQ");
+    expect(promptHash("vector text")).toBe("a01d42719f12b747e2b5ae6d1924290d39fe0285e9dff07181284c99615fd93c");
+  });
+  it("random seals differ and fit the registry's format", async () => {
+    const a = await seal("x", "launch"), b = await seal("x", "launch");
+    expect(a).not.toBe(b);
+    expect(a).toMatch(/^[A-Za-z0-9_-]{40,6000}$/);
+  });
+  it("bounds match the season's rules", () => {
+    expect(bounds("hold NEAR above its 7-day average, max 60%, cut to 20% on an 8% drop", "high")).toEqual({ min: 0, max: 0.6 });
+    expect(bounds("max 60%", "low")).toEqual({ min: 0, max: 0.4 });
+    expect(bounds("at least 30% NEAR, up to 90%", "med")).toEqual({ min: 0.3, max: 0.7 });
+    expect(bounds("never below 60%", "low")).toBeNull();
+  });
+  it("suggests a style line without quoting the strategy", () => {
+    const s = suggestStyle("Hold NEAR above its 24-hour average; cut to 20% if it drops 5%", "med");
+    expect(s).toBe("Follows the trend, cuts risk fast; medium risk");
+    expect(s).not.toMatch(/24-hour|5%/);
+  });
+  it("names", () => {
+    expect(NAME_RE.test("Calm Owl")).toBe(true);
+    expect(NAME_RE.test("x")).toBe(false);
+    expect(NAME_RE.test("Calm <Owl>")).toBe(false);
+  });
+});
+
+describe("calmest return", () => {
+  const E12 = 10n ** 12n;
+  const p = (x: number, h: number) => ({ price: (BigInt(Math.round(x * 1e6)) * E12).toString(), timestamp_ms: h * 3600_000 });
+  it("measures the window from the price just before it", () => {
+    const navs = [p(1.1, 0), p(1.0, 10), p(1.05, 20), p(0.99, 30), p(1.02, 40)];
+    const s = windowStats(navs, 15 * 3600_000)!;
+    expect(s.posts).toBe(3);
+    expect(s.ret).toBeCloseTo(0.02);
+    expect(s.dd).toBeCloseTo((1.05 - 0.99) / 1.05);
+    expect(windowStats(navs, 35 * 3600_000)).toBeNull();
+  });
+  it("ranks return per unit of drawdown, with a floor for flat weeks", () => {
+    expect(calmScore({ ret: 0.01, dd: 0.005 })).toBeCloseTo(2);
+    expect(calmScore({ ret: 0.001, dd: 0 })).toBeCloseTo(2);
+  });
+});

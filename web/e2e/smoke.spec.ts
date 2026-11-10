@@ -178,6 +178,34 @@ test("landing: 60-second tour with plain links", async ({ page }) => {
   await expect(page.getByTestId("tour")).toContainText("https://testnet.nearblocks.io/txns/");
 });
 
+test("lead a vault: strategy sealed in the browser, bounds from the risk band, style line to approve", async ({ page }) => {
+  await page.goto("/create/ai/");
+  await page.getByTestId("f-name").fill("Calm Owl");
+  await page.getByRole("button", { name: "Use the example" }).click();
+  await page.getByTestId("f-risk-med").click();
+  await expect(page.getByTestId("bounds")).toContainText("0% and 60%");
+  await page.getByTestId("f-risk-low").click();
+  await expect(page.getByTestId("bounds")).toContainText("0% and 40%");
+  await expect(page.getByTestId("f-style")).toHaveValue(/risk$/);
+  await expect(page.getByTestId("hash")).toHaveText(/^[0-9a-f]{10}…[0-9a-f]{10}$/);
+  await expect(page.getByTestId("launch-btn")).toHaveText("Connect a wallet to launch");
+  await page.getByTestId("kind-human").click();
+  await expect(page.getByTestId("f-strategy")).toHaveCount(0);
+  await expect(page.getByTestId("sealed-note")).toHaveCount(0);
+});
+
+test("open season: the community vault is on the leaderboard with its badge, and its page names it", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  const row = page.getByTestId("row-c0.sp-sop-92991.testnet");
+  await expect(row).toContainText("Calm Owl");
+  await expect(row.getByTestId("community")).toHaveText("Community");
+  await expect(page.getByTestId("calmest")).toContainText("Calmest return this week");
+  await page.goto("/vault/?id=c0.sp-sop-92991.testnet");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calm Owl");
+  await expect(page.getByTestId("community")).toBeVisible();
+  await expect(page.getByTestId("about")).toContainText("strategy is sealed");
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");

@@ -6,6 +6,7 @@ import { feeEarned, fmtUnits, priceOf, view, type SignalRec } from "@/lib/vault"
 import { newSignalKey, publicKeyOf, randomNonce, signSignal, type Signal } from "@/lib/signal";
 import { Redact, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
+import { REGISTRY, launchOfVault, seal, type Launch } from "@/lib/community";
 
 const KEY_STORE = (vault: string) => `sp.signal-key.${vault}`;
 const sym = (id: string) => ASSETS[id]?.symbol ?? id.replace(/^nep141:/, "");
@@ -31,6 +32,11 @@ export default function LeaderConsole() {
   const targetParam = useQueryParam("target");
   const [out, setOut] = useState<{ ok: boolean; text: string } | null>(null);
   const [preview, setPreview] = useState<string>("");
+  // Community vault: signals go sealed to the registry and run at the season's next tick.
+  const [launch, setLaunch] = useState<Launch | null>(null);
+  useEffect(() => {
+    if (id) launchOfVault(id).then(setLaunch, () => setLaunch(null));
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -83,6 +89,15 @@ export default function LeaderConsole() {
     if (typeof s === "string") return setOut({ ok: false, text: s });
     const env = signSignal(s, secret!);
     setPreview(JSON.stringify(env, null, 2));
+    if (launch) {
+      try {
+        const tx = await call({ receiverId: REGISTRY, method: "post_signal", args: { vault: id, sealed: await seal(JSON.stringify(env), `signal:${id}`) }, deposit: 10_000_000_000_000_000_000_000n, gas: 30n * TGAS });
+        setOut({ ok: true, text: tx ? `Sealed and queued (tx ${short(tx, 8)}). Nobody can read it; the season executes it at its next tick, within 15 minutes.` : "Sent to your wallet." });
+      } catch (e) {
+        setOut({ ok: false, text: String((e as Error).message ?? e) });
+      }
+      return;
+    }
     try {
       const r = await fetch(`${OPERATOR_API}/v1/signals`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(env) });
       const j = await r.json();
@@ -95,7 +110,7 @@ export default function LeaderConsole() {
   return (
     <section>
       <span className="eyebrow">Private desk</span>
-      <h1 className="mt-2">{metaOf(id).name}</h1>
+      <h1 className="mt-2">{launch?.name ?? metaOf(id).name}</h1>
       <p className="muted mt-2 break-words text-sm">Leader console · vault <code>{id}</code> · leader <code>{data.cfg.leader}</code></p>
 
       <div className="stats mt-6" data-testid="desk">
@@ -151,7 +166,7 @@ export default function LeaderConsole() {
             <input aria-label="Limit price" disabled={form.type !== "limit"} value={form.limit} onChange={(e) => setForm({ ...form, limit: e.target.value })} inputMode="decimal" />
           </label>
         </div>
-        <button className="btn btn-primary mt-3" disabled={!keyMatches} onClick={send}>Sign and send</button>
+        <button className="btn btn-primary mt-3" disabled={!keyMatches} onClick={send}>{launch ? "Sign, seal and queue" : "Sign and send"}</button>
         <p className="muted mt-2 text-xs">One confidential 1Click quote fills the whole vault at one price. Max slippage {data.cfg.max_slippage_bps / 100}%. A limit order waits in the operator until the price crosses (24h expiry).</p>
         {out && <p className={`mt-2 text-sm ${out.ok ? "pos" : "neg"}`} role="status">{out.text}</p>}
         {preview && <details className="mt-2 text-xs"><summary className="muted">Signed envelope</summary><pre className="scroll-x">{preview}</pre></details>}

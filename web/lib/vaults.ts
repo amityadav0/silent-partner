@@ -2,7 +2,7 @@
 // are. Season vaults mirror operator/season/vaults.json.
 export type Mode = "paper" | "live";
 export type Risk = "low" | "med" | "high";
-export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean };
+export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean; community?: boolean };
 
 const season = { mode: "paper" as const, network: "testnet" as const, season: true };
 export const META: Record<string, VaultMeta> = {

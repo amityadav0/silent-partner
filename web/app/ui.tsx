@@ -1,5 +1,5 @@
 "use client";
-import { badgeOf, metaOf, modeLabel } from "@/lib/vaults";
+import { badgeOf, metaOf, modeLabel, type VaultMeta } from "@/lib/vaults";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -44,8 +44,8 @@ function ThemeToggle() {
 export function Nav() {
   const { accountId, ready, signIn, signOut } = useWallet();
   const path = usePathname();
-  const link = (href: string, label: string) => (
-    <Link href={href} aria-current={path?.startsWith(href) ? "page" : undefined}>{label}</Link>
+  const link = (match: string, label: string, href = match) => (
+    <Link href={href} aria-current={path?.startsWith(match) ? "page" : undefined}>{label}</Link>
   );
   return (
     <header className="wrap site-head">
@@ -53,7 +53,7 @@ export function Nav() {
       <nav className="site-links" aria-label="Main">
         {link("/leaderboard/", "Leaders")}
         <Link href="/#why">How it works</Link>
-        {link("/create/", "Lead a vault")}
+        {link("/create/", "Lead a vault", "/create/ai/")}
       </nav>
       <div className="site-tools">
         {NETWORK === "testnet" && <span className="chip">testnet</span>}
@@ -143,18 +143,19 @@ export function RiskDots({ risk }: { risk?: "low" | "med" | "high" }) {
 }
 
 /** Honest provenance label: "paper · testnet" or "live · mainnet". */
-export function ModeChip({ id }: { id: string }) {
-  const m = metaOf(id);
+export function ModeChip({ id, meta }: { id: string; meta?: VaultMeta }) {
+  const m = meta ?? metaOf(id);
   return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds"}>{modeLabel(m)}</span>;
 }
 
 const RISK_WORD = { low: "low", med: "medium", high: "high" } as const;
 
 /** Who leads (AI / Bot / Human) and the leader's risk level. */
-export function LeaderChips({ id }: { id: string }) {
-  const m = metaOf(id);
+export function LeaderChips({ id, meta }: { id: string; meta?: VaultMeta }) {
+  const m = meta ?? metaOf(id);
   return (
     <>
+      {m.community && <span className="chip" data-testid="community">Community</span>}
       <span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.leaderKind === "ai" ? "Decides on NEAR AI Cloud; its reasoning stays private (hash only)" : undefined}>{badgeOf(m)}</span>
       {m.risk && <span className={`chip chip-risk-${m.risk}`} data-testid="risk">Risk · {RISK_WORD[m.risk]}</span>}
     </>

@@ -35,6 +35,11 @@ test("screens", async ({ page }) => {
   await expect(page.getByTestId("claim-0")).toBeVisible();
   await shot(page, "emergency-claim-paid");
 
+  await page.goto("/create/ai/");
+  await page.getByTestId("f-name").fill("Calm Owl");
+  await page.getByRole("button", { name: "Use the example" }).click();
+  await shot(page, "create-ai");
+
   await page.goto("/create/");
   await page.getByTestId("f-vault").fill("my-vault.testnet");
   await page.getByTestId("f-leader").fill("me.testnet");

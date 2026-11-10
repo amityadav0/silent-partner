@@ -95,6 +95,11 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Scope README line: not needed, Amit isn't submitting Scope (2026-11-10)
 - [ ] NEAR AI key fails since 2026-11-09 22:30 UTC: AI leaders hold, shown on the site (D-J-3). Waiting on Amit, NEEDS-AMIT §10
 
+## Open season and polish (Nov 10)
+- [x] P0 polish: typography, copy, light default, calmer leaderboard (02b7081)
+- [x] G1 AI leader builder (/create/ai), G2 open season: registry contract, season provisioning, sealed strategies and signals, Community badge, calmest return (D-G-1 to D-G-3); Calm Owl launched end to end on testnet
+- [ ] G3 alerts · G4 My partners · G5 partner letters · G6 share loops · G7 first-run sheet
+
 ## Next
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
