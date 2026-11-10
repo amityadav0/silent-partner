@@ -94,8 +94,8 @@ async function withRetry(call: () => Promise<Response>, retryMs: number): Promis
   return call();
 }
 
-export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string; retryMs?: number }): Promise<Decision> {
-  const persona = PERSONAS[o.persona ?? "ai"] ?? PERSONAS.ai;
+export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string | Persona; retryMs?: number }): Promise<Decision> {
+  const persona = typeof o.persona === "object" ? o.persona : PERSONAS[o.persona ?? "ai"] ?? PERSONAS.ai;
   if (!o.apiKey) return { target: null, why: "NEARAI_API_KEY not set: holding" };
   const model = o.model || DEFAULT_MODEL;
   const f = o.fetchImpl ?? fetch;

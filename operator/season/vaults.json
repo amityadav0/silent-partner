@@ -23,14 +23,14 @@
       "leader": "sp-lmeanrev-92991.testnet",
       "strategy": "mean-reversion",
       "name": "Mean-reversion bot",
-      "blurb": "Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above."
+      "blurb": "Rule-based: buys NEAR 1.5\u03c3 below its 6h mean, sells 1.5\u03c3 above."
     },
     {
       "id": "sp-ai-92991.testnet",
       "leader": "sp-lai-92991.testnet",
       "strategy": "ai",
       "name": "Allocator",
-      "blurb": "AI (NEAR AI Cloud): picks a NEAR weight 0–100% each epoch from momentum, volatility and its own reasoning."
+      "blurb": "AI (NEAR AI Cloud): picks a NEAR weight 0\u2013100% each epoch from momentum, volatility and its own reasoning."
     },
     {
       "id": "sp-trend-8952.testnet",
@@ -51,14 +51,14 @@
       "leader": "sp-lvoltgt-8952.testnet",
       "strategy": "ai-voltarget",
       "name": "Vol Target",
-      "blurb": "AI: sizes NEAR to a 40% annualised volatility target, 20–100% invested."
+      "blurb": "AI: sizes NEAR to a 40% annualised volatility target, 20\u2013100% invested."
     },
     {
       "id": "sp-convict-8952.testnet",
       "leader": "sp-lconvict-8952.testnet",
       "strategy": "ai-conviction",
       "name": "Conviction",
-      "blurb": "AI: 50% NEAR baseline, tilting 20–80% by conviction."
+      "blurb": "AI: 50% NEAR baseline, tilting 20\u201380% by conviction."
     },
     {
       "id": "sp-manual-92991.testnet",
@@ -82,5 +82,9 @@
     "tolerance_bps": 50,
     "writer": "feed.sp-lai-92991.testnet",
     "kind": "mock (Pyth-compatible), fed from CoinGecko by the season job"
+  },
+  "community": {
+    "registry": "registry.sp-sop-92991.testnet",
+    "template": "sp-convict-8952.testnet"
   }
 }

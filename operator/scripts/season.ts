@@ -31,6 +31,8 @@ import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
 import { cardPng, cardSvg } from "../src/season/card.js";
 import { viewCall } from "../src/intents.js";
+import { communityKeys, communityPersona, unseal, type Launch } from "../src/season/community.js";
+import { ackSignals, launches, operatorAccount, pendingSignals, provision } from "../src/season/provision.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
 const local = existsSync("data/season-keys.json") ? JSON.parse(readFileSync("data/season-keys.json", "utf8")) : {};
@@ -78,6 +80,32 @@ if (oracleCfg && oracleKey && market) {
   console.log(JSON.stringify({ oracle }));
 }
 
+// Open season: deploy up to two pending launches per tick, then run every live community vault.
+const C = (S as any).community as { registry: string; template: string } | undefined;
+const ck = communityKeys(stateKey);
+let community: Launch[] = [];
+const communityLog: Record<string, unknown>[] = [];
+let sealedSignals: { id: string; vault: string; sealed: string }[] = [];
+if (C) {
+  try {
+    const opAcct = await operatorAccount(env.rpc, S.operator, opKey);
+    const ctx = { rpc: env.rpc, operator: S.operator, operatorKey: opKey, registry: C.registry, template: C.template, usdc: S.base.replace(/^nep141:/, ""), wasm: readFileSync(new URL("../season/vault.wasm", import.meta.url)), sealSk: ck.sealSk };
+    for (const l of (await launches(env.rpc, C.registry)).filter((l) => l.status === "pending").slice(0, 2)) {
+      try {
+        const r = await provision(ctx, opAcct, l);
+        communityLog.push({ launch: l.id, vault: r.vault, ...(r.rejected ? { rejected: r.rejected } : { live: true }), txs: r.txs });
+      } catch (x) {
+        communityLog.push({ launch: l.id, error: String((x as Error).message).slice(0, 200) });
+      }
+    }
+    community = (await launches(env.rpc, C.registry)).filter((l) => l.status === "live" && l.vault);
+    sealedSignals = await pendingSignals(env.rpc, C.registry);
+  } catch (x) {
+    communityLog.push({ error: `registry: ${String((x as Error).message).slice(0, 160)}` });
+  }
+  for (const c of communityLog) console.log(JSON.stringify({ community: c }));
+}
+
 const results: TickResult[] = [];
 const files: string[] = [];
 for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
@@ -100,6 +128,55 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
   console.log(JSON.stringify(redact(results[results.length - 1])));
 }
 
+// Community vaults: AI leaders from their sealed strategy (once the leader registered the
+// season's signer), human leaders from their sealed signals, one per vault per tick.
+const processed = new Set<string>();
+for (const l of community) {
+  const vid = l.vault!;
+  const fills = `fills-${vid}.jsonl`, notes = `notes-${vid}.jsonl`;
+  files.push(fills, notes);
+  try {
+    const chain = new NearVault(vid, env.rpc, "testnet", S.operator, opKey);
+    const va = (await chain.getVault()).vault_account!;
+    const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), new FillLog(vid, join(plain, fills)), KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
+    let decide: Decide | undefined, signalKey: string | undefined, manual: unknown;
+    if (l.kind === "ai") {
+      const persona = communityPersona(l, await unseal(l.sealed_prompt ?? "", ck.sealSk, "launch"));
+      const registered = await viewCall<string | null>(env.rpc, vid, "get_signal_key", {}, fetch, "optimistic");
+      if (persona && market && registered === ck.signalPublic) {
+        decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL, persona });
+        signalKey = ck.signalSecret;
+      }
+    } else {
+      const s = sealedSignals.find((x) => x.vault === vid && !processed.has(x.id));
+      if (s) {
+        processed.add(s.id);
+        manual = await unseal(s.sealed, ck.sealSk, `signal:${vid}`).then((t) => JSON.parse(t), () => undefined);
+      }
+    }
+    results.push(await tick({ op, vault: vid, base: S.base, risk: S.risk, decide, signalKey, manual, notesPath: join(plain, notes), minStep: l.kind === "ai" ? AI_MIN_STEP : undefined }));
+  } catch (x) {
+    results.push({ vault: vid, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
+  }
+  console.log(JSON.stringify(redact(results[results.length - 1])));
+}
+// Acknowledge the sealed signals read this tick (a contiguous prefix; signals for unknown vaults are dropped).
+if (C && sealedSignals.length) {
+  const live = new Set(community.map((l) => l.vault));
+  let upto: number | null = null;
+  for (const s of [...sealedSignals].sort((a, b) => Number(a.id) - Number(b.id))) {
+    if (processed.has(s.id) || !live.has(s.vault)) upto = Number(s.id) + 1;
+    else break;
+  }
+  if (upto !== null) {
+    try {
+      await ackSignals(await operatorAccount(env.rpc, S.operator, opKey), C.registry, upto);
+    } catch (x) {
+      communityLog.push({ error: `ack: ${String((x as Error).message).slice(0, 120)}` });
+    }
+  }
+}
+
 // Track-record cards (public PNGs, only on-chain data): season-state/cards/<vault>.png.
 const STYLE: Record<string, [string, string]> = {
   momentum: ["Bot", "EMA crossover"], "mean-reversion": ["Bot", "Buys −1.5σ, sells +1.5σ"], manual: ["Human", "Signs by hand"],
@@ -107,7 +184,8 @@ const STYLE: Record<string, [string, string]> = {
   "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
 };
 mkdirSync(join(sealed, "cards"), { recursive: true });
-for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
+const cardVaults = [...S.vaults.filter((v) => v.strategy !== "drill"), ...community.map((l) => ({ id: l.vault!, strategy: `community-${l.kind}`, name: l.name, style: l.style }))];
+for (const v of cardVaults) {
   try {
     const navs: { epoch: number; timestamp_ms: number; price: string }[] = [];
     for (let from = 0; ; from += 100) {
@@ -116,7 +194,7 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
       if (page.length < 100) break;
     }
     const g = await viewCall<{ leader_shares: string; total_shares: string }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
-    const [badge, style] = STYLE[v.strategy] ?? ["", ""];
+    const [badge, style] = STYLE[v.strategy] ?? [v.strategy === "community-ai" ? "AI" : "Human", (v as { style?: string }).style ?? ""];
     writeFileSync(join(sealed, "cards", `${v.id}.png`), cardPng(cardSvg({ name: v.name, badge, style, vault: v.id, navs, leaderShares: g.leader_shares, totalShares: g.total_shares, asOf: new Date() })));
   } catch (x) {
     console.log(JSON.stringify({ card_error: v.id, error: String((x as Error).message).slice(0, 120) }));
@@ -125,7 +203,7 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
 
 // Keep-online check (D-S-11): warn when an account the season spends from has
 // < 10 days of budget left. Balances are public on-chain anyway.
-const DAILY: [string, number][] = [[S.operator, 0.35], ...(((S as any).oracle?.writer ? [[(S as any).oracle.writer, 0.03]] : []) as [string, number][]), ...S.vaults.filter((v) => v.strategy !== "drill").map((v) => [v.id, 0.29] as [string, number])];
+const DAILY: [string, number][] = [[S.operator, 0.35], ...(((S as any).oracle?.writer ? [[(S as any).oracle.writer, 0.03]] : []) as [string, number][]), ...S.vaults.filter((v) => v.strategy !== "drill").map((v) => [v.id, 0.29] as [string, number]), ...community.map((l) => [l.vault!, 0.29] as [string, number])];
 const warnings: Record<string, unknown>[] = [];
 for (const [id, perDay] of DAILY) {
   try {
@@ -159,7 +237,7 @@ sealDir(plain, join(sealed, "state"), files, stateKey);
 for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
 const ranAt = new Date().toISOString();
-writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, results: results.map(redact) }, null, 2) + "\n");
+writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, community: communityLog, results: results.map(redact) }, null, 2) + "\n");
 // Recent signals per vault (hashes only), so the vault page can match a trade to its on-chain record.
 const recentFile = join(sealed, "recent-signals.json");
 let recent: Record<string, Record<string, unknown>[]> = {};
