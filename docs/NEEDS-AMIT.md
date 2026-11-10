@@ -280,3 +280,15 @@ Since about 2026-11-09 22:30 UTC, NEAR AI Cloud answers the season's key with HT
    ```
    Then replace the `NEARAI_API_KEY=` line in `~/silent-partner/.env`.
 3. Nothing else is needed: the next tick (within 15 minutes) uses it, and the uptime issue closes itself once the AI leaders answer.
+
+## 11. Optional: Telegram alerts bot (2026-11-10), from your Telegram account
+
+Alerts already work without it, through browser notifications and ntfy.sh push to a phone with no account. A bot adds Telegram. The code is in place and switches on when the token exists.
+
+1. In Telegram, message @BotFather: `/newbot`, name it "Silent Partner alerts", and pick a username such as `silent_partner_alerts_bot`. Copy the token.
+2. Run:
+   ```sh
+   gh secret set TELEGRAM_BOT_TOKEN -R amityadav0/silent-partner   # paste the token at the prompt
+   gh variable set NEXT_PUBLIC_TELEGRAM_BOT -R amityadav0/silent-partner -b silent_partner_alerts_bot
+   ```
+3. Tell me the username; I'll show the Telegram option on the vault pages. Followers send `/follow <vault id>` to the bot; the season answers within 15 minutes.

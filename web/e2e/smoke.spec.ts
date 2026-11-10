@@ -206,6 +206,17 @@ test("open season: the community vault is on the leaderboard with its badge, and
   await expect(page.getByTestId("about")).toContainText("strategy is sealed");
 });
 
+test("alerts panel: vault-level only, ntfy topic, browser notifications", async ({ page, context }) => {
+  await context.grantPermissions(["notifications"]);
+  await page.goto("/vault/?id=sp-momo-92991.testnet");
+  const a = page.getByTestId("alerts");
+  await expect(a).toContainText("nothing about positions");
+  await expect(page.getByTestId("ntfy-link")).toHaveAttribute("href", "https://ntfy.sh/silent-partner-sp-momo-92991-testnet");
+  await page.getByTestId("alerts-toggle").click();
+  await expect(page.getByTestId("alerts-toggle")).toHaveText("Notifying in this browser ✓");
+  await expect(page.getByTestId("alert-list")).not.toContainText("Reading");
+});
+
 test("leader console reads as a private desk", async ({ page }) => {
   await page.goto("/leader/?id=sp-convict-8952.testnet");
   await expect(page.getByTestId("desk-key")).toContainText("Signal key");

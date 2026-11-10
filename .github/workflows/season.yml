@@ -90,6 +90,7 @@ jobs:
           SEASON_STATE_KEY: ${{ secrets.SEASON_STATE_KEY }}
           SEASON_ORACLE_KEY: ${{ secrets.SEASON_ORACLE_KEY }}
           NEARAI_API_KEY: ${{ secrets.NEARAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SEASON_STATE_DIR: ../season-state
           TICKS: "22"
         run: |

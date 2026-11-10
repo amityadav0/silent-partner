@@ -311,3 +311,8 @@ describe("calmest return", () => {
     expect(calmScore({ ret: 0.001, dd: 0 })).toBeCloseTo(2);
   });
 });
+
+import { ntfyTopic } from "../lib/community";
+describe("alerts", () => {
+  it("ntfy topic matches the season's", () => expect(ntfyTopic("c0.sp-sop-92991.testnet")).toBe("silent-partner-c0-sp-sop-92991-testnet"));
+});

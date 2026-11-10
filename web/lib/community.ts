@@ -90,3 +90,6 @@ export const launchOfVault = (vault: string) => view<Launch | null>(REGISTRY, "l
 export function communityMeta(l: Launch): VaultMeta {
   return { name: l.name, leaderKind: l.kind, style: l.style, risk: l.risk, blurb: `Community ${l.kind === "ai" ? "AI leader on NEAR AI Cloud: its strategy is sealed, only its hash is on chain" : "leader trading by hand"}. Led by ${l.leader}.`, mode: "paper", network: "testnet", season: true, community: true };
 }
+
+/** Public ntfy.sh topic for a vault's alerts (same as operator/src/season/alerts.ts). */
+export const ntfyTopic = (vault: string) => `silent-partner-${vault.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}`;

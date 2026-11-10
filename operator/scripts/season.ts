@@ -33,6 +33,7 @@ import { cardPng, cardSvg } from "../src/season/card.js";
 import { viewCall } from "../src/intents.js";
 import { communityKeys, communityPersona, unseal, type Launch } from "../src/season/community.js";
 import { ackSignals, launches, operatorAccount, pendingSignals, provision } from "../src/season/provision.js";
+import { computeAlerts, pushNtfy, telegram, type AlertEvent, type Snapshot, type TgState, type VaultState } from "../src/season/alerts.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
 const local = existsSync("data/season-keys.json") ? JSON.parse(readFileSync("data/season-keys.json", "utf8")) : {};
@@ -174,6 +175,42 @@ if (C && sealedSignals.length) {
     } catch (x) {
       communityLog.push({ error: `ack: ${String((x as Error).message).slice(0, 120)}` });
     }
+  }
+}
+
+// Alerts: vault-level events from public chain state, to season-state/alerts.json, ntfy.sh and Telegram.
+const alertVaults = [...S.vaults.filter((v) => v.strategy !== "drill").map((v) => ({ id: v.id, name: v.name })), ...community.map((l) => ({ id: l.vault!, name: l.name }))];
+const snaps: Snapshot[] = [];
+for (const v of alertVaults) {
+  try {
+    const g = await viewCall<{ price: string; last_nav_ms: number; emergency: boolean; pending_withdrawals: number }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
+    const claims = await viewCall<{ amount: string; paid: string }[]>(env.rpc, v.id, "get_claims", { from: 0, limit: 1000 }, fetch, "optimistic");
+    snaps.push({ vault: v.id, name: v.name, price: Number(BigInt(g.price)) / 1e18, lastNavMs: g.last_nav_ms, emergency: g.emergency, pending: g.pending_withdrawals, claimsPaid: claims.filter((c) => BigInt(c.paid) >= BigInt(c.amount)).length });
+  } catch {
+    /* a missed read skips this vault's alerts for one tick */
+  }
+}
+const alertFile = join(sealed, "alerts.json");
+let alertDoc: { state: Record<string, VaultState>; events: AlertEvent[] } = { state: {}, events: [] };
+try {
+  alertDoc = JSON.parse(readFileSync(alertFile, "utf8"));
+} catch {
+  /* first run */
+}
+const fresh = computeAlerts(alertDoc.state, snaps, Date.now());
+writeFileSync(alertFile, JSON.stringify({ state: fresh.state, events: [...fresh.events, ...alertDoc.events].slice(0, 200) }, null, 2) + "\n");
+for (const ev of fresh.events) {
+  console.log(JSON.stringify({ alert: ev }));
+  await pushNtfy(ev).catch(() => undefined);
+}
+if (e.TELEGRAM_BOT_TOKEN) {
+  const tgFile = join(plain, "telegram.json");
+  files.push("telegram.json");
+  try {
+    const st: TgState = existsSync(tgFile) ? JSON.parse(readFileSync(tgFile, "utf8")) : { offset: 0, subs: {} };
+    writeFileSync(tgFile, JSON.stringify(await telegram(e.TELEGRAM_BOT_TOKEN, st, fresh.events, new Set(alertVaults.map((v) => v.id)))));
+  } catch (x) {
+    console.log(JSON.stringify({ telegram_error: String((x as Error).message).slice(0, 120) }));
   }
 }
 
