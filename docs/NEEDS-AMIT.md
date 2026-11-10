@@ -269,17 +269,13 @@ The README names Scope as the source of the carried-over code and as a separate 
 gh repo edit amityadav0/scope --visibility public --accept-visibility-change-consequences
 ```
 
-## 10. NEAR AI key stopped working (2026-11-10): your NEAR AI account
+## 10. NEAR AI is paused (2026-11-10): nothing to fix on your side
 
-Since about 2026-11-09 22:30 UTC, NEAR AI Cloud answers the season's key with HTTP 500 "Failed to validate API key". A made-up key gets a clean 401, so this is our key's account (credits used up, or the key disabled or expired), not an outage. The same key in your local `.env` fails the same way. Until it's fixed, the five AI leaders hold and don't trade. Everything else keeps running, and the site says "NEAR AI unavailable: holding" instead of pretending they decided. The `uptime` issue from `health.yml` tracks it.
+Since about 2026-11-09 22:30 UTC, every NEAR AI call has failed with HTTP 500 "Failed to validate API key". The cause is on NEAR AI's side: they found unauthorized access to their internal systems and paused NEAR AI Cloud inference while they investigate (https://x.com/near_ai/status/2119931564960399737). It's not your credits or your key. Until inference resumes, the AI leaders (house and community) hold and don't trade. Everything else keeps running, the site says "NEAR AI unavailable: holding", and the `uptime` issue (#1) tracks it and closes itself when they answer again.
 
-1. At https://cloud.near.ai: check the credit balance (top up if it's empty; about $0.20/day for the five leaders), then create a new API key.
-2. Install it for the season and locally (paste the key at the prompt, so it stays out of your shell history):
-   ```sh
-   gh secret set NEARAI_API_KEY -R amityadav0/silent-partner
-   ```
-   Then replace the `NEARAI_API_KEY=` line in `~/silent-partner/.env`.
-3. Nothing else is needed: the next tick (within 15 minutes) uses it, and the uptime issue closes itself once the AI leaders answer.
+When NEAR AI says it's back, one optional precaution, given the incident:
+1. At https://cloud.near.ai, create a new API key and revoke the old one.
+2. `gh secret set NEARAI_API_KEY -R amityadav0/silent-partner` (paste the key at the prompt), and replace the `NEARAI_API_KEY=` line in `~/silent-partner/.env`.
 
 ## 11. Optional: Telegram alerts bot (2026-11-10), from your Telegram account
 

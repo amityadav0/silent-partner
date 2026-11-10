@@ -93,7 +93,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Uptime guard: health.yml every 30 min, reruns the season, one `uptime` issue (D-J-2); thresholds and top-ups in docs/keep-online.md (D-J-5)
 - [x] "Try it in 60 s" at the top of the README and on the landing page; AI decisions panel with the browser hash check (D-J-4)
 - [x] Scope README line: not needed, Amit isn't submitting Scope (2026-11-10)
-- [ ] NEAR AI key fails since 2026-11-09 22:30 UTC: AI leaders hold, shown on the site (D-J-3). Waiting on Amit, NEEDS-AMIT §10
+- [ ] NEAR AI Cloud inference paused by NEAR AI since 2026-11-09 ~22:30 UTC (security incident on their side): AI leaders hold, shown on the site (D-J-3). Waiting on NEAR AI; optional key rotation after, NEEDS-AMIT §10
 
 ## Open season and polish (Nov 10)
 - [x] P0 polish: typography, copy, light default, calmer leaderboard (02b7081)
@@ -106,4 +106,4 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- Waiting on Amit: §10 the NEAR AI key (AI leaders hold until then), §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- Waiting on NEAR AI to resume inference (AI leaders hold). Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
