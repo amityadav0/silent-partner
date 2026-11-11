@@ -1,9 +1,9 @@
 {
   "state": {
     "sp-momo-92991.testnet": {
-      "price": 0.9527790927009616,
+      "price": 0.9457654120893344,
       "peak": 1,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -19,9 +19,9 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.9544114888527535,
+      "price": 0.94939966751366,
       "peak": 1,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 1.038756364592692,
+      "price": 1.0349273315337693,
       "peak": 1.0402850804930872,
       "ddLevel": 0,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9773384974378767,
+      "price": 0.9669113917556973,
       "peak": 1.0034015725891603,
       "ddLevel": 0,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.9873332218179903,
+      "price": 0.9793907434861471,
       "peak": 1.0178035118132513,
       "ddLevel": 0,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 1.0003285026186004,
+      "price": 0.9971466268538871,
       "peak": 1.0063633106894039,
       "ddLevel": 0,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.96689796,
+      "price": 0.96117497,
       "peak": 1,
       "ddLevel": 0,
       "silent": false,
@@ -83,6 +83,18 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-momo-92991.testnet",
+      "kind": "drawdown",
+      "text": "Momentum bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-11T02:09:48.166Z"
+    },
+    {
+      "vault": "sp-ai-92991.testnet",
+      "kind": "drawdown",
+      "text": "Allocator: drawdown crossed −5% from its high.",
+      "at": "2026-11-11T02:09:48.166Z"
+    },
     {
       "vault": "sp-trend-8952.testnet",
       "kind": "move",
