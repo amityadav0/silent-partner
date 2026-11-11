@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-11T07:27:08.893Z",
+  "ranAt": "2026-11-11T07:42:08.540Z",
   "marketData": true,
   "oracle": {
-    "tx": "Ap3gL9booVirrC7rFMFRZ7Fhm5Tz6xyXCoMc184fLnt3"
+    "tx": "9QzCkUEbnu6NVgS2nmMQUifY7B6B8Wc2U8By3KMq8cRc"
   },
   "warnings": [
     {
@@ -16,81 +16,85 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 208,
+      "epoch": 209,
       "nav": "802258897",
-      "tx": "4aQcoPScJZq5xr1PXzyz2b1HW4XvKy2AcRwPYWhm26L3"
+      "tx": "Am2x4jinbGSiCkeXQYtYoFwax6tZjSNUF7mSiZwDF7FQ"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 212,
-      "nav": "819104277",
-      "tx": "9Kg2WVn9KLpzp31SUzpYkygEjk7H2gLm28gJDDYHmGmG"
+      "epoch": 213,
+      "nav": "814437088",
+      "tx": "F97fYTyyFeTzEK2Np8wtuuRoHC2xcmHmqfPjpnJkVrBV"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 209,
-      "nav": "659535259",
-      "tx": "7iNR54iKVUo4ohzKmSLAHBmfFbyofj6ZXWKGp3nVDifV",
+      "epoch": 210,
+      "nav": "657985578",
+      "tx": "GfqFMWTfg5KqYx9HAp4YojyzwHRHKMXSueST9L6t8vRw",
+      "signal_hash": "24d820e847c37ea7b3aa9dff20eb0b8388cf355a70b90eadc73d1f4198d9823e",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 362,
-        "completion_tokens": 615
+        "prompt_tokens": 361,
+        "completion_tokens": 367
       },
       "ai_target_band": "20–40%",
-      "ai_rationale_hash": "7dbb5315f5c5be8f98756ac59ce653ba7a47bd0479d15e234930abe330037718"
+      "ai_rationale_hash": "59d8ca52762242990c2c6100aedd15bb836f52676f9ff887fed4b6e63098b0cf"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "error": "NAV rejected (5Uo712nMyNYQPGUWmaJJmsQqfRbyXNrhGTvnsKzo4xfk): silent-partner.nav_rejected epoch=167 nav=549397814 reason=24h window: share return -511bps outside [-423, 311]bps (asset -12bps)"
+      "error": "NAV rejected (AiKzi5jKcdF1qMCffwUrBPavy1g1qbCJP4mdyzNoQhTm): silent-partner.nav_rejected epoch=167 nav=548963547 reason=24h window: share return -518bps outside [-469, 312]bps (asset -57bps)"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 194,
-      "nav": "626497676",
-      "tx": "D9EwJ9xKeW4cBV7m3qXg1iWJacbC9A2FM1k4kJ6mT2d2",
+      "epoch": 195,
+      "nav": "625326932",
+      "tx": "Q46kyJraiYP3CopoNep6xG3cj7RG3Dok4HqtGrpi7Uj",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 372,
-        "completion_tokens": 233
+        "prompt_tokens": 371,
+        "completion_tokens": 305
       },
       "ai_target_band": "40–60%",
-      "ai_rationale_hash": "a128b06155d610cdfc86f4133f008adb2ea28e64a6f464ba258a8121a4fdc859"
+      "ai_rationale_hash": "57eaa9bcc6aae643d1c09378cd42f3a34a1886e10749f75ca670e4c191eb98c4"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 194,
-      "nav": "647489596",
-      "tx": "D8zTP9jEouUmK6UtrdrdYjaMziW9YbDqVYuMPaa1b5y",
+      "epoch": 195,
+      "nav": "646819439",
+      "tx": "Fqwfj36nZpS7tbVZdqcYPnoLHjYh7TzNW6Y9gp6LzxCV",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 383,
-        "completion_tokens": 631
+        "prompt_tokens": 382,
+        "completion_tokens": 350
       },
       "ai_target_band": "20–40%",
-      "ai_rationale_hash": "d2e7adace459b99e0c2b215d495263d49f92e42abcca58f955d530da24f60710"
+      "ai_rationale_hash": "5c69858715e4025d25e522094ea288fe5ab48e0a3a0b757f59d4bfb8aae3191a"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 188,
-      "nav": "608498221",
-      "tx": "GAc9pMUc83y3NMRYUcWfXmLhjHYMZbMU4XaFijcpCTpK",
+      "epoch": 189,
+      "nav": "607374155",
+      "tx": "9sR6p1yGuCZYcuRYXVFC1Ue3dMva4vaR3C9tTHhJrwYJ",
+      "signal_hash": "2920d2ed70438621a9cd6d9526742a79d51a8bc3e8a5a37b3e4875bf7e6a568a",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 370,
-        "completion_tokens": 499
+        "prompt_tokens": 369,
+        "completion_tokens": 461
       },
       "ai_target_band": "40–60%",
-      "ai_rationale_hash": "ca3ce1a1468c3d2132aae2e84940f78e90c28dce27f1a67e0ec7d5e548be95fb"
+      "ai_rationale_hash": "498088f5a432994a7055d33651b88692c6cecab6d5a790a8f243b8a8d36ab2ae"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 208,
-      "nav": "647997224",
-      "tx": "41T8ASFus7amBpkZjg3PBetxUnKtBq25HcKB8QDatM2h"
+      "epoch": 209,
+      "nav": "647116818",
+      "tx": "5QmxSqSuPstsWfrrnTrkjDVpbESrb7HbbV2GC4p69HMz"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
