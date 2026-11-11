@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-11T13:04:55.366Z",
+  "ranAt": "2026-11-11T13:19:39.893Z",
   "marketData": true,
   "oracle": {
-    "tx": "84iugEbqAe1eTzYnbv3MgzbTkP3qtu53W6CY3yS7C2JM"
+    "tx": "FcG8DnToVe6jRU5TfC4zBRhFNbHp4R1fPeFPTSo1DsHN"
   },
   "warnings": [
     {
@@ -16,85 +16,89 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 232,
-      "nav": "814197005",
-      "tx": "5HRuqu6ub8RJSPVCt55eDe17KKquc2qgVK2WrfVy6L6m"
+      "epoch": 233,
+      "nav": "820733505",
+      "tx": "HEsVf211f8iv4tFGQ1KYA3mut671uDFSRJeAgapSTkSt"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 236,
+      "epoch": 237,
       "nav": "822962314",
-      "tx": "75UouVcCRsd7JfkTj2NsFKwY8VdfW1DGP16f5C1gb952"
+      "tx": "57Jtj1Bfagu8vCPZ8uA3KRQVNoeH9LjR5GWftxqM29y"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 233,
-      "nav": "657244000",
-      "tx": "7bpzWs1d5ugtcpy3Mc12rzdVmcdZJyMEuvVfZacxhPsP",
+      "epoch": 234,
+      "nav": "662498561",
+      "tx": "3hsJVEd5aJE18RjQFVf9Yox7qCjGxe3y24VNcFgnXDtG",
+      "signal_hash": "df8aa2a4593cedfe69e4b7051d85591d06d5112c840ca00261b7ef8adbc94b07",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 360,
-        "completion_tokens": 558
+        "prompt_tokens": 358,
+        "completion_tokens": 413
       },
-      "ai_target_band": "80–100%",
-      "ai_rationale_hash": "0ed547b9a758bed41ada238a36fad7773dfcfebf9f4d7b954e7509cd9e0720ee"
+      "ai_target_band": "60–80%",
+      "ai_rationale_hash": "ec112cd99c9fdd237d8f2c524a615be72db9cf73a1c145a417fe3a476262d1bb"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "error": "NAV rejected (DLRPgQ49Qrx8mp6bph6U15bgNJGmbWAM4bUSWUxxnq4s): silent-partner.nav_rejected epoch=167 nav=551113638 reason=24h window: share return -481bps outside [-411, 662]bps (asset 351bps)"
+      "error": "NAV rejected (J3mg6owTCLXAYfBXrRvpqjMZqEHqxhcvwwCiM54eYWjc): silent-partner.nav_rejected epoch=167 nav=554445111 reason=24h window: share return -424bps outside [-411, 720]bps (asset 409bps)"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 218,
-      "nav": "635970906",
-      "tx": "BfasuagEiyQgwZg8dNZZyeVp9wJRWvM1poSsLemxENLB",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "ok",
-      "ai_tokens": {
-        "prompt_tokens": 370,
-        "completion_tokens": 2000
-      },
-      "ai_target_band": "hold",
-      "ai_rationale_hash": "353fd0de2519453a4f72b776c37021d25eeaa4915d93c6b65e0970ae079b8264"
-    },
-    {
-      "vault": "sp-voltgt-8952.testnet",
-      "epoch": 218,
-      "nav": "653589920",
-      "tx": "ArKFP9Kxc1g7M3e2zMUsuVsKCxrn6XtTX2GR84BvB19j",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "ok",
-      "ai_tokens": {
-        "prompt_tokens": 381,
-        "completion_tokens": 606
-      },
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "84b5231e89a7fb11e6ba03ad5bc0e53f847b7ae65ea7df16e03138d5e9cc4e67"
-    },
-    {
-      "vault": "sp-convict-8952.testnet",
-      "epoch": 211,
-      "nav": "616546527",
-      "tx": "9Z7CST7r1pUG49dbBruPWNpTMuPis4zXnbUceB2Z6XMS",
+      "epoch": 219,
+      "nav": "636394119",
+      "tx": "3XAMMpfbzkmAbKn8hZiRH535g79WBPwW7HnJ4kxfniA1",
+      "signal_hash": "ed917ec8f34d5f57ad22371a85a4e2a5aee123e9cd1c4a99f4881408fc388321",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
         "prompt_tokens": 368,
-        "completion_tokens": 470
+        "completion_tokens": 919
+      },
+      "ai_target_band": "0–20%",
+      "ai_rationale_hash": "3e14f512716e486d33c0d72c1952e3eacda3df61b4916a4c8a28eaccf37ff9b5"
+    },
+    {
+      "vault": "sp-voltgt-8952.testnet",
+      "epoch": 219,
+      "nav": "655570920",
+      "tx": "7Zv53puGpJqZ1znDfuPyxRccHuGbLwXjcTQDU3UYfrnU",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 379,
+        "completion_tokens": 355
+      },
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "dd43dd97ebd1159f1de36e2e198ba1d9b0fa5cb638fb2d8c7a67005891a10f4f"
+    },
+    {
+      "vault": "sp-convict-8952.testnet",
+      "epoch": 212,
+      "nav": "619436876",
+      "tx": "CmvynDCovfmSUaKvEemyP4UnC4nVGHBY2mTJv9SkTfVQ",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 366,
+        "completion_tokens": 441
       },
       "ai_target_band": "60–80%",
-      "ai_rationale_hash": "22f8a284e168324bb33b054036aec8513dd5bccda1f120c7994fdda509876e61"
+      "ai_rationale_hash": "541edacd57aa53854e7dfa46f5d0583b1c330d998fbca95aea8b98d93c165711"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 232,
-      "nav": "654833943",
-      "tx": "A4AF1mNz1anmoirnmHhAYSHnHkkPz2e4yxPtEo79EFQN"
+      "epoch": 233,
+      "nav": "656358860",
+      "tx": "3rmojFxHhqGBqLH7XaqJ48BRBVwDHLSACQ57Fw3coetL"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "{\"index\":0,\"kind\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: a NAV post is already waiting for its oracle price\"}}}}"
+      "error": "The account c0.sp-sop-92991.testnet wouldn't have enough balance to cover storage, required to have 270000000000000000001 yoctoNEAR more"
     }
   ]
 }
