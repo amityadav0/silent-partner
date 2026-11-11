@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-11T18:55:16.389Z",
+  "ranAt": "2026-11-11T19:09:36.173Z",
   "marketData": true,
   "oracle": {
-    "tx": "7bqcz8iTtf9k9TdVdtpEjcDPz6y4JWsvHvc7KJsxG9Z3"
+    "tx": "CaaGgmvHT2h6UwSs4UmQCKyKmGQFewYTJixUUZSwowyr"
   },
   "warnings": [
     {
@@ -16,99 +16,107 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 256,
-      "nav": "813190548",
-      "tx": "4JSgEHNKZ2uykfVt7BkKJvaoTdegEfKj7RPfc9fCcxuM"
+      "epoch": 257,
+      "nav": "807915837",
+      "tx": "6G4kXpiS51DqXJhf3FMYcDqq6Awx4ZgK1ePNo6ceaa5e",
+      "signal_hash": "55bbd40883d3f4e84be47473bd7b0500d1b654724754753432a584e69e1fd6c0",
+      "signal_status": "executed"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 260,
-      "nav": "822456254",
-      "tx": "75TgZZJm3r9dA5BMH2umKEAbv86uapRcmMgXocZAUGdJ"
+      "epoch": 261,
+      "nav": "818517153",
+      "tx": "ALAgEtX1iFrcN7mSpNTNwqhxeSv854YgqpCkoHtuDFT3",
+      "signal_hash": "d1571ed37fd11a47b2a46678fe6524884ed6e7c9dab70d03bff2d8fabd516862",
+      "signal_status": "executed"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 257,
-      "nav": "653606094",
-      "tx": "7jfEkqnmCLo72gDpxP4LEisg5whPQvi2uaMzoZfSmwwy",
-      "signal_hash": "c03bfa351983bd9963af89b682204096fb81d0928fd295bc5fc939dc826bb6cb",
+      "epoch": 258,
+      "nav": "650788416",
+      "tx": "6GCJrudk4EwF9JehXR1Ep8xazL14J3oRqizPQY4eKodD",
+      "signal_hash": "8727226f9e5eb9ecd185bfb0a2aa84afa71bea4eac22ce9aded1f314d6404ca5",
       "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 361,
-        "completion_tokens": 591
+        "prompt_tokens": 360,
+        "completion_tokens": 346
       },
-      "ai_target_band": "60–80%",
-      "ai_rationale_hash": "879359a9c83195c94b7c641a4c913a0751a7405edd0d5be64e76e381ff072f92"
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "961349b3a74d97542ff8d01ffb387dc34ff654fb7f08868c8a17774002872616"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 187,
-      "nav": "547596090",
-      "tx": "6HKnck6BKEFiBzQuACKewMtT15rpGckF5V6aiZtSDgMt",
-      "signal_hash": "7e8a13396b087c97973923481adc4c453d7c1139e02cd656177998796bc7ed0e",
+      "epoch": 188,
+      "nav": "547176984",
+      "tx": "EtXm1sVMGk4D84DCTpoGyjmPhHrGcfDXKMmJPgW3CV9n",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 386,
+        "completion_tokens": 502
+      },
+      "ai_target_band": "0–20%",
+      "ai_rationale_hash": "582444a283284bbc299db47de4cf5789ce102fdb8f522cbfbf510bc0ab8ec3aa"
+    },
+    {
+      "vault": "sp-contra-8952.testnet",
+      "epoch": 242,
+      "nav": "634869109",
+      "tx": "3HvknPLRW98iw6rDm29tuJy4mR6XgPBgNHh1TppZP6ak",
+      "signal_hash": "495b2d4e176ad6f70dfc4f5735b059209db3092b34199465740fdb4849745c9a",
       "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 387,
-        "completion_tokens": 304
+        "prompt_tokens": 370,
+        "completion_tokens": 746
       },
-      "ai_target_band": "0–20%",
-      "ai_rationale_hash": "db6e2d45d9bedc2544b4eb778688838c7c248847e3bb2f01314408d88283ce18"
-    },
-    {
-      "vault": "sp-contra-8952.testnet",
-      "epoch": 241,
-      "nav": "636078233",
-      "tx": "2Kcj7jLGu9zfnXPFEbG9U6sYqos8x6LZioRfpxkoEBB5",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "ok",
-      "ai_tokens": {
-        "prompt_tokens": 371,
-        "completion_tokens": 2000
-      },
-      "ai_target_band": "hold",
-      "ai_rationale_hash": "a30e75e97e136b3ac5a4e28cf84c823382b31fd90b94f03015a1c9e3ec00bf79"
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "022b795b464981931e4ee7b05eca1b62688a49c95e2cc8957c5a0e961e825199"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 241,
-      "nav": "648480523",
-      "tx": "62NgtBHFhM9oLVX3pvSzqfXWuEGoqkuLApJ1f6RKuCNX",
+      "epoch": 242,
+      "nav": "647241388",
+      "tx": "ADnEeP13XB72D7xLadtKN6i8m7f4LswaaL4hWrxW64XB",
+      "signal_hash": "09148443f10094cfbe0f49ab4516a838cceb3be51d7181f403ddd8cad0f49524",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 382,
-        "completion_tokens": 952
+        "prompt_tokens": 381,
+        "completion_tokens": 511
       },
       "ai_target_band": "20–40%",
-      "ai_rationale_hash": "d75ca54343bf45a427332a6e7736863bec3b8bc74d8212ad15d47ac273fe64f0"
+      "ai_rationale_hash": "60c1742340e838931b6ee1dad5d35646350989b485ff43cb48072883e14c4086"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 234,
-      "nav": "612373026",
-      "tx": "22PxZmD4mR1iic43MaZBf5RCFHyL2653BZVxtgAJNaVx",
+      "epoch": 235,
+      "nav": "610146555",
+      "tx": "DuVHoYpkxkgZnm2KQQpdJ3DnfmmththMqjQYCjxPoEde",
+      "signal_hash": "9186de15de9f87f1282b54c507eb581a18c00bf3f34787e7c07fe1e88444dc11",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 369,
-        "completion_tokens": 889
+        "prompt_tokens": 368,
+        "completion_tokens": 867
       },
       "ai_target_band": "40–60%",
-      "ai_rationale_hash": "f2438542c22562a44e4aec89a2adbc8ce1ba32042418ebb52a378632da92c981"
+      "ai_rationale_hash": "45e703aebc4fe7c0480635a9a655f1c1874668d9c6a3d45b884b6df4f8f25811"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 254,
-      "nav": "653806849",
-      "tx": "2JvcpF78f2eqeDWTeTNM7M6rfxRo6U7GrXfAJXX9PKLE"
+      "epoch": 255,
+      "nav": "652416206",
+      "tx": "E5VaHUGsPrZTweyaBt9apw5mRZVyRadAx8HDSz6oLhdK"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "The account c0.sp-sop-92991.testnet wouldn't have enough balance to cover storage, required to have 270000000000000000001 yoctoNEAR more"
+      "error": "The account c0.sp-sop-92991.testnet wouldn't have enough balance to cover storage, required to have 260000000000000000001 yoctoNEAR more"
     }
   ]
 }
