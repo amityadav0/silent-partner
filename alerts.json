@@ -1,16 +1,16 @@
 {
   "state": {
     "sp-momo-92991.testnet": {
-      "price": 0.9530021254962974,
+      "price": 0.9475649577241546,
       "peak": 1,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 1.003599998116661,
+      "price": 1.0017411873405508,
       "peak": 1.0053623096909017,
       "ddLevel": 0,
       "silent": false,
@@ -19,9 +19,9 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.9505597716273252,
+      "price": 0.9470049442232379,
       "peak": 1,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 1.040739447069493,
+      "price": 1.038884434324286,
       "peak": 1.0428453905838393,
       "ddLevel": 0,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9701685438568054,
+      "price": 0.9687468247166722,
       "peak": 1.0034015725891603,
       "ddLevel": 0,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.9823580889048203,
+      "price": 0.9805987021237543,
       "peak": 1.0178035118132513,
       "ddLevel": 0,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 1.0003014255178093,
+      "price": 0.9996539098613145,
       "peak": 1.0063633106894039,
       "ddLevel": 0,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.96662629,
+      "price": 0.96603274,
       "peak": 1,
       "ddLevel": 0,
       "silent": false,
@@ -83,6 +83,18 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-momo-92991.testnet",
+      "kind": "drawdown",
+      "text": "Momentum bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-11T04:27:55.252Z"
+    },
+    {
+      "vault": "sp-ai-92991.testnet",
+      "kind": "drawdown",
+      "text": "Allocator: drawdown crossed −5% from its high.",
+      "at": "2026-11-11T04:27:55.252Z"
+    },
     {
       "vault": "sp-contra-8952.testnet",
       "kind": "high",
