@@ -1,0 +1,32 @@
+{
+  "cfg": {
+    "owner": "e5e48dcfe4ee062fc78dda34bd50885a1de812af069f939c8c544f9c2df625fd",
+    "operator": "c24664ec4591796ae1672b277dec9f211fb7e5bf63277598f07038b971f66bff",
+    "leader": "e5e48dcfe4ee062fc78dda34bd50885a1de812af069f939c8c544f9c2df625fd",
+    "base_token": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    "base_asset_id": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    "intents_contract": "intents.near",
+    "mpc_contract": "v1.signer",
+    "mpc_path": "silent-partner/vault",
+    "oneclick_key": "ed25519:reYaWhvwu8Jzo3WUM3zhn6VrhuMEF4eADL17qtRVifc",
+    "attestation_key": "ed25519:4mm15GiMGtZSfQnSy14N2N2D114sUcSSSc3qBdyasgih",
+    "perf_fee_bps": 2000,
+    "min_leader_bps": 1000,
+    "max_slippage_bps": 100,
+    "min_deposit": "1000000",
+    "allowed_assets": [
+      "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+      "nep141:wrap.near"
+    ],
+    "nav_oracle": null,
+    "nav_quotes": {
+      "base_id": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+      "risk_id": "nep141:wrap.near",
+      "max_age_ms": 120000,
+      "tolerance_bps": 25,
+      "max_spread_bps": 40,
+      "min_interval_ms": 3600000,
+      "window_up_bps": 200
+    }
+  }
+}
