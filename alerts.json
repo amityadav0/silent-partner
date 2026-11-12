@@ -10,16 +10,16 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9603710769410709,
+      "price": 0.9549548234279365,
       "peak": 1.0085308546861929,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.9257087718504236,
+      "price": 0.9254565796480984,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.8967464336907035,
+      "price": 0.8958275189207562,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 1.01654745597922,
+      "price": 1.0117102655321035,
       "peak": 1.048802249757816,
       "ddLevel": 0,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9417965394583893,
+      "price": 0.9403772853445097,
       "peak": 1.0034015725891603,
       "ddLevel": 1,
       "silent": false,
@@ -55,16 +55,16 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.9494036468218735,
+      "price": 0.9481444161030322,
       "peak": 1.0178035118132513,
       "ddLevel": 1,
       "silent": false,
       "emergency": false,
-      "pending": 0,
+      "pending": 1,
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9870031371634155,
+      "price": 0.9859706864744321,
       "peak": 1.009732148096798,
       "ddLevel": 0,
       "silent": false,
@@ -83,6 +83,18 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-meanrev-92991.testnet",
+      "kind": "drawdown",
+      "text": "Mean-reversion bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-12T06:45:58.383Z"
+    },
+    {
+      "vault": "sp-convict-8952.testnet",
+      "kind": "withdrawal",
+      "text": "Conviction: a withdrawal was queued (a holder's request or a copy stop-loss).",
+      "at": "2026-11-12T06:45:58.383Z"
+    },
     {
       "vault": "sp-meanrev-92991.testnet",
       "kind": "drawdown",
