@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-12T00:13:24.580Z",
+  "ranAt": "2026-11-12T00:31:31.341Z",
   "marketData": true,
   "oracle": {
-    "tx": "CcVMe8FCZ33dty5zdufkLJKgEPfhxCdUTKvqSNhKpo8E"
+    "tx": "B2zvYmrrUytNHBe2a7PAFiQSCcU9gpLS4R9v17ZYMQXv"
   },
   "warnings": [
     {
@@ -16,95 +16,75 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 278,
+      "epoch": 279,
       "nav": "807915837",
-      "tx": "2uYiGqNTPG6UDPEWK1BWZ83gUqZykh5kj5CUmaLNYE7L"
+      "tx": "EiqrqKMaVJPW9AvWcmMVDtfvwZFx6ZTexau4VpANKVqq"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 280,
-      "nav": "794981035",
-      "tx": "9Zdb1TkuNMWuaSgLMEBoJzTge3Wmy1Rrqy1ycryJw79x"
+      "epoch": 281,
+      "nav": "799818524",
+      "tx": "7vqAdqScRY2niQYgKt77ftN9ShJoxnmkXkkGhJNRYtPy"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 277,
-      "nav": "648887475",
-      "tx": "69K7kYcmqqLTuqXhx2nWCnSxjAA8MuVfYk3Noi6BRatk",
+      "epoch": 278,
+      "nav": "649189770",
+      "tx": "BsFDX75siEUmGAc72nh2FH3QZ4bGKcApVFj337i6QDVg",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 361,
-        "completion_tokens": 550
+        "prompt_tokens": 360,
+        "completion_tokens": 502
       },
       "ai_target_band": "0–20%",
-      "ai_rationale_hash": "a6a6e623eaa15bb3d076cbaa3ef06695c27936cc58e776e0ac211951104b6f6d"
+      "ai_rationale_hash": "57b0b60dbe8a7d52990e28e4ad791b2cd1a88fa6a0b7d310790928ac32e37751"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 207,
-      "nav": "543042093",
-      "tx": "CUvxf9TxDejyXM5iM4h3zQpaJa2A7rFPvGAMvfJsGS37",
+      "epoch": 208,
+      "nav": "542577878",
+      "tx": "B6TaKJm9A9gojPe99c6zQkKUsX3uhfBH4dyVozSWRkLi",
+      "signal_hash": "1e73d6226b8f1720eadfa8466023a85cdbb151a82845af74b159b0f030ffe329",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 387,
-        "completion_tokens": 421
+        "prompt_tokens": 386,
+        "completion_tokens": 756
       },
-      "ai_target_band": "0–20%",
-      "ai_rationale_hash": "17a37f42bc2ce6d353623d135dd79becfd687038453b0739e94f44858b20a5b4"
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "f7f522c5d4351dae6b43ecd1b3a3df7251a545e275ac5fb2028f261b337ca0e4"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 262,
-      "nav": "622878226",
-      "tx": "9fNn4LiMAjvaZyGYHnCZhwuiyvQtA3DFU3Z9MogWTZLZ",
+      "epoch": 263,
+      "nav": "628799069",
+      "tx": "3VvZQ88roTxVXJ3GFHjYWV2zoR1RhSmCqD8HpBjvngPa",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 371,
-        "completion_tokens": 1112
+        "prompt_tokens": 370,
+        "completion_tokens": 2000
       },
-      "ai_target_band": "80–100%",
-      "ai_rationale_hash": "971cc5d7e10982c23ac972577010df7634497c242842fa5d93b7f0f8f6e24a8c"
+      "ai_target_band": "hold",
+      "ai_rationale_hash": "f16541ed9d865f9f37ec3ce8f75034f5ab9612902c7798768345eb87b3c44b0b"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 262,
-      "nav": "639150499",
-      "tx": "G9bnBFdnpPdSYyDZXFUW533wJp22ZLnyUfCz5kr7daj",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "ok",
-      "ai_tokens": {
-        "prompt_tokens": 382,
-        "completion_tokens": 233
-      },
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "96d03180660deffc51942306bfad68413e11a79d87ad86bce59a44081c46d851"
+      "error": "NAV rejected (Asrn4o9wy7GvKdyFTZCWoyqhDmvjh3VtS8B9Tt52WbaD): silent-partner.nav_rejected epoch=263 nav=640695473 reason=no fresh oracle price"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 255,
-      "nav": "599275559",
-      "tx": "C7cXyFXrwtMbQMg1wP4af5Uoe9YP3aTY9PS2MjwGNPXS",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "ok",
-      "ai_tokens": {
-        "prompt_tokens": 369,
-        "completion_tokens": 438
-      },
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "67d539ce8f167dca526e513044ba030c7a487c592647abd68dd0a4f74970b461"
+      "error": "NAV rejected (141S4EUShrC8pqVhn4222NaufGJxK5iBMgmXSbvUiXoE): silent-partner.nav_rejected epoch=256 nav=600638459 reason=no fresh oracle price"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 275,
-      "nav": "645494177",
-      "tx": "FPLtXRzLJ9fRqQDe6hAcS2JgFkJC8dVUWtJXJaZVDZFR"
+      "error": "NAV rejected (AYDSDtVN1rfXZx1NZF4jM7oGaXFNasj2LK9zjQau7QWX): silent-partner.nav_rejected epoch=276 nav=647317995 reason=no fresh oracle price"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "The account c0.sp-sop-92991.testnet wouldn't have enough balance to cover storage, required to have 270000000000000000001 yoctoNEAR more"
+      "error": "NAV rejected (FkUjQ8mfF1G8kvMxcKraZbGj77y8TxxwyBxaoQziHSyH): silent-partner.nav_rejected epoch=102 nav=95570231 reason=no fresh oracle price"
     }
   ]
 }
