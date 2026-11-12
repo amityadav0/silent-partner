@@ -56,7 +56,7 @@ If the spares run dry, create a fresh testnet account from the faucet (`near acc
 
 | What | Effect | What to do |
 |---|---|---|
-| NEAR AI outage, key or credits (NEAR AI paused inference on 2026-11-10 after a security incident) | The five AI leaders hold and stop trading; ticks, NAVs and bots continue. `last-run.json` shows `ai_status: "unavailable"` and the vault page says "NEAR AI unavailable: holding". | Owner's NEAR AI account: check credits and the key, rotate it, then `gh secret set NEARAI_API_KEY`. A one-off failure is retried once inside the tick. |
+| NEAR AI outage, key or credits (NEAR AI paused inference on 2026-11-10 after a security incident) | The five AI leaders hold and stop trading; ticks, NAVs and bots continue. `last-run.json` shows `ai_status: "unavailable"` and the vault page says "NEAR AI unavailable: holding". | A provider-side pause needs nothing from us; the leaders resume on the first tick after NEAR AI answers and the `uptime` issue closes itself. For a key or credit problem: check the owner's NEAR AI account, rotate the key, then `gh secret set NEARAI_API_KEY`. A one-off failure is retried once inside the tick. |
 | GitHub cron skips | Scheduled runs are best-effort. The season loop re-dispatches itself every ~5h30m, so it doesn't depend on cron. | `health.yml` reruns `season.yml` when the tick is stale. |
 | Public RPC rate limits (FastNEAR 429) | Reads fall back to other endpoints (`web/lib/vault.ts` `rpc`). | Nothing, unless all endpoints fail for long. |
 | Testnet keys | Don't expire. | None. |
