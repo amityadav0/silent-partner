@@ -16,22 +16,17 @@ This list holds only what needs you: signatures or real funds, mainnet deploys, 
 
 ### Steps
 
-1. **Pick the account.** Use a mainnet account you control; call it `ACCOUNT`. An implicit (64-hex) account is simplest, because its key is accepted on intents without registration.
-2. **Register the key (named accounts only).** For a named account like `amit.near`, register the key you'll sign with on intents.near. This is one tx with 1 yocto:
+1. **Account: ready (2026-11-12).** A fresh implicit account `79bc21888f74e434e05fc751bb255eb1bc730103b97af96c52e53cf6e47d5ce0` was generated locally. Its key is only in `~/.near-credentials/{implicit,mainnet}/` and in `.env` (`ROUNDTRIP_ACCOUNT` / `ROUNDTRIP_PRIVATE_KEY`, gitignored). It doesn't need to exist on-chain or hold NEAR: the round trip is NEP-413 signatures only, and intents.near accepts an implicit account's own key without registration.
+2. **Fund it with 1 USDC on intents.** One tx from your own account that holds USDC. `msg` names the account intents.near credits, so the implicit account needs no USDC storage:
    ```sh
-   near contract call-function as-transaction intents.near add_public_key json-args '{"public_key":"ed25519:<your pk>"}' prepaid-gas '30 Tgas' attached-deposit '1 yoctoNEAR' sign-as <ACCOUNT> network-config mainnet sign-with-keychain send
+   near contract call-function as-transaction 17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 ft_transfer_call json-args '{"receiver_id":"intents.near","amount":"1000000","msg":"79bc21888f74e434e05fc751bb255eb1bc730103b97af96c52e53cf6e47d5ce0"}' prepaid-gas '100 Tgas' attached-deposit '1 yoctoNEAR' sign-as <YOUR_ACCOUNT> network-config mainnet sign-with-keychain send
    ```
-3. **Put 1 USDC on your public intents balance.** This is one tx. An empty `msg` credits the sender:
+   Check it with `intents.near mt_balance_of {"account_id":"79bc…5ce0","token_id":"nep141:17208628…33a1"}`, which should return `1000000`.
+3. **USDC storage: only for the optional withdraw (step 6).** The account isn't registered on the USDC contract (`storage_balance_of` = null; the minimum is 0.00125 NEAR). Pay it from your account only if you'll `ft_withdraw` to the implicit account:
    ```sh
-   near contract call-function as-transaction 17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 ft_transfer_call json-args '{"receiver_id":"intents.near","amount":"1000000","msg":""}' prepaid-gas '100 Tgas' attached-deposit '1 yoctoNEAR' sign-as <ACCOUNT> network-config mainnet sign-with-keychain send
+   near contract call-function as-transaction 17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 storage_deposit json-args '{"account_id":"79bc21888f74e434e05fc751bb255eb1bc730103b97af96c52e53cf6e47d5ce0","registration_only":true}' prepaid-gas '30 Tgas' attached-deposit '0.00125 NEAR' sign-as <YOUR_ACCOUNT> network-config mainnet sign-with-keychain send
    ```
-   Check it with `intents.near mt_balance_of {"account_id":"<ACCOUNT>","token_id":"nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"}`, which should return `1000000`. The near.com UI deposit works too.
-4. **Run the script.** Add these lines to `.env` yourself and don't paste the key anywhere else:
-   ```
-   ROUNDTRIP_ACCOUNT=<ACCOUNT>
-   ROUNDTRIP_PRIVATE_KEY=ed25519:...
-   ```
-   Then run:
+4. **Run the script.** `.env` already has the account and key. Run:
    ```sh
    cd operator && ROUNDTRIP_LIVE=1 npx tsx --env-file-if-exists=../.env scripts/roundtrip.ts ../docs/probes/p1-roundtrip-live.json
    ```
