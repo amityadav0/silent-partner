@@ -354,3 +354,7 @@ Before the fix, Trend Rider's window stood at NEAR −7.1% since its anchor and 
 | first deploys, superseded (trend, convict, contra, voltgt) | [`9oTWwDda…`](https://testnet.nearblocks.io/txns/9oTWwDda5vZrf6TnmdX7cVmA821BJxvJxbACKyedt7NB), [`DiProDnM…`](https://testnet.nearblocks.io/txns/DiProDnMFtocSNkkg8MYaQFD2QbRL5RSs8a4q5va5NrU), [`13JqFL9Z…`](https://testnet.nearblocks.io/txns/13JqFL9ZL3fc9PLBE8TG6Fj8Hi8FeEwpWV4TKpbHeB3j), [`HiqywyFR…`](https://testnet.nearblocks.io/txns/HiqywyFR4ZX1qJXGkXHemwhS5GmB7cUYaDar1uz2UgsX) |
 | 3 NEAR from `sp-lai-92991` to Calm Owl (`c0.sp-sop-92991.testnet`, out of NEAR since 2026-11-11) | [`6moUePvW…`](https://testnet.nearblocks.io/txns/6moUePvW6ri3pcauH3eKugJttum1g4bBXoUesaRomBk8) |
 
+## First TEE receipts for AI decisions (D-AI-4, 2026-11-12)
+
+The season loop was restarted on `5900208`. At its first tick (2026-11-12 08:51:58 UTC), all six AI leaders (Allocator, Trend Rider, Contrarian, Vol Target, Conviction and Calm Owl) got a NEAR AI receipt. Each is a `provider_tee` signature by enclave key `0xfe0071895500a9755c18044948ab4f4e1a7f337e` over `<model>:<sha256(request)>:<sha256(response)>`, and the model's TDX quote binds that key and the tick's nonce (`bound: true`), with NVIDIA GPU evidence present. The browser checker (`web/lib/receipt.ts`), run against that tick's `last-run.json` and `attestations.json`, passed signature, model, memo and quote binding for all six. The memo in each leader-signed signal is now `sha256(signed text : quote digest)`.
+
