@@ -209,7 +209,7 @@ This is `POST https://nearhackathon.com/api/applications` with `Content-Type: ap
 - Submit once. Fixes go through https://nearhackathon.com/request-changes.
 - The deadline is 2026-11-14 23:59 UTC, and the repo must be public by then (it is).
 
-Fill in the four `<…>` fields, then set `requestId` once with `uuidgen | tr A-Z a-z` and reuse it on any retry.
+Fill in the three remaining `<…>` fields (nearAddress is `amityadav.near`), then set `requestId` once with `uuidgen | tr A-Z a-z` and reuse it on any retry.
 
 ```json
 {
@@ -219,10 +219,10 @@ Fill in the four `<…>` fields, then set `requestId` once with `uuidgen | tr A-
   "email": "<your email>",
   "size": "1",
   "tracks": ["privacy", "defi", "agents"],
-  "nearAddress": "<your mainnet account, e.g. amit.near>",
+  "nearAddress": "amityadav.near",
   "projectUrl": "https://github.com/amityadav0/silent-partner",
   "demoUrl": "<URL of your X post>",
-  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price, so there is no follower order for anyone to trade ahead of. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move (on mainnet, proven by two 1Click-signed quotes the contract verifies; the testnet season uses a mock price feed), so an operator can't inflate returns beyond that band. If the operator stops for 24 hours, holders exit pro rata without it. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash. Live testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
+  "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price, so there is no follower order for anyone to trade ahead of. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move (on mainnet, proven by two 1Click-signed quotes the contract verifies; the testnet season uses a mock price feed), so an operator can't inflate returns beyond that band. If the operator stops for 24 hours, holders exit pro rata without it. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash, with a NEAR AI TEE receipt. Live on NEAR mainnet with real USDC: the vault (code hash matching the reviewed reproducible build) ran a deposit, an MPC-signed shield, a confidential leader trade and a follower payout, all listed in docs/mainnet.md. Testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
   "consent": true
 }
 ```

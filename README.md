@@ -1,5 +1,13 @@
 # Silent Partner
 
+> **Live on NEAR mainnet, real USDC.** Vault [`1f80f62c…a36e`](https://nearblocks.io/address/1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e). Its code hash `9S9R3aaEs3cPs9nyjvhZKnsK7Ry3GcHTi1f1KVBtZy34` matches the reviewed reproducible build ([docs/mainnet.md](docs/mainnet.md)). Page: https://amityadav0.github.io/silent-partner/vault/?id=1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e
+> - Deploy: [`BVvZZYcn…`](https://nearblocks.io/txns/BVvZZYcnFspLT2t7nnCCLuqyh7dqqo3RSprJnw9UxhKH)
+> - First shield, signed by the vault's MPC key: [`2v7aU92E…`](https://nearblocks.io/txns/2v7aU92EcYUsgqDz6p12JfkwYAkRpB4wend8hpFqVZBT)
+> - Confidential leader trade, USDC → wNEAR: [`6jg61f4q…`](https://nearblocks.io/txns/6jg61f4qsPUPXK6cPzKaunZDdFP5Pjr7CWYf1uXpfEfz)
+> - Follower payout: [`E5KEBvXH…`](https://nearblocks.io/txns/E5KEBvXH7B83CzcaQQQ8Pmb9AVbn8HkFJKSyLcaaPx83), settled on-chain [`DBkm23XQ…`](https://nearblocks.io/txns/DBkm23XQpPU34HjSjt8DoPGFNiKfQAFypfkK9HhAzn6Q)
+>
+> The testnet paper season below is separate. Its numbers are never mixed with mainnet.
+
 > **Try it in 60 s**
 > 1. Flip the trade ticket from public to sealed: https://amityadav0.github.io/silent-partner/#ticket
 > 2. An AI leader's latest trade, matched in your browser to the hash of its sealed reasoning: https://amityadav0.github.io/silent-partner/vault/?id=sp-contra-8952.testnet#ai
@@ -9,7 +17,7 @@
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**Live site: https://amityadav0.github.io/silent-partner/**. It's a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
+**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
 ![Silent Partner landing page: a trade ticket stamped SEALED, with every field redacted](docs/screens/landing.png)
 

@@ -58,7 +58,8 @@ Balances: before, the confidential balance was empty. After the shield it showed
 | **Leader trade**: 25% USDC → wNEAR (confidential 1Click) | sign `6jg61f4qsPUPXK6cPzKaunZDdFP5Pjr7CWYf1uXpfEfz`, intent `G4ghXr2W6nHu2czXUTYYU6CcgaFzhWnfDBgqi1kQtCUi`, signal `1e93d2c8…052b` | 1.75 USDC → 0.51685 wNEAR (min 0.51419); `signals` = 1 on-chain |
 | D-H-2 plain-nonce check (read-only `simulate_intents`) | [probes/plain-nonce-mainnet.json](probes/plain-nonce-mainnet.json) | plain nonce **accepted** (versioned too), so payouts can settle via `is_nonce_used` |
 | Follower `request_withdraw`, 2,000,000 shares | `566BLzGi6AHGmsiYmGZ68CzxoEQumUH2EKoQoRqgY4EK` | pending: 1 |
-| Epoch 2: burn the shares and pay the claim | scheduled for 15:34 UTC (the 1 h minimum interval after epoch 1 at 14:32) | pending |
+| Epoch 2 (15:34 UTC) | `DTitp9HKHnLrLFiJH3Db4nCcYdqgS3dZxZHXmRgU9TeN` | NAV 6,982,430, price 0.99749. The withdrawal is priced here and starts maturing: a request burns at the post *after* the one that priced it, so nobody exits at a price they already knew |
+| **Epoch 3 (16:35 UTC): burn + payout** | post `BeagVHK5g8FQAQzDhwq8fXYx71fYQ637xrmUw14hGk58`; unshield sign `CC1TtU2oGXRKQFp4DEWitnY7sH1UfJHEA1HjQ7TFmhyv` (intent `HtQJnoiErfc4QpXHs46Fj1MzwjRMeytYhjNXCehqqxsG`); payout sign `31wDgXPoSirp6NWPxRvr7wht2PqgW18uh6iuWMpjRXp3`, exec `E5KEBvXH7B83CzcaQQQ8Pmb9AVbn8HkFJKSyLcaaPx83`, settle `DBkm23XQpPU34HjSjt8DoPGFNiKfQAFypfkK9HhAzn6Q` | **Follower paid 1,994,980 USDC units** (2,000,000 shares × 0.99749) to their `intents.near` balance through an MPC-signed `PublicPayout` with a plain nonce, and the claim settled as `paid`. Afterwards: price 1.00427 (NEAR up), 4,075 fee shares to the leader on the new high, 5,004,075 shares left, leader 40% |
 
 ## Next
 
