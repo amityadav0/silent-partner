@@ -144,10 +144,10 @@ export function RiskDots({ risk }: { risk?: "low" | "med" | "high" }) {
   );
 }
 
-/** Honest provenance label: "paper · testnet" or "live · mainnet". */
+/** Honest provenance label: "paper · testnet" or "MAINNET · real funds". */
 export function ModeChip({ id, meta }: { id: string; meta?: VaultMeta }) {
   const m = meta ?? metaOf(id);
-  return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds"}>{modeLabel(m)}</span>;
+  return <span className={`chip ${m.mode === "paper" ? "chip-paper" : "chip-ok"}`} data-testid="mode" title={m.mode === "paper" ? "Paper trades priced by real 1Click dry quotes; testnet tokens, no real funds" : "Real funds on NEAR mainnet"}>{modeLabel(m)}</span>;
 }
 
 const RISK_WORD = { low: "low", med: "medium", high: "high" } as const;

@@ -15,16 +15,23 @@ export const META: Record<string, VaultMeta> = {
   "sp-meanrev-92991.testnet": { ...season, name: "Mean-reversion bot", leaderKind: "bot", risk: "med", style: "Buys −1.5σ, sells +1.5σ", blurb: "Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above." },
   "sp-manual-92991.testnet": { ...season, name: "Manual leader", leaderKind: "human", risk: "med", style: "Signs by hand", blurb: "A human leader signing signals by hand." },
   "sp-drill-92991.testnet": { mode: "paper", network: "testnet", name: "Emergency drill", leaderKind: "drill", style: "Exit drill", blurb: "Test build with a 5-minute NAV timeout. The operator was stopped and a follower exited through the emergency path." },
-  "sp-vault-60270.testnet": { mode: "paper", network: "testnet", name: "First testnet vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted NAVs and one browser-signed signal." },
+  "sp-vault-60270.testnet": { mode: "paper", network: "testnet", name: "Genesis vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted NAVs and one browser-signed signal." },
+};
+
+/** The live mainnet vault (real funds, D-P5-11). Never listed with the testnet
+ *  paper season, so the two networks' numbers are never mixed. */
+export const MAINNET_VAULT = "1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e";
+export const MAINNET_META: Record<string, VaultMeta> = {
+  [MAINNET_VAULT]: { mode: "live", network: "mainnet", name: "Genesis (mainnet)", leaderKind: "human", risk: "med", style: "The first live vault on NEAR mainnet", blurb: "Real USDC. Deployed from the reviewed reproducible build. Shield, a confidential leader trade and a follower payout all ran through the vault's MPC key." },
 };
 
 export const DEFAULT_VAULTS = Object.keys(META);
 
 export const metaOf = (id: string): VaultMeta =>
-  META[id] ?? { name: id, leaderKind: "human", style: "", blurb: "", mode: id.endsWith(".testnet") ? "paper" : "live", network: id.endsWith(".testnet") ? "testnet" : "mainnet" };
+  META[id] ?? MAINNET_META[id] ?? { name: id, leaderKind: "human", style: "", blurb: "", mode: id.endsWith(".testnet") ? "paper" : "live", network: id.endsWith(".testnet") ? "testnet" : "mainnet" };
 
 /** The honest label shown next to every number from this vault. */
-export const modeLabel = (m: VaultMeta) => (m.mode === "paper" ? `paper · ${m.network}` : m.network === "mainnet" ? "live · mainnet" : `live · ${m.network}`);
+export const modeLabel = (m: VaultMeta) => (m.mode === "paper" ? `paper · ${m.network}` : m.network === "mainnet" ? "MAINNET · real funds" : `live · ${m.network}`);
 
 /** Leader badge: who decides the trades. */
 export const badgeOf = (m: VaultMeta) => ({ ai: "AI", bot: "Bot", human: "Human", drill: "Drill" })[m.leaderKind];

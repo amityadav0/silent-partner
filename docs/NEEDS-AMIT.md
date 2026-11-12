@@ -289,3 +289,28 @@ Alerts already work without it, through browser notifications and ntfy.sh push t
    gh variable set NEXT_PUBLIC_TELEGRAM_BOT -R amityadav0/silent-partner -b silent_partner_alerts_bot
    ```
 3. Tell me the username; I'll show the Telegram option on the vault pages. Followers send `/follow <vault id>` to the bot; the season answers within 15 minutes.
+
+## 12. Mainnet keeper: pick A, B or C (2026-11-12)
+
+**Why it matters.** The mainnet vault must get an accepted price post at least every 24 h. Otherwise anyone can switch it into emergency mode: deposits stop for good, and holders exit at the last price. Judges look Nov 16–18, and the demo has to stay up through Nov 25. Until you pick, I post by hand from this Mac, at least twice a day. The time of the last accepted post is in STATUS.md.
+
+**What a keeper needs.** Three things, and none of them is the vault key:
+- **The attestation key.** It signs each price; the contract checks it.
+- **An operator key** to send `post_nav`.
+- **The vault's fill log.** It holds the sealed positions the price is computed from, so it's private.
+
+A keeper only posts prices. It never trades or pays out; I do those by hand.
+
+**If a keeper secret leaks, the damage is bounded:**
+- **Prices:** the contract accepts a post only inside the band set by fresh signed 1Click quotes (±25 bps plus spreads, at most +2% in 24 h).
+- **Trades:** a `post_nav`-only key can't trade. Every other path needs the leader's signature or sends funds back to the vault.
+- **Privacy:** the leak would reveal the vault's positions, which is the one real cost.
+
+| | A. GitHub Actions (recommended) | B. launchd on your Mac | C. Both: Mac first, GitHub as a backup |
+|---|---|---|---|
+| Uptime | Runs every 3 h, whether your Mac is on or off | Only while the Mac is awake and online. Sleep for over 24 h means emergency | Best |
+| Keys | Two repo secrets: the attestation key, and a **new function-call key on the operator account that can call only `post_nav` on the vault**, with a 0.5 NEAR gas allowance. The full operator key stays on this Mac. The fill log is a third secret, updated after each manual trade | Stay on your Mac | As in A |
+| Worst case if leaked | Prices drift within the band, and positions are exposed. No funds can move | Same, if the Mac is compromised | Same as A |
+| Setup | Me: about 30 min plus one `add_key` tx from the operator account. You: say "A" | Me: about 15 min. You: keep the Mac plugged in and awake through Nov 25 (`caffeinate -s`, or Energy settings) | Both |
+
+**Recommendation: A.** It's the only option that survives your Mac sleeping or being away. A leaked secret can't move funds, because the key is limited to `post_nav` with a small gas allowance. To pick, reply "A", "B" or "C". Nothing goes into GitHub until you do.

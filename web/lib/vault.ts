@@ -2,7 +2,7 @@
 // them. Only on-chain NAV posts are used: no positions exist anywhere here.
 import { ed25519 } from "@noble/curves/ed25519";
 import { base58 } from "@scure/base";
-import { RPCS } from "./config";
+import { RPCS, rpcsFor } from "./config";
 
 export type NavPost = { epoch: number; nav: string; timestamp_ms: number; block_ms: number; price: string; total_shares: string; fee_shares: string; withdrawn: string; fills_head: string; signature: string };
 export type VaultView = { vault_account: string | null; total_shares: string; book_nav: string; price: string; hwm: string; epoch: number; last_nav_ms: number; stale: boolean; emergency: boolean; leader_shares: string; pending_withdrawals: number; signals: number };
@@ -11,7 +11,7 @@ export type Claim = { id: number; account: string; exit_account: string; amount:
 export type SignalRec = { index: number; hash: string; fill_hash: string; executed_ms: number; epoch: number };
 
 export async function view<T>(contract: string, method: string, args: object = {}, fetchImpl: typeof fetch = fetch): Promise<T> {
-  const r = await rpc({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: contract, method_name: method, args_base64: btoa(JSON.stringify(args)) } }, fetchImpl);
+  const r = await rpc({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: contract, method_name: method, args_base64: btoa(JSON.stringify(args)) } }, fetchImpl, rpcsFor(contract));
   return parseView<T>(contract, method, r);
 }
 

@@ -1,6 +1,9 @@
 // Smoke tests against the static export, reading the testnet vault live.
 // The signal test also needs the testnet operator on :8788
 // (operator: npx tsx scripts/serve-testnet.ts) and the local testnet keys.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { VAULT, leaderSeedHex, withLeaderKey } from "./helpers";
 
@@ -409,4 +412,40 @@ test("leaderboard: only vaults with 12 verified price posts are ranked", async (
   }
   const fresh = page.getByTestId("new-leaders");
   if (await fresh.count()) await expect(fresh).toContainText(/ranking after 12 price posts \(\d+\/12\)/);
+});
+
+test("AI vault: an error-only latest tick still shows the last decision and its receipts from the log", async ({ page }) => {
+  const id = "sp-contra-8952.testnet";
+  const fx = JSON.parse(readFileSync(join(process.cwd(), "../operator/test/fixtures/nearai-receipt.json"), "utf8"));
+  const { model, ...receipt } = fx.receipt;
+  const memo = createHash("sha256").update(`${receipt.text}:${receipt.quote_sha256}`).digest("hex");
+  await page.route("**/season-state/last-run.json", (r) => r.fulfill({ json: { ranAt: "2026-11-12T14:40:00Z", results: [{ vault: id, error: "NAV out of band" }] } }));
+  await page.route("**/season-state/attestations.json", (r) => r.fulfill({ json: { [receipt.quote_sha256]: { ...fx.attestation, seen: "2026-11-12T14:25:00Z" } } }));
+  await page.route("**/season-state/decisions.json", (r) =>
+    r.fulfill({ json: { [id]: [{ ranAt: "2026-11-12T14:25:00Z", ai_model: model, ai_status: "ok", ai_target_band: "40–60%", ai_rationale_hash: memo, signal_hash: null, ai_receipt: receipt }] } }),
+  );
+  await page.goto(`/vault/?id=${id}`);
+  const ai = page.getByTestId("ai-decisions");
+  await expect(ai.getByTestId("ai-last-tick")).toContainText("Last decision", { timeout: 30_000 });
+  await expect(ai.getByTestId("ai-last-tick")).toContainText("decided 40–60% NEAR");
+  await expect(ai.getByTestId("ai-latest-tick-note")).toContainText("no decision");
+  await expect(ai).toContainText(`${model} · NEAR AI Cloud`);
+  await expect(ai.getByTestId("ai-receipt").first()).toContainText("✓");
+  await expect(ai.getByTestId("ai-receipt").first()).toContainText("hold,");
+});
+
+test("mainnet vault: read live from mainnet, MAINNET chip, read-only, kept off the testnet leaderboard", async ({ page }) => {
+  const id = "1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e";
+  await page.goto(`/vault/?id=${id}`);
+  await expect(page.getByTestId("mode")).toHaveText("MAINNET · real funds", { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Genesis (mainnet)");
+  await expect(page.getByTestId("stat-attested")).toContainText("verified in your browser");
+  await expect(page.getByTestId("mainnet-readonly")).toBeVisible();
+  await expect(page.getByTestId("my-position")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: id })).toHaveAttribute("href", `https://nearblocks.io/address/${id}`);
+  await page.goto("/");
+  await expect(page.getByTestId("mainnet-line")).toContainText(/\d+ price posts, all verified/, { timeout: 30_000 });
+  await expect(page.getByTestId("event-mainnet").first()).toBeVisible();
+  await page.goto("/leaderboard/");
+  await expect(page.locator(`[data-testid="row-${id}"]`)).toHaveCount(0);
 });

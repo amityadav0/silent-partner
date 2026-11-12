@@ -1,4 +1,4 @@
-import { DEFAULT_VAULTS } from "./vaults";
+import { DEFAULT_VAULTS, MAINNET_META } from "./vaults";
 // Public build-time config. Nothing here is a secret.
 export const NETWORK = (process.env.NEXT_PUBLIC_NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
 /** Vault contracts listed on the leaderboard. */
@@ -13,6 +13,11 @@ export const RPCS: string[] = process.env.NEXT_PUBLIC_NEAR_RPC
     ? ["https://rpc.mainnet.fastnear.com", "https://near.drpc.org", "https://rpc.mainnet.near.org"]
     : ["https://rpc.testnet.fastnear.com", "https://near-testnet.drpc.org", "https://rpc.testnet.near.org"];
 export const NEAR_EXPLORER = NETWORK === "mainnet" ? "https://nearblocks.io" : "https://testnet.nearblocks.io";
+const MAINNET_RPCS = ["https://rpc.mainnet.fastnear.com", "https://near.drpc.org", "https://rpc.mainnet.near.org"];
+/** Network a contract lives on: known mainnet vaults read mainnet even on the testnet site. */
+export const networkOf = (contract: string): "testnet" | "mainnet" => (MAINNET_META[contract] ? "mainnet" : NETWORK);
+export const rpcsFor = (contract: string): string[] => (networkOf(contract) === NETWORK ? RPCS : MAINNET_RPCS);
+export const explorerFor = (contract: string): string => (networkOf(contract) === "mainnet" ? "https://nearblocks.io" : "https://testnet.nearblocks.io");
 export const TGAS = 1_000_000_000_000n;
 /** Display names and decimals for intents asset ids. */
 export const ASSETS: Record<string, { symbol: string; decimals: number }> = {

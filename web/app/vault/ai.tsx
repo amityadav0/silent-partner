@@ -7,6 +7,7 @@ import { short } from "../ui";
 import { checkReceipt, receiptOk, type AttestationDoc, type PublicReceipt } from "@/lib/receipt";
 
 type RunRow = { vault: string; ai_model?: string; ai_status?: "ok" | "unavailable"; ai_error?: string; ai_tokens?: unknown; ai_target_band?: string; ai_rationale_hash?: string | null };
+type Decision = { ranAt: string; ai_model: string; ai_status?: string; ai_target_band: string | null; ai_rationale_hash: string | null; signal_hash: string | null; ai_receipt?: PublicReceipt };
 type Recent = { ranAt: string; epoch: number; signal_hash: string; ai_target_band: string | null; ai_rationale_hash: string | null; ai_model?: string; ai_receipt?: PublicReceipt };
 
 const SEED = "https://raw.githubusercontent.com/amityadav0/silent-partner/master/operator/season/recent-signals.seed.json";
@@ -18,7 +19,9 @@ export function AiDecisions({ id }: { id: string }) {
   const [atts, setAtts] = useState<AttestationDoc | null>(null);
   const [run, setRun] = useState<{ ranAt: string; row: RunRow | undefined } | null>(null);
   const [recent, setRecent] = useState<Recent[] | null>(null);
+  const [decisions, setDecisions] = useState<Decision[]>([]);
   useEffect(() => {
+    fetch(seasonUrl("decisions.json")).then((r) => (r.ok ? r.json() : {})).then((j: Record<string, Decision[]>) => setDecisions(j[id] ?? []), () => setDecisions([]));
     view<SignalRec[]>(id, "get_signals", { from: 0, limit: 1000 }).then((s) => (setSignals(s), setLast(s.at(-1) ?? null)), () => setLast(null));
     fetch(seasonUrl("attestations.json")).then((r) => (r.ok ? r.json() : null)).then(setAtts, () => setAtts(null));
     fetch(seasonUrl("last-run.json")).then((r) => r.json()).then((j: { ranAt: string; results: RunRow[] }) => setRun({ ranAt: j.ranAt, row: j.results.find((x) => x.vault === id) }), () => setRun(null));
@@ -29,7 +32,13 @@ export function AiDecisions({ id }: { id: string }) {
       .then((j) => setRecent(j[id] ?? []), () => setRecent([]));
   }, [id]);
   const match = last && recent ? recent.find((x) => x.signal_hash === last.hash) : undefined;
-  const row = run?.row;
+  const latestRow = run?.row;
+  // A tick can end in a rejected NAV with no decision fields: show the last tick that decided.
+  const decided = (r?: RunRow) => !!r && !!r.ai_model && (!!r.ai_target_band || r.ai_status === "unavailable");
+  const lastDec = decisions.at(-1);
+  const fallback = !decided(latestRow) && lastDec ? { ranAt: lastDec.ranAt, row: { vault: id, ai_model: lastDec.ai_model, ai_status: lastDec.ai_status as RunRow["ai_status"], ai_target_band: lastDec.ai_target_band ?? undefined, ai_rationale_hash: lastDec.ai_rationale_hash, ai_tokens: lastDec.ai_status === "ok" ? true : undefined } } : null;
+  const shown = fallback ?? (run ? { ranAt: run.ranAt, row: latestRow } : null);
+  const row = shown?.row;
   const down = row?.ai_status === "unavailable" || (row?.ai_model && !row.ai_tokens && !row.ai_rationale_hash);
   return (
     <div className="panel flex flex-col gap-3" id="ai" data-testid="ai-decisions">
@@ -37,9 +46,10 @@ export function AiDecisions({ id }: { id: string }) {
       <div>
         <div className="row-kv"><span>Model</span><span className="break-all">{row?.ai_model ?? "…"} · NEAR AI Cloud</span></div>
         <div className="row-kv" data-testid="ai-last-tick">
-          <span>Last tick{run ? `, ${when(run.ranAt)}` : ""}</span>
-          <span className={down ? "neg" : undefined}>{!run ? "…" : down ? "NEAR AI unavailable: holding" : `decided ${row?.ai_target_band ?? "–"} NEAR`}</span>
+          <span>{fallback ? "Last decision" : "Last tick"}{shown ? `, ${when(shown.ranAt)}` : ""}</span>
+          <span className={down ? "neg" : undefined}>{!shown ? "…" : down ? "NEAR AI unavailable: holding" : row?.ai_target_band ? `decided ${row.ai_target_band} NEAR` : "no decision this tick"}</span>
         </div>
+        {fallback && run && <div className="row-kv muted text-sm" data-testid="ai-latest-tick-note"><span>Latest tick, {when(run.ranAt)}</span><span>no decision (the price post didn&apos;t go through)</span></div>}
         <div className="row-kv" data-testid="ai-latest">
           <span>Latest trade</span>
           <span>{last === undefined ? "…" : last ? `signal #${last.index}, ${when(last.executed_ms)}` : "none yet"}</span>
@@ -54,7 +64,7 @@ export function AiDecisions({ id }: { id: string }) {
           </div>
         )}
       </div>
-      <Receipts recent={recent} signals={signals} atts={atts} />
+      <Receipts recent={recent} decisions={decisions} signals={signals} atts={atts} />
       <p className="muted text-sm leading-normal">
         The exact target and the reasoning stay sealed. The leader-signed signal commits to the reasoning by its hash, and the contract checked the leader&apos;s signature when it recorded the trade. Your browser matched the season log&apos;s hash to the on-chain record just now.
       </p>
@@ -63,9 +73,16 @@ export function AiDecisions({ id }: { id: string }) {
 }
 
 /** One line per recent AI decision: its NEAR AI TEE receipt, checked in this browser. */
-function Receipts({ recent, signals, atts }: { recent: Recent[] | null; signals: SignalRec[]; atts: AttestationDoc | null }) {
+function Receipts({ recent, decisions, signals, atts }: { recent: Recent[] | null; decisions: Decision[]; signals: SignalRec[]; atts: AttestationDoc | null }) {
   if (!recent) return null;
-  const rows = recent.filter((x) => x.ai_receipt && x.ai_model).slice(-5).reverse();
+  // Executed trades (recent-signals) and every decision incl. holds (decisions.json), deduped by receipt signature.
+  const all = [...recent.filter((x) => x.ai_receipt && x.ai_model), ...decisions.filter((x) => x.ai_receipt && x.ai_model).map((x) => ({ ...x, epoch: 0, signal_hash: x.signal_hash ?? "" }))] as Recent[];
+  const seen = new Set<string>();
+  const rows = all
+    .sort((a, b) => Date.parse(a.ranAt) - Date.parse(b.ranAt))
+    .filter((x) => (seen.has(x.ai_receipt!.signature) ? false : (seen.add(x.ai_receipt!.signature), true)))
+    .slice(-5)
+    .reverse();
   if (!rows.length) return <p className="muted text-sm" data-testid="ai-receipts">TEE receipts start with this leader&apos;s next decision.</p>;
   return (
     <div className="flex flex-col gap-1" data-testid="ai-receipts">
@@ -75,9 +92,9 @@ function Receipts({ recent, signals, atts }: { recent: Recent[] | null; signals:
         const ok = receiptOk(c);
         const idx = signals.find((s) => s.hash === x.signal_hash)?.index;
         return (
-          <details key={x.signal_hash} className="text-sm" data-testid="ai-receipt">
+          <details key={x.ai_receipt!.signature} className="text-sm" data-testid="ai-receipt">
             <summary className="cursor-pointer">
-              <span className={ok ? "pos" : "neg"}>{ok ? "✓" : "✗"}</span> {idx !== undefined ? `#${idx}` : short(x.signal_hash, 4)} · signed in NEAR AI&apos;s TEE{x.ai_receipt!.gpu_evidence ? " (CPU + GPU attested)" : ""} · {x.ai_model!.split("/").pop()} · reasoning sealed
+              <span className={ok ? "pos" : "neg"}>{ok ? "✓" : "✗"}</span> {idx !== undefined ? `#${idx}` : x.signal_hash ? short(x.signal_hash, 4) : `hold, ${when(x.ranAt)}`} · signed in NEAR AI&apos;s TEE{x.ai_receipt!.gpu_evidence ? " (CPU + GPU attested)" : ""} · {x.ai_model!.split("/").pop()} · reasoning sealed
             </summary>
             <ul className="muted mt-1 flex flex-col gap-0.5 pl-4 text-xs">
               <li>{c.signature ? "✓" : "✗"} NEAR AI&apos;s enclave key <code>{short(x.ai_receipt!.signing_address, 6)}</code> signed this exact request and response</li>

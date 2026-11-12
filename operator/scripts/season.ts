@@ -327,6 +327,21 @@ for (const r of results.map(redact) as Record<string, any>[]) {
   recent[r.vault] = [...(recent[r.vault] ?? []), keep].slice(-20);
 }
 writeFileSync(recentFile, JSON.stringify(recent, null, 2) + "\n");
+// Every AI decision per vault, holds included (last 20), so the vault page can show the last
+// decision and its TEE receipt even when the latest tick was a rejected NAV with no decision.
+const decFile = join(sealed, "decisions.json");
+let decisions: Record<string, Record<string, unknown>[]> = {};
+try {
+  if (existsSync(decFile)) decisions = JSON.parse(readFileSync(decFile, "utf8"));
+} catch {
+  /* start over */
+}
+for (const r of results.map(redact) as Record<string, any>[]) {
+  if (!r.ai_model || (!r.ai_target_band && r.ai_status !== "unavailable")) continue;
+  const keep = { ranAt, epoch: r.epoch ?? null, ai_model: r.ai_model, ai_status: r.ai_status ?? "ok", ai_target_band: r.ai_target_band ?? null, ai_rationale_hash: r.ai_rationale_hash ?? null, signal_hash: r.signal_hash ?? null, ...(r.ai_receipt ? { ai_receipt: r.ai_receipt } : {}) };
+  decisions[r.vault] = [...(decisions[r.vault] ?? []), keep].slice(-20);
+}
+writeFileSync(decFile, JSON.stringify(decisions, null, 1) + "\n");
 // The attestation quotes behind this tick's receipts, keyed by quote digest (kept across ticks, last 50).
 const attFile = join(sealed, "attestations.json");
 let attDoc: Record<string, Attestation & { seen: string }> = {};

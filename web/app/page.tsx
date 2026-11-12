@@ -4,15 +4,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { VAULTS } from "@/lib/config";
 import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
-import { metaOf } from "@/lib/vaults";
+import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { Redact } from "./ui";
 
-type LiveEvent = { t: number; what: string; vault: string; id: string; ok: boolean };
+type LiveEvent = { t: number; what: string; vault: string; id: string; ok: boolean; mainnet?: boolean };
 const DRILL = "sp-drill-92991.testnet";
 
 function useLive() {
   const [s, setS] = useState<{ navs: number; verified: number; signals: number; events: LiveEvent[] } | null>(null);
+  const [main, setMain] = useState<{ epoch: number; ok: boolean; events: LiveEvent[] } | null>(null);
   useEffect(() => {
+    // The mainnet vault, kept apart from the testnet paper season's numbers.
+    loadVault(MAINNET_VAULT).then((d) => {
+      const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
+      const n = d.navs.at(-1);
+      const ev: LiveEvent[] = n ? [{ t: n.timestamp_ms, what: "Price post signed", vault: metaOf(d.id).name, id: d.id, ok: !v.bad.includes(n.epoch), mainnet: true }] : [];
+      setMain({ epoch: d.vault.epoch, ok: v.bad.length === 0, events: ev });
+    }, () => setMain(null));
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then(async (rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
@@ -42,7 +50,8 @@ function useLive() {
       });
     });
   }, []);
-  return s;
+  if (!s) return null;
+  return { ...s, main, events: [...(main?.events ?? []), ...s.events] };
 }
 
 const when = (t: number) => {
@@ -61,13 +70,13 @@ function RecentEvents({ events }: { events: LiveEvent[] }) {
           {events.map((e, i) => (
             <li key={i} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-sm" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} data-testid="recent-event">
               <span>
-                <span className={e.ok ? "pos" : "neg"} aria-label={e.ok ? "verified" : "failed check"}>{e.ok ? "✓" : "✗"}</span> {e.what} · <Link href={`/vault/?id=${e.id}`}>{e.vault}</Link>
+                <span className={e.ok ? "pos" : "neg"} aria-label={e.ok ? "verified" : "failed check"}>{e.ok ? "✓" : "✗"}</span> {e.mainnet && <span className="chip chip-ok mr-1" data-testid="event-mainnet">MAINNET</span>}{e.what} · <Link href={`/vault/?id=${e.id}`}>{e.vault}</Link>
               </span>
               <span className="muted tabular-nums">{when(e.t)}</span>
             </li>
           ))}
         </ul>
-        <p className="muted text-xs">Read from NEAR testnet just now. Price signatures are checked in your browser; no amounts or holders are shown.</p>
+        <p className="muted text-xs">Read from NEAR just now: rows marked MAINNET hold real funds, the rest are the testnet paper season. Price signatures are checked in your browser; no amounts or holders are shown.</p>
       </div>
     </section>
   );
@@ -164,6 +173,13 @@ export default function Landing() {
           <div><b>24 h</b><span>to an exit that doesn&apos;t need us</span></div>
           <div><b>0</b><span>positions on the public chain</span></div>
         </div>
+      </section>
+
+      <section className="wrap pt-6" data-testid="mainnet-line">
+        <p className="text-sm">
+          <span className="chip chip-ok mr-2">MAINNET</span>
+          Live on NEAR mainnet with real USDC: <Link href={`/vault/?id=${MAINNET_VAULT}`}>Genesis vault</Link>. Its MPC key signed the shield, a confidential leader trade and a follower payout.{live?.main ? ` ${live.main.epoch} price posts, ${live.main.ok ? "all verified in your browser" : "a signature check failed"}.` : ""}
+        </p>
       </section>
 
       {live && <RecentEvents events={live.events} />}

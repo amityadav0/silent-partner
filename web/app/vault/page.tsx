@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ASSETS, NEAR_EXPLORER, TGAS } from "@/lib/config";
+import { ASSETS, NETWORK, TGAS, explorerFor, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, drawdownWindow, fmtUnits, leaderStake, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
 import { LeaderChips, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
@@ -93,6 +93,8 @@ export default function VaultPage() {
   const st = status(vault);
   const free = mine ? mine.shares - mine.locked : 0n;
   const meta = cmeta ?? metaOf(data.id);
+  // A vault on the other network (the mainnet vault on the testnet site) is read-only here.
+  const foreign = networkOf(data.id) !== NETWORK;
   return (
     <section>
       <div className="vault-grid">
@@ -114,12 +116,12 @@ export default function VaultPage() {
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
             <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
-            <Stat label="Verified price posts" value={`${m.v.ok} / ${navs.length}`} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
+            <Stat label="Verified price posts" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>
 
           <ReturnsChart
             points={returns(navs)}
-            copy={copyOverlay(navs, paper.follow)}
+            copy={foreign ? undefined : copyOverlay(navs, paper.follow)}
             drawdown={m.win}
             title={
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
@@ -134,13 +136,21 @@ export default function VaultPage() {
           <WhoSeesWhat id={data.id} viewer={viewer} shares={mine?.shares ?? null} vault={vault} dec={m.dec} sym={m.sym} />
 
           {meta.community && <Letters vault={data.id} />}
-          <Alerts vault={data.id} />
+          {!foreign && <Alerts vault={data.id} />}
 
           <p className="muted text-sm leading-relaxed" data-testid="about">
             {meta.blurb} Led by <code>{cfg.leader}</code>. AUM {aumBucket(vault.book_nav, m.dec)} (bucketed).
           </p>
           <LinkedTrackRecord vault={data.id} />
 
+          {foreign ? (
+            <div className="panel" data-testid="mainnet-readonly">
+              <h2>Real funds on NEAR mainnet</h2>
+              <p className="muted mt-1 text-sm leading-relaxed">
+                Everything on this page is read live from NEAR mainnet and checked in your browser. This site&apos;s wallet is on testnet, so deposits and withdrawals for this vault aren&apos;t offered here. Every mainnet transaction is listed in <a href="https://github.com/amityadav0/silent-partner/blob/master/docs/mainnet.md">docs/mainnet.md</a>.
+              </p>
+            </div>
+          ) : (
           <div className="panel" data-testid="my-position">
             <h2>Your position</h2>
             {!accountId && asParam && <p className="muted text-xs">Viewing <code>{asParam}</code> read-only.</p>}
@@ -163,9 +173,10 @@ export default function VaultPage() {
             )}
             {msg && <p className="mt-3 break-words text-sm" role="status">{msg}</p>}
           </div>
+          )}
         </div>
 
-        <FollowPanel name={meta.name} data={data} price={m.price} dec={m.dec} sym={m.sym} active={st === "active"} shares={mine && accountId ? mine.shares : 0n} paper={paper} onDone={reload} />
+        {!foreign && <FollowPanel name={meta.name} data={data} price={m.price} dec={m.dec} sym={m.sym} active={st === "active"} shares={mine && accountId ? mine.shares : 0n} paper={paper} onDone={reload} />}
       </div>
 
       <h2>NAV posts</h2>
@@ -193,7 +204,7 @@ export default function VaultPage() {
         <button className="quiet mt-2" onClick={() => setAllNavs(!allNavs)} data-testid="nav-all">{allNavs ? "Show the latest 20" : `Show all ${navs.length} posts`}</button>
       )}
       <p className="muted mt-3 break-words text-xs">
-        Contract <a href={`${NEAR_EXPLORER}/address/${data.id}`}>{data.id}</a> · confidential account (MPC-derived) <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
+        Contract <a href={`${explorerFor(data.id)}/address/${data.id}`}>{data.id}</a> · confidential account (MPC-derived) <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
       </p>
     </section>
   );
