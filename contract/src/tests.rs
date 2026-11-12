@@ -1763,7 +1763,10 @@ fn per_post_dip_is_recoverable_once() {
         assert!(post_with_price(&mut v, 10_000_000, Some(px(338_539_870)), t));
         t += 1000;
         let nav = nav_vs_last(&v, dip_b);
-        assert!(post_with_price(&mut v, nav, Some(px(335_641_441)), t), "the low mark passes the lower band ({dip_b} bps)");
+        assert!(
+            post_with_price(&mut v, nav, Some(px(335_641_441)), t),
+            "the low mark passes the lower band ({dip_b} bps)"
+        );
         t += 1000;
         let nav = nav_vs_last(&v, ret_c);
         assert_eq!(post_with_price(&mut v, nav, Some(px(339_241_739)), t), want, "dip {dip_b}, recovery {ret_c}");
@@ -1786,5 +1789,8 @@ fn dip_credit_does_not_carry_past_the_next_post() {
     assert!(post_with_price(&mut v, nav, Some(px(335_641_442)), t));
     t += 1000;
     let nav = nav_vs_last(&v, 191);
-    assert!(!post_with_price(&mut v, nav, Some(px(339_241_739)), t), "a stale dip must not widen a later post");
+    assert!(
+        !post_with_price(&mut v, nav, Some(px(339_241_739)), t),
+        "a stale dip must not widen a later post"
+    );
 }
