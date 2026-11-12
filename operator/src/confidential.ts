@@ -2,7 +2,22 @@
 // tier). Every quote response is checked with the carried 1Click signature
 // verifier before it's used; a quote that doesn't verify is never acted on.
 import { toSignedQuote, type QuoteResponse, type SignedQuote } from "./carry/signedQuote.js";
-import type { Nep413Payload } from "./intents.js";
+import { versionedNonce, type Nep413Payload } from "./intents.js";
+
+/** The vault contract signs only payloads that expire within 1 h (MAX_INTENT_AHEAD_MS).
+ *  Mainnet 1Click hands out ~3-day deadlines, so tighten the message deadline and
+ *  re-encode a versioned nonce (it embeds the deadline) with the same salt. */
+export const INTENT_AHEAD_MS = 30 * 60_000;
+const VNONCE_MAGIC = Buffer.from([0x56, 0x28, 0xf6, 0xc6]);
+export function tightenDeadline(p: Nep413Payload, nowMs: number, aheadMs = INTENT_AHEAD_MS): Nep413Payload {
+  const m = JSON.parse(p.message);
+  const dl = nowMs + aheadMs;
+  if (typeof m.deadline !== "string" || Date.parse(m.deadline) <= dl) return p;
+  m.deadline = new Date(dl).toISOString();
+  const n = Buffer.from(p.nonce, "base64");
+  const nonce = n.length === 32 && n.subarray(0, 4).equals(VNONCE_MAGIC) ? versionedNonce(n.subarray(5, 9).toString("hex"), dl, nowMs).toString("base64") : p.nonce;
+  return { ...p, message: JSON.stringify(m), nonce };
+}
 
 export type Leg = "trade" | "shield" | "unshield";
 export type QuoteArgs = { leg: Leg; from: string; to: string; amount: string; slippageBps: number; vault: string; recipient?: string; deadlineMs: number; dry: boolean };
@@ -29,7 +44,7 @@ export function quoteBody(a: QuoteArgs, publicPricing = false) {
 export type VerifiedQuote = { raw: QuoteResponse; signed: SignedQuote; amountIn: bigint; amountOut: bigint; minAmountOut: bigint; depositAddress?: string };
 
 export class Confidential {
-  constructor(private base: string, private jwt: string, private fetchImpl: typeof fetch = fetch, private oneClickKey?: string, private publicPricing = false) {}
+  constructor(private base: string, private jwt: string, private fetchImpl: typeof fetch = fetch, private oneClickKey?: string, private publicPricing = false, private now: () => number = Date.now) {}
 
   private async req(method: "GET" | "POST", path: string, body?: unknown, bearer?: string): Promise<any> {
     const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
@@ -54,7 +69,7 @@ export class Confidential {
     const j = await this.req("POST", "/v0/generate-intent", { type: "swap_transfer", standard: "nep413", signerId, depositAddress });
     const p = j?.intent?.payload;
     if (!p?.message || !p?.nonce || !p?.recipient) throw new Error("generate-intent: no payload");
-    return { message: p.message, nonce: p.nonce, recipient: p.recipient };
+    return tightenDeadline({ message: p.message, nonce: p.nonce, recipient: p.recipient }, this.now());
   }
 
   async submitIntent(payload: Nep413Payload, publicKey: string, signature: string): Promise<string> {

@@ -22,3 +22,29 @@ describe("NEP-413", () => {
     expect(imt(USDC)).toBe("imt:51e8f94d77b5e90dc9852ca6113771e11e8382ce69473a75e313e41665de7cbe:" + USDC);
   });
 });
+
+import { tightenDeadline } from "../src/confidential.js";
+import { versionedNonce as vn } from "../src/intents.js";
+describe("tightenDeadline (mainnet 1Click gives ~3-day deadlines; the vault signs ≤1 h)", () => {
+  const now = Date.parse("2026-11-12T13:40:00.000Z");
+  const far = now + 3 * 86_400_000;
+  const msg = (dl: number) => JSON.stringify({ deadline: new Date(dl).toISOString(), intents: [{ intent: "transfer", receiver_id: "dep", tokens: { "nep141:usdc": "7000000" } }], signer_id: "vault" });
+  it("rewrites deadline and versioned nonce, keeping salt and intents", () => {
+    const p = { message: msg(far), nonce: vn("a1b2c3d4", far, now).toString("base64"), recipient: "intents.near" };
+    const t = tightenDeadline(p, now);
+    const m = JSON.parse(t.message);
+    expect(Date.parse(m.deadline)).toBe(now + 30 * 60_000);
+    expect(m.intents).toEqual(JSON.parse(p.message).intents);
+    expect(m.signer_id).toBe("vault");
+    const n = Buffer.from(t.nonce, "base64");
+    expect(n.subarray(5, 9).toString("hex")).toBe("a1b2c3d4");
+    expect(n.readBigUInt64LE(9)).toBe(BigInt(now + 30 * 60_000) * 1_000_000n);
+    expect(t.recipient).toBe("intents.near");
+  });
+  it("leaves a plain nonce alone and a short deadline untouched", () => {
+    const plain = Buffer.alloc(32, 7).toString("base64");
+    expect(tightenDeadline({ message: msg(far), nonce: plain, recipient: "r" }, now).nonce).toBe(plain);
+    const p = { message: msg(now + 60_000), nonce: plain, recipient: "r" };
+    expect(tightenDeadline(p, now)).toBe(p);
+  });
+});
