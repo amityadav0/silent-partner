@@ -103,7 +103,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 ## Nov 12: active-trading NAV window, Calm Owl refill
 - [x] Calm Owl (`c0`) topped up (3 NEAR), and community vaults are now refilled by the season tick (D-J-6)
 - [x] 24h NAV window follows the asset's path split at leader signals, so honest active traders pass and fake timing still fails; tests, threat-model row 18, AI vaults upgraded in place (D-H-7)
-- [ ] reproducible mainnet wasm rebuilt for D-H-7, NEEDS-AMIT §3 hash updated
+- [x] reproducible mainnet wasm rebuilt at 624f3ba for D-H-7 (D-P5-9), NEEDS-AMIT §3 hash updated
 
 ## Next
 - Season loop picks up the open-season, alerts and badge code at its next self-handover (~2026-11-10 05:21 UTC): check that `last-run.json` shows `community` and a result for `c0.sp-sop-92991.testnet`, that `alerts.json` and `badges/` appear on season-state, and that Calm Owl's card renders. `health.yml` reports a stale tick.
