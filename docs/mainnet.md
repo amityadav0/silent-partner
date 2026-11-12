@@ -27,7 +27,6 @@ Every role is an implicit account. Keys exist only in `~/.near-credentials/mainn
 | USDC `storage_deposit` for the vault | `CZMFddRmWRbnYvHWeWTCyJ3Rf9yvCReSxAsQ1Yb87xuh` | ok |
 | USDC `storage_deposit` for the leader | `5JCe2G8jjCJiyhnLrn5gYdmJ1gjnzywcYSyFUzddWgV9` | ok |
 | USDC `storage_deposit` for the follower | `CtUt692fo5yVpn5oUbbnDwGSWhb4CP58QM1SuXoDnrCu` | ok |
-
 | Amit → hub, 8 USDC | (from Amit's wallet) | hub USDC 8,000,000 |
 | Hub → intents.near, 1 USDC (`ft_transfer_call`, empty msg) | `3q8xEzEPpRzRLd5Ye6TEgUc7kZk3W2NWaD7cUdva9V7p` | public intents USDC 1,000,000 |
 
