@@ -41,8 +41,25 @@ Public → confidential → public, 1 USDC, through 1Click with our partner JWT.
 
 Balances: before, the confidential balance was empty. After the shield it showed 1,000,000 with `source: "private"`. After the unshield the confidential balance was empty again and the public `intents.near` balance was back at 1,000,000.
 
-## Next
+## §3 vault run (2026-11-12)
 
-Deploy and init the vault. The wasm is checked: sha256 `7d4e87ae…47c7`, the same as §3. The args are in [mainnet-init.live.json](mainnet-init.live.json).
+| Step | Tx / hash | Result |
+|---|---|---|
+| Deploy + `new` (args: [mainnet-init.live.json](mainnet-init.live.json)) | `BVvZZYcnFspLT2t7nnCCLuqyh7dqqo3RSprJnw9UxhKH` | code_hash `9S9R3aaEs3cPs9nyjvhZKnsK7Ry3GcHTi1f1KVBtZy34`, the same as §3 (reproducible build of `624f3ba`) |
+| `activate` (operator) | `3sNC3qXPJPoUfpdiwvhyeXFi1riA2oWSr1j5XVPYRVbb` | `vault_account` `2df9e05a…ab07` = hex of `v1.signer` `derived_public_key` ✓ |
+| `set_signal_key` (leader) | `3YWcA9sHo42MSL5AwEXn4UF9BMX9kNcc2dwXUWnjEv3y` | signal pk `ed25519:7spWXqhYDeuNoQy5abFAqghXgjtt7qhfaUza3HcUnhdg` |
+| Hub → leader 2 USDC, → follower 5 USDC | `761gDX3qKjAMutGN75zKcEuR9nULGLiSeb64eJC9H6Jk`, `HRAQxXbP44MkrNubCSnLn7YHvrjPsz6kDaWdz7j1MQHP` | ok |
+| Hub → leader and follower, +0.1 NEAR each (a 150 Tgas `ft_transfer_call` needs more than 0.15 NEAR of balance) | `9bfWcxFAjAR2B4M2sGcpRzE8axt51ZALgczwjfrSu6yJ`, `78KQu3ccGagGnUCFwvVqMeTiVrjdraVpJkp93CEdD4Bz` | ok |
+| Leader deposits 2 USDC | `FBR7NNGV3iWBUMrqtd5odXm4iPqkv8MDw6gYrR2u4Pn8` | 2,000,000 shares |
+| Follower deposits 5 USDC | `w5EU6i3veqn13buD8ZRZNuTk5uxKa8wZxwjyHCpux3w` | 7,000,000 shares in total, leader 28.6%; the 7 USDC is forwarded to intents.near for the MPC account |
+| Shield, first try | panicked in `sign_intent`: `payload deadline out of window` | No funds moved. Mainnet 1Click payloads carry ~3-day deadlines and the vault signs ≤1 h, so the operator now tightens them (D-P5-10) |
+| **Shield 7 USDC**, the first MPC-signed intent on mainnet | sign `2v7aU92EcYUsgqDz6p12JfkwYAkRpB4wend8hpFqVZBT`, intent `H7kbaEipjaPFqmJRudB8Aee9SuE74J1TaK3vZ1hLwZ9S` | SUCCESS; confidential USDC 7,000,000 |
+| **Epoch 1** | `DDAMZHLwEWAywF8MCtq5p64kwdEx9YLrSixF8YW75Tm3` | NAV 7,000,000, price 1.0, with verified 1Click price quotes |
+| **Leader trade**: 25% USDC → wNEAR (confidential 1Click) | sign `6jg61f4qsPUPXK6cPzKaunZDdFP5Pjr7CWYf1uXpfEfz`, intent `G4ghXr2W6nHu2czXUTYYU6CcgaFzhWnfDBgqi1kQtCUi`, signal `1e93d2c8…052b` | 1.75 USDC → 0.51685 wNEAR (min 0.51419); `signals` = 1 on-chain |
+| D-H-2 plain-nonce check (read-only `simulate_intents`) | [probes/plain-nonce-mainnet.json](probes/plain-nonce-mainnet.json) | plain nonce **accepted** (versioned too), so payouts can settle via `is_nonce_used` |
+| Follower `request_withdraw`, 2,000,000 shares | `566BLzGi6AHGmsiYmGZ68CzxoEQumUH2EKoQoRqgY4EK` | pending: 1 |
+| Epoch 2: burn the shares and pay the claim | scheduled for 15:34 UTC (the 1 h minimum interval after epoch 1 at 14:32) | pending |
+
+## Next
 
 Leftover funds go back to `amityadav.near` after the demo window ends (Nov 25). That includes deleting the vault account with `amityadav.near` as the beneficiary, which returns its storage NEAR.

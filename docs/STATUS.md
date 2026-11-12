@@ -113,4 +113,4 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- §1 $1 round trip **done on mainnet 2026-11-12** (docs/mainnet.md). Role accounts funded; vault deploy waits for Amit's explicit OK. Waiting on Amit: §3 deploy. §4–6 (video, X post, application) are his.
+- **Mainnet live (2026-11-12):** the §1 round trip is done. §3: vault `1f80f62c…a36e` deployed (the hash matches) and activated. 7 USDC deposited (leader 28.6%) and shielded, epoch 1 posted, one leader trade USDC→wNEAR executed, plain-nonce check passed, and the follower's withdrawal is queued for epoch 2. Details in docs/mainnet.md. The web app doesn't show the mainnet vault yet. §4–6 (video, X post, application) are his.

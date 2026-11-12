@@ -54,7 +54,7 @@ Using OutLayer would cost about $0.006 per NAV post, plus a $1 key if we go thro
 
 ## 3. Mainnet runbook (P5)
 
-**Status:** waiting for your OK. Do §1 (the $1 round trip) first. Nothing below has been run.
+**Status: run on mainnet 2026-11-12** with your OK in chat. It used implicit accounts instead of the named ones below (D-P5-11). Every tx is in [mainnet.md](mainnet.md). The runbook below is kept for reference.
 
 Every command is yours to sign. The operator steps (`op.ts`) print what they will do and wait for `yes`. I run nothing on mainnet without your OK in chat; once you give it, we go step by step and I record every tx in `docs/mainnet.md`.
 
