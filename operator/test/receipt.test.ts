@@ -24,7 +24,7 @@ describe("NEAR AI TEE receipts", () => {
   it("a tampered text, a different model or other bytes fail", () => {
     expect(verifyReceipt({ ...r, text: r.text.replace(/.$/, r.text.endsWith("0") ? "1" : "0") })).toBe(false);
     expect(verifyReceipt({ ...r, model: "other/model" })).toBe(false);
-    const [, req, res] = r.text.slice(r.model.length + 1).split(":").length === 2 ? ["", ...r.text.slice(r.model.length + 1).split(":")] : [];
+    const [req, res] = r.text.slice(r.model.length + 1).split(":") as [string, string];
     expect(verifyReceipt(r, { requestSha: req, responseSha: res })).toBe(true);
     expect(verifyReceipt(r, { requestSha: req, responseSha: "00".repeat(32) })).toBe(false);
   });
