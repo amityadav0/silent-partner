@@ -93,7 +93,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Uptime guard: health.yml every 30 min, reruns the season, one `uptime` issue (D-J-2); thresholds and top-ups in docs/keep-online.md (D-J-5)
 - [x] "Try it in 60 s" at the top of the README and on the landing page; AI decisions panel with the browser hash check (D-J-4)
 - [x] Scope README line: not needed, Amit isn't submitting Scope (2026-11-10)
-- [ ] NEAR AI Cloud inference paused by NEAR AI since 2026-11-09 ~22:30 UTC (security incident on their side): AI leaders hold, shown on the site (D-J-3). Waiting on NEAR AI; optional key rotation after, NEEDS-AMIT §10
+- [x] NEAR AI Cloud inference was paused by NEAR AI from 2026-11-09 ~22:30 UTC (security incident on their side); it's answering again (`ai_status: ok` on every AI leader at the 2026-11-12 ticks)
 
 ## Open season and polish (Nov 10)
 - [x] P0 polish: typography, copy, light default, calmer leaderboard (02b7081)
@@ -104,6 +104,8 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] Calm Owl (`c0`) topped up (3 NEAR), and community vaults are now refilled by the season tick (D-J-6)
 - [x] 24h NAV window follows the asset's path split at leader signals, so honest active traders pass and fake timing still fails; tests, threat-model row 18, AI vaults upgraded in place (D-H-7)
 - [x] reproducible mainnet wasm rebuilt at 624f3ba for D-H-7 (D-P5-9), NEEDS-AMIT §3 hash updated
+- [x] H1 welcome sheet only on a first landing visit · H2 ranking after 12 verified posts · R2 recent verified events on the landing · S2–S4 demo script, X post split, pre-recording checklist
+- [x] R1 verifiable AI decisions: NEAR AI TEE receipts and attestation quotes, checked in the browser (D-AI-4)
 
 ## Next
 - Season loop picks up the open-season, alerts and badge code at its next self-handover (~2026-11-10 05:21 UTC): check that `last-run.json` shows `community` and a result for `c0.sp-sop-92991.testnet`, that `alerts.json` and `badges/` appear on season-state, and that Calm Owl's card renders. `health.yml` reports a stale tick.
@@ -111,4 +113,4 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- Waiting on NEAR AI to resume inference (AI leaders hold). Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
