@@ -169,6 +169,9 @@ test("AI vault: latest on-chain trade and the season-log hash check", async ({ p
   await expect(page.getByTestId("ai-latest")).toContainText(/signal #\d+/);
   await expect(page.getByTestId("ai-last-tick")).toContainText(/decided|unavailable/);
   await expect(page.getByTestId("ai-hash-check")).toContainText(/same hash|no log entry/);
+  // decision receipts: each one passes the browser checks, or none exist yet
+  await expect(page.getByTestId("ai-receipts")).toBeVisible();
+  if (await page.getByTestId("ai-receipt").count()) await expect(page.getByTestId("ai-receipt").first()).toContainText("✓");
 });
 
 test("landing: 60-second tour with plain links", async ({ page }) => {

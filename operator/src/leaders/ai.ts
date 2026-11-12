@@ -5,6 +5,7 @@
 // later prove what it was thinking without having published it in advance.
 import { summary, type Series } from "./market.js";
 import type { Decision } from "../season/tick.js";
+import { fetchReceipt, sha256hex, type Attestation } from "./receipt.js";
 
 export const NEARAI_URL = "https://cloud-api.near.ai/v1";
 /** Served from NEAR AI's attested TEE infrastructure. */
@@ -94,25 +95,44 @@ async function withRetry(call: () => Promise<Response>, retryMs: number): Promis
   return call();
 }
 
-export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string | Persona; retryMs?: number }): Promise<Decision> {
+export async function aiLeader(s: Series, current: number, o: { apiKey?: string; model?: string; fetchImpl?: typeof fetch; persona?: string | Persona; retryMs?: number; attestation?: Attestation & { report: { gpu: boolean } } }): Promise<Decision> {
   const persona = typeof o.persona === "object" ? o.persona : PERSONAS[o.persona ?? "ai"] ?? PERSONAS.ai;
   if (!o.apiKey) return { target: null, why: "NEARAI_API_KEY not set: holding" };
   const model = o.model || DEFAULT_MODEL;
   const f = o.fetchImpl ?? fetch;
   try {
+    // The exact bytes sent and received are what NEAR AI's TEE signs, so keep both.
+    // The canonical model id (no aliasing) is part of the signed text.
+    const body = JSON.stringify({ model, messages: [{ role: "system", content: systemPrompt(persona) }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 });
     const r = await withRetry(() => f(`${NEARAI_URL}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${o.apiKey}` },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: systemPrompt(persona) }, { role: "user", content: prompt(s, current) }], max_tokens: 2000 }),
+      headers: { "content-type": "application/json", authorization: `Bearer ${o.apiKey}`, "x-no-aliasing": "true", "accept-encoding": "identity" },
+      body,
     }), o.retryMs ?? 3000);
-    const j = (await r.json().catch(() => ({}))) as { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } };
+    const raw = await r.text().catch(() => "");
+    let j: { id?: string; choices?: { message?: { content?: string } }[]; error?: { message?: string }; usage?: { prompt_tokens: number; completion_tokens: number } } = {};
+    try {
+      j = JSON.parse(raw);
+    } catch {
+      /* not JSON */
+    }
     if (!r.ok) return { target: null, why: `NEAR AI ${r.status}: holding`, model };
     const parsed = parseReply(j.choices?.[0]?.message?.content ?? "");
     const target = parsed.target === null ? null : Math.min(persona.max, Math.max(persona.min, parsed.target));
     const rationale = parsed.rationale;
-    // chat id: lets the leader fetch NEAR AI's TEE signature for this completion when it discloses.
     const usage = j.usage ? { prompt_tokens: j.usage.prompt_tokens, completion_tokens: j.usage.completion_tokens } : undefined;
-    return { target, why: target === null ? "model holds" : `model target ${target}`, rationale: JSON.stringify({ chat_id: j.id ?? null, model, rationale }), model, usage };
+    // TEE receipt: NEAR AI's enclave signature over these exact bytes, and the attestation that binds its key.
+    const rc = j.id ? await fetchReceipt({ url: NEARAI_URL, apiKey: o.apiKey, model, chatId: j.id, requestSha: sha256hex(body), responseSha: sha256hex(raw), fetchImpl: f, attestation: o.attestation, retryMs: o.retryMs }).catch((e) => ({ error: String((e as Error).message).slice(0, 80) })) : { error: "no completion id" };
+    // The sealed notebook keeps the exact request and response, so a disclosure can be rechecked against the receipt.
+    const sealed = JSON.stringify({ chat_id: j.id ?? null, model, rationale, request: body, response: raw });
+    return {
+      target,
+      why: target === null ? "model holds" : `model target ${target}`,
+      rationale: sealed,
+      model,
+      usage,
+      ...("error" in rc ? { receipt_error: rc.error } : { receipt: rc.receipt, attestation: rc.attestation }),
+    };
   } catch (e) {
     return { target: null, why: `NEAR AI unreachable (${(e as Error).message.slice(0, 80)}): holding`, model };
   }

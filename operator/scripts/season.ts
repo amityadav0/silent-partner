@@ -14,6 +14,7 @@
 // Inputs: SEASON_SIGNAL (manual leader's signed envelope), SEASON_STATE_DIR
 // (sealed state checkout, default ../season-state).
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { KeyPair } from "near-api-js";
@@ -26,6 +27,7 @@ import { loadEnv } from "../src/config.js";
 import { nearUsd, type Series } from "../src/leaders/market.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
 import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
+import type { Attestation } from "../src/leaders/receipt.js";
 import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
 import { tick, type Decide, type TickResult } from "../src/season/tick.js";
@@ -109,6 +111,18 @@ if (C) {
 }
 
 const results: TickResult[] = [];
+// One NEAR AI attestation per tick and signing key, reused across AI leaders and published
+// whole (attestation.json), so a browser can recheck that its quote binds the signer.
+let attestation: (Attestation & { report: { gpu: boolean } }) | undefined;
+const attestations = new Map<string, Attestation>();
+const ai = (persona: Parameters<typeof aiLeader>[2]["persona"]): Decide => async (cur) => {
+  const d = await aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL, persona, attestation });
+  if (d.attestation) {
+    attestation = d.attestation as typeof attestation;
+    attestations.set(d.attestation.signing_address, { model: d.attestation.model, signing_address: d.attestation.signing_address, nonce: d.attestation.nonce, intel_quote: d.attestation.intel_quote });
+  }
+  return d;
+};
 const files: string[] = [];
 for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
   const fills = `fills-${v.id}.jsonl`, notes = `notes-${v.id}.jsonl`;
@@ -119,7 +133,7 @@ for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
     const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), new FillLog(v.id, join(plain, fills)), KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
     let decide: Decide | undefined;
     if (market && STRATEGIES[v.strategy]) decide = async (cur) => STRATEGIES[v.strategy](market!, cur);
-    if (market && v.strategy.startsWith("ai")) decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL, persona: v.strategy });
+    if (market && v.strategy.startsWith("ai")) decide = ai(v.strategy);
     // one manual signal per vault per tick; the rest wait for the next tick
     const m = v.strategy === "manual" ? pending.find((p) => p.env?.signal?.vault === v.id) : undefined;
     if (m?.file) consumed.push(m.file);
@@ -146,7 +160,7 @@ for (const l of community) {
       const persona = communityPersona(l, await unseal(l.sealed_prompt ?? "", ck.sealSk, "launch"));
       const registered = await viewCall<string | null>(env.rpc, vid, "get_signal_key", {}, fetch, "optimistic");
       if (persona && market && registered === ck.signalPublic) {
-        decide = (cur) => aiLeader(market!, cur, { apiKey: e.NEARAI_API_KEY, model: e.NEARAI_MODEL, persona });
+        decide = ai(persona);
         signalKey = ck.signalSecret;
       }
     } else {
@@ -285,7 +299,10 @@ function redact(r: TickResult) {
   // AI leader: the target as a 20-point bucket and the rationale's hash, never the exact target or the rationale.
   // ai_status says whether NEAR AI answered, so an outage never reads as a "hold" decision.
   const down = r.decision?.model && !r.decision.usage && /^NEAR AI|NEARAI_API_KEY/.test(r.decision.why ?? "");
-  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_status: down ? "unavailable" : "ok", ...(down ? { ai_error: String(r.decision.why).slice(0, 80) } : {}), ai_tokens: r.decision.usage ?? null, ai_target_band: weightBucket(r.decision.target), ai_rationale_hash: r.decision.memo_hash ?? null } : {};
+  // The TEE receipt is public by design: hashes, NEAR AI's signature and the attestation digest, no reasoning.
+  const rc = r.decision?.receipt;
+  const receipt = rc ? { ai_receipt: { text: rc.text, signature: rc.signature, signing_address: rc.signing_address, signature_kind: rc.signature_kind, quote_sha256: rc.quote_sha256, nonce: rc.nonce, bound: rc.bound, gpu_evidence: rc.gpu_evidence } } : r.decision?.receipt_error ? { ai_receipt_error: r.decision.receipt_error } : {};
+  const ai = r.decision?.model ? { ai_model: r.decision.model, ai_status: down ? "unavailable" : "ok", ...(down ? { ai_error: String(r.decision.why).slice(0, 80) } : {}), ai_tokens: r.decision.usage ?? null, ai_target_band: weightBucket(r.decision.target), ai_rationale_hash: r.decision.memo_hash ?? null, ...receipt } : {};
   return { vault: r.vault, epoch: r.epoch, nav: r.nav, tx: r.tx, ...sig, ...ai, ...(r.error ? { error: r.error } : {}) };
 }
 
@@ -306,8 +323,18 @@ try {
 }
 for (const r of results.map(redact) as Record<string, any>[]) {
   if (!r.signal_hash || r.signal_status === "rejected") continue;
-  const keep = { ranAt, epoch: r.epoch, signal_hash: r.signal_hash, signal_status: r.signal_status, ai_target_band: r.ai_target_band ?? null, ai_rationale_hash: r.ai_rationale_hash ?? null };
+  const keep = { ranAt, epoch: r.epoch, signal_hash: r.signal_hash, signal_status: r.signal_status, ai_target_band: r.ai_target_band ?? null, ai_rationale_hash: r.ai_rationale_hash ?? null, ...(r.ai_receipt ? { ai_model: r.ai_model, ai_receipt: r.ai_receipt } : {}) };
   recent[r.vault] = [...(recent[r.vault] ?? []), keep].slice(-20);
 }
 writeFileSync(recentFile, JSON.stringify(recent, null, 2) + "\n");
+// The attestation quotes behind this tick's receipts, keyed by quote digest (kept across ticks, last 50).
+const attFile = join(sealed, "attestations.json");
+let attDoc: Record<string, Attestation & { seen: string }> = {};
+try {
+  if (existsSync(attFile)) attDoc = JSON.parse(readFileSync(attFile, "utf8"));
+} catch {
+  /* start over */
+}
+for (const a of attestations.values()) attDoc[createHash("sha256").update(Buffer.from(a.intel_quote.replace(/^0x/, ""), "hex")).digest("hex")] = { ...a, seen: ranAt };
+writeFileSync(attFile, JSON.stringify(Object.fromEntries(Object.entries(attDoc).slice(-50)), null, 1) + "\n");
 if (results.some((r) => r.error)) process.exitCode = 1;

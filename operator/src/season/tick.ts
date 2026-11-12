@@ -1,17 +1,29 @@
 // One paper-season tick for one vault: optional leader decision → signal →
 // paper fill at a real 1Click dry-quote price → NAV epoch posted on testnet.
 import { createHash } from "node:crypto";
+import { receiptMemo, type Attestation, type Receipt } from "../leaders/receipt.js";
 import { appendFileSync } from "node:fs";
 import { KeyPair } from "near-api-js";
 import type { Operator } from "../operator.js";
 import { signSignal } from "../signal.js";
 import { rebalance } from "../leaders/strategies.js";
 
-export type Decision = { target: number | null; why: string; /** private, never published; only its hash goes in the signal */ rationale?: string; model?: string; usage?: { prompt_tokens: number; completion_tokens: number } };
+export type Decision = {
+  target: number | null;
+  why: string;
+  /** private, never published; only its hash goes in the signal */
+  rationale?: string;
+  model?: string;
+  usage?: { prompt_tokens: number; completion_tokens: number };
+  /** NEAR AI's TEE receipt for the completion (public: hashes, signature, quote digest). */
+  receipt?: Receipt;
+  receipt_error?: string;
+  attestation?: Attestation;
+};
 export type Decide = (current: number) => Promise<Decision>;
 // minStep: smallest weight change worth a trade for this leader (bots 0.1, AI 0.05).
 
-export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale"> & { memo_hash?: string }; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
+export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale" | "attestation"> & { memo_hash?: string }; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
 
 export async function exposure(op: Operator, risk: string): Promise<{ nav: bigint; current: number }> {
   const n = await op.nav();
@@ -35,8 +47,10 @@ export async function tick(o: { op: Operator; vault: string; base: string; risk:
     out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: (o.manual as any).signal.size_bps, from: (o.manual as any).signal.from, to: (o.manual as any).signal.to } : { error: r.error };
   } else if (o.decide && o.signalKey) {
     const d = await o.decide(current);
-    const memo = d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
-    out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage, memo_hash: memo };
+    // With a TEE receipt the memo commits to the model, the exact request and response
+    // (hence the reasoning) and the attestation; without one, to the sealed rationale.
+    const memo = d.receipt ? receiptMemo(d.receipt) : d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
+    out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage, memo_hash: memo, receipt: d.receipt, receipt_error: d.receipt_error };
     const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo, o.minStep);
     if (s) {
       const r = await o.op.submitSignal(signSignal(s, KeyPair.fromString(o.signalKey as `ed25519:${string}`)));

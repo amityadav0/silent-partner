@@ -154,13 +154,18 @@ describe("AI leader", () => {
       seen.push({ url, headers: init.headers, body: JSON.parse(String(init.body)) });
       return new Response(JSON.stringify({ id: "chatcmpl-1", choices: [{ message: { content: '{"target_exposure": 0.5, "rationale": "EMAs crossed up"}' } }] }));
     }) as unknown as typeof fetch;
-    const d = await aiLeader(s, 0, { apiKey: "k", fetchImpl: f });
+    const d = await aiLeader(s, 0, { apiKey: "k", fetchImpl: f, retryMs: 0 });
     expect(seen[0].url).toBe("https://cloud-api.near.ai/v1/chat/completions");
+    expect(seen[0].headers["x-no-aliasing"]).toBe("true");
     expect(seen[0].headers.authorization).toBe("Bearer k");
     expect(seen[0].body.model).toBe(DEFAULT_MODEL);
     expect(d.target).toBe(0.5);
     expect(d.why).not.toContain("EMAs");
-    expect(JSON.parse(d.rationale!)).toEqual({ chat_id: "chatcmpl-1", model: DEFAULT_MODEL, rationale: "EMAs crossed up" });
+    const sealed = JSON.parse(d.rationale!);
+    expect(sealed).toMatchObject({ chat_id: "chatcmpl-1", model: DEFAULT_MODEL, rationale: "EMAs crossed up" });
+    expect(JSON.parse(sealed.request).model).toBe(DEFAULT_MODEL); // exact bytes kept for disclosure
+    expect(d.receipt).toBeUndefined(); // this mock has no TEE signature
+    expect(d.receipt_error).toBe("no TEE signature for this completion");
     const err = (async () => new Response("{}", { status: 500 })) as unknown as typeof fetch;
     expect((await aiLeader(s, 0, { apiKey: "k", fetchImpl: err, retryMs: 0 })).target).toBeNull();
   });
@@ -226,7 +231,7 @@ import { PERSONAS, systemPrompt } from "../src/leaders/ai.js";
 
 describe("house AI leaders", () => {
   const s = series((i) => 3 + i * 0.001);
-  const reply = (w: number) => (async () => new Response(JSON.stringify({ id: "c", choices: [{ message: { content: `{"target_weight": ${w}, "rationale": "r"}` } }] }))) as unknown as typeof fetch;
+  const reply = (w: number) => (async () => new Response(JSON.stringify({ choices: [{ message: { content: `{"target_weight": ${w}, "rationale": "r"}` } }] }))) as unknown as typeof fetch;
   it("each persona has its own mandate, and its bounds are enforced in code", async () => {
     expect(Object.keys(PERSONAS).sort()).toEqual(["ai", "ai-contrarian", "ai-conviction", "ai-trend", "ai-voltarget"]);
     expect(systemPrompt(PERSONAS["ai-voltarget"])).toContain("annualised volatility");
