@@ -183,23 +183,29 @@ Follow the script in [demo-script.md](demo-script.md): 3:00, a screen recording 
 
 ## 5. X post (P6): you post it
 
-The required parts are: "built at NEAR HACKATHON", @NEARProtocol and #NEARHackathon. Optional tags: @NearLegion and @NearBuilders. Attach the video, or the Conviction track-record card from `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-convict-8952.testnet.png`.
+Two parts: a first post of at most 280 characters, then a reply to it. The first post carries the required parts: "built at NEAR HACKATHON", @NEARProtocol, #NEARHackathon, the link and the video. Attach the demo video to it. If there's no video yet, attach the Conviction track-record card from `https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-convict-8952.testnet.png`.
 
-> Copy trading puts your orders behind the leader's, and puts the leader's whole book in public.
->
-> Silent Partner fixes both on NEAR: one private vault, one fill, one price for leader and followers.
-> • Confidential Intents keeps positions private
+**Post 1** (272 characters as X counts them, with the link counted as 23):
+
+> Copy trading puts your order behind the leader's, and their whole book in public.
+> 
+> Silent Partner: one sealed vault on NEAR. One trade, one price for leader and followers, no positions on-chain.
+> 
+> Built at NEAR HACKATHON @NEARProtocol #NEARHackathon
+> amityadav0.github.io/silent-partner
+
+**Reply** (492 characters: one post on a Premium account. Without Premium, post it as two replies, splitting after the last bullet):
+
+> How it works:
+> • @near_intents Confidential Intents keep the vault's positions private
 > • A Chain Signatures key held by the contract signs only transfers to the vault or a holder's own claim
-> • AI leaders run on NEAR AI; their reasoning stays private, committed on-chain by hash
-> • Follow from Base, Arbitrum, Ethereum or Solana in one step via 1Click
->
-> Built at NEAR HACKATHON @NEARProtocol #NEARHackathon @NearBuilders
-> Try it, no wallet needed: amityadav0.github.io/silent-partner
-> Code: github.com/amityadav0/silent-partner
->
+> • AI leaders on @near_ai: reasoning sealed, only its hash on-chain
+> • Follow from Base, Arbitrum, Ethereum or Solana via 1Click
+> • Every price signed and re-checked in your browser
+> 
+> @NearBuilders · code: github.com/amityadav0/silent-partner
+> 
 > Would you copy a trader you can't see, if the chain proves their returns?
-
-It's about 640 characters. If your account has a 280-character limit, post the first two lines plus the links, and put the bullets and the question in a reply.
 
 ## 6. Hackathon application (P6): you submit it
 

@@ -1,6 +1,6 @@
 "use client";
-// First visit: three short steps (what's sealed, what you see, your exit). Skippable,
-// remembered in this browser, never shown again once dismissed.
+// First visit to the landing page: three short steps (what's sealed, what you see, your
+// exit). Any close (Skip, Escape, backdrop, the last step) counts as seen, in this browser.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -19,11 +19,14 @@ export function Welcome() {
   const [i, setI] = useState(0);
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (path?.startsWith("/v/")) return; // share links redirect straight away
+    // Only on the landing page, first visit. A deep link (a vault, the leaderboard, a
+    // shared /v/ link or an invite with ?ref=) opens on the thing that was clicked, and
+    // headless browsers and screenshot bots never get the sheet.
+    if (path !== "/" || new URLSearchParams(window.location.search).has("ref") || navigator.webdriver) return;
     try {
       if (!localStorage.getItem(KEY)) setOpen(true);
     } catch {
-      /* no storage: don't nag on every page */
+      /* no storage: don't nag on every visit */
     }
   }, [path]);
   useEffect(() => {

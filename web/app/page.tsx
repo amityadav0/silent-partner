@@ -3,22 +3,74 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { VAULTS } from "@/lib/config";
-import { loadVault, verifyNavs } from "@/lib/vault";
+import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
+import { metaOf } from "@/lib/vaults";
 import { Redact } from "./ui";
 
+type LiveEvent = { t: number; what: string; vault: string; id: string; ok: boolean };
+const DRILL = "sp-drill-92991.testnet";
+
 function useLive() {
-  const [s, setS] = useState<{ navs: number; verified: number; signals: number } | null>(null);
+  const [s, setS] = useState<{ navs: number; verified: number; signals: number; events: LiveEvent[] } | null>(null);
   useEffect(() => {
-    Promise.allSettled(VAULTS.map((v) => loadVault(v))).then((rs) => {
+    Promise.allSettled(VAULTS.map((v) => loadVault(v))).then(async (rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+      const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
+      // Recent verified events: times and ✓ only. No amounts, no holders.
+      const posts: LiveEvent[] = checked
+        .filter(({ d }) => d.id !== DRILL && d.navs.length)
+        .map(({ d, v }) => {
+          const n = d.navs.at(-1)!;
+          return { t: n.timestamp_ms, what: "Price post signed", vault: metaOf(d.id).name, id: d.id, ok: !v.bad.includes(n.epoch) };
+        });
+      const ai = await Promise.all(
+        ok.filter((d) => metaOf(d.id).leaderKind === "ai" && d.vault.signals > 0).map((d) =>
+          view<SignalRec[]>(d.id, "get_signals", { from: Math.max(0, d.vault.signals - 1), limit: 1 })
+            .then((xs) => xs.map((x) => ({ t: x.executed_ms, what: "AI decision recorded", vault: metaOf(d.id).name, id: d.id, ok: true })))
+            .catch(() => [] as LiveEvent[]),
+        ),
+      );
+      const drill = await view<Claim[]>(DRILL, "get_claims", { from: 0, limit: 5 })
+        .then((cs) => cs.filter((c) => c.emergency && c.opened_ms && BigInt(c.paid) >= BigInt(c.amount)).map((c) => ({ t: c.opened_ms!, what: "Emergency exit paid, no operator", vault: metaOf(DRILL).name, id: DRILL, ok: true })))
+        .catch(() => [] as LiveEvent[]);
+      const recent = [...posts.sort((a, b) => b.t - a.t).slice(0, 4), ...ai.flat().sort((a, b) => b.t - a.t).slice(0, 2)].sort((a, b) => b.t - a.t);
       setS({
         navs: ok.reduce((a, d) => a + d.navs.length, 0),
-        verified: ok.reduce((a, d) => a + verifyNavs(d.id, d.cfg.attestation_key, d.navs).ok, 0),
+        verified: checked.reduce((a, c) => a + c.v.ok, 0),
         signals: ok.reduce((a, d) => a + d.vault.signals, 0),
+        events: [...recent, ...drill.slice(0, 1)],
       });
     });
   }, []);
   return s;
+}
+
+const when = (t: number) => {
+  const m = Math.round((Date.now() - t) / 60_000);
+  return m < 60 ? `${Math.max(1, m)} min ago` : m < 48 * 60 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+/** Proof the system is alive, without FOMO: what happened and that it checks out. */
+function RecentEvents({ events }: { events: LiveEvent[] }) {
+  if (!events.length) return null;
+  return (
+    <section className="wrap pt-10" data-testid="recent-events">
+      <div className="panel flex flex-col gap-3">
+        <span className="eyebrow">Recent verified events</span>
+        <ul className="flex flex-col">
+          {events.map((e, i) => (
+            <li key={i} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-sm" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} data-testid="recent-event">
+              <span>
+                <span className={e.ok ? "pos" : "neg"} aria-label={e.ok ? "verified" : "failed check"}>{e.ok ? "✓" : "✗"}</span> {e.what} · <Link href={`/vault/?id=${e.id}`}>{e.vault}</Link>
+              </span>
+              <span className="muted tabular-nums">{when(e.t)}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="muted text-xs">Read from NEAR testnet just now. Price signatures are checked in your browser; no amounts or holders are shown.</p>
+      </div>
+    </section>
+  );
 }
 
 function Ticket() {
@@ -113,6 +165,8 @@ export default function Landing() {
           <div><b>0</b><span>positions on the public chain</span></div>
         </div>
       </section>
+
+      {live && <RecentEvents events={live.events} />}
 
       <section id="tour" className="wrap pt-14" data-testid="tour">
         <span className="eyebrow">Try it in 60 seconds</span>

@@ -246,9 +246,21 @@ test("share loops: a vault link with its own preview, invite credit, badge and b
   await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst DD · \d+ epochs · positions sealed$/);
 });
 
-test("first visit: three steps, skippable, remembered", async ({ browser }) => {
-  const ctx = await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined });
+test("first visit: three steps on the landing page only, skippable, remembered", async ({ browser }) => {
+  // a real visitor: Playwright's navigator.webdriver would hide the sheet
+  const human = async () => {
+    const c = await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined });
+    await c.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
+    return c;
+  };
+  const ctx = await human();
   const page = await ctx.newPage();
+  // deep links open on what was clicked
+  for (const u of ["/leaderboard/", "/vault/?id=sp-momo-92991.testnet", "/create/ai/", "/?ref=sp-lmomo-92991.testnet"]) {
+    await page.goto(u);
+    await page.waitForTimeout(300);
+    await expect(page.getByTestId("welcome"), u).toHaveCount(0);
+  }
   await page.goto("/");
   const w = page.getByTestId("welcome");
   await expect(w).toContainText("What's sealed");
@@ -262,12 +274,25 @@ test("first visit: three steps, skippable, remembered", async ({ browser }) => {
   await expect(w).toHaveCount(0);
   await page.goto("/");
   await expect(page.getByTestId("welcome")).toHaveCount(0);
-  // a second visitor skips it with Escape
-  const p2 = await (await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined })).newPage();
-  await p2.goto("/leaderboard/");
-  await expect(p2.getByTestId("welcome")).toBeVisible();
-  await p2.keyboard.press("Escape");
-  await expect(p2.getByTestId("welcome")).toHaveCount(0);
+  // a second visitor skips it with Escape; a third with a backdrop click
+  for (const how of ["escape", "backdrop"]) {
+    const c = await human();
+    const p2 = await c.newPage();
+    await p2.goto("/");
+    await expect(p2.getByTestId("welcome")).toBeVisible();
+    if (how === "escape") await p2.keyboard.press("Escape");
+    else await p2.mouse.click(5, 5);
+    await expect(p2.getByTestId("welcome")).toHaveCount(0);
+    await p2.reload();
+    await page.waitForTimeout(300);
+    await expect(p2.getByTestId("welcome")).toHaveCount(0);
+    await c.close();
+  }
+  // a headless browser never sees it
+  const bot = await (await browser.newContext({ baseURL: "http://localhost:3000", storageState: undefined })).newPage();
+  await bot.goto("/");
+  await bot.waitForTimeout(300);
+  await expect(bot.getByTestId("welcome")).toHaveCount(0);
   await ctx.close();
 });
 
@@ -362,4 +387,23 @@ test("bring your track record: a pasted EIP-191 proof verifies in the browser", 
   await page.getByTestId("tr-signature").fill(sig);
   await page.getByTestId("tr-verify").click();
   await expect(page.getByTestId("tr-result")).toContainText(`✓ ${addr} signed for sp-convict-8952.testnet`);
+});
+
+test("landing: recent verified events show times and checks only", async ({ page }) => {
+  await page.goto("/");
+  const ev = page.getByTestId("recent-events");
+  await expect(ev.getByTestId("recent-event").first()).toBeVisible({ timeout: 30_000 });
+  await expect(ev).toContainText("Price post signed");
+  await expect(ev).toContainText("✓");
+  await expect(ev).not.toContainText(/USDC|\$|followers?\b|\.testnet/i);
+});
+
+test("leaderboard: only vaults with 12 verified price posts are ranked", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible();
+  for (const cell of await page.locator("[data-testid^=row-sp-]:not([data-testid*=drill]):not([data-testid*=vault-60270]) td[data-label=Verified]").allTextContents()) {
+    expect(Number(cell.match(/(\d+)\//)![1])).toBeGreaterThanOrEqual(12);
+  }
+  const fresh = page.getByTestId("new-leaders");
+  if (await fresh.count()) await expect(fresh).toContainText(/ranking after 12 price posts \(\d+\/12\)/);
 });

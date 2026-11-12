@@ -18,6 +18,11 @@ const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
   ret: { label: "Return", by: (a, b) => b.ret - a.ret },
 };
 
+/** A vault is ranked once it has this many browser-verified price posts; newer ones wait in "New this week". */
+const MIN_POSTS = 12;
+// Old test vaults (not in the season) keep their place at the bottom instead.
+const ranked = (r: Row) => r.ok >= MIN_POSTS || !r.m.season;
+
 // The drill and first test vaults barely traded, so they can't rank above real leaders.
 const rank = (r: Row) => (r.m.season ? 0 : 1);
 
@@ -30,7 +35,8 @@ export default function Leaderboard() {
   const [sort, setSort] = useState<Key>("dd");
   const router = useRouter();
   const worst = useMemo(() => Math.max(0.0001, ...(rows ?? []).map((r) => r.dd)), [rows]);
-  const sorted = useMemo(() => (rows ? [...rows].sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
+  const sorted = useMemo(() => (rows ? rows.filter(ranked).sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
+  const fresh = useMemo(() => (rows ?? []).filter((r) => !ranked(r)).sort((a, b) => b.ok - a.ok), [rows]);
   useEffect(() => {
     (async () => {
       // House leaders plus every live community vault from the open season registry.
@@ -115,6 +121,20 @@ export default function Leaderboard() {
       </p>
       {errors.map((e) => <p key={e} className="neg text-sm">{e}</p>)}
 
+      {fresh.length > 0 && (
+        <div className="panel flex flex-col gap-3" data-testid="new-leaders">
+          <span className="eyebrow">New this week</span>
+          <p className="muted text-sm">Ranked after {MIN_POSTS} signed price posts, so a leader with no history can&apos;t top &ldquo;Calmest first&rdquo;.</p>
+          <div className="flex flex-wrap gap-2">
+            {fresh.map((r) => (
+              <Link key={r.d.id} href={`/vault/?id=${r.d.id}`} className="chip no-underline" style={{ color: "var(--ink)", padding: "6px 12px", fontSize: 13 }} data-testid={`new-${r.d.id}`}>
+                {r.m.name} · ranking after {MIN_POSTS} price posts ({Math.min(r.ok, MIN_POSTS)}/{MIN_POSTS})
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-4">
         <div className="panel lead-card flex min-w-0 flex-[1_1_320px] flex-col items-start gap-3" data-testid="lead-card">
           <h2 className="text-[32px]">Trade well? Lead a vault.</h2>
@@ -136,7 +156,7 @@ function Calmest({ rows }: { rows: Row[] | null }) {
   const best = useMemo(() => {
     if (!rows) return null;
     const since = Date.now() - WEEK;
-    const scored = rows.filter((r) => r.m.season).flatMap((r) => {
+    const scored = rows.filter((r) => r.m.season && ranked(r)).flatMap((r) => {
       const s = windowStats(r.d.navs, since);
       return s && s.posts >= 4 ? [{ r, s, score: calmScore(s) }] : [];
     });
