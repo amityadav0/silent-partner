@@ -449,14 +449,6 @@
   ],
   "sp-voltgt-8952.testnet": [
     {
-      "ranAt": "2026-11-11T13:51:08.370Z",
-      "epoch": 221,
-      "signal_hash": "8a1b41045e559bd30e3eca8eab5bc2f996b82dc50b28587c8ac5e49ca6447bbd",
-      "signal_status": "executed",
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "18587b7c08176511d3455f222fb16993653dd342f7a402b045fb81d3df30538a"
-    },
-    {
       "ranAt": "2026-11-11T14:35:15.490Z",
       "epoch": 224,
       "signal_hash": "5e0b8bc96e6293e66c3348a749bfbafdf38293168a4ae2b8c44fed61e0dd188d",
@@ -648,6 +640,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "e1c8eb3005240092bc1a533dc4909920b83adaf9b71f978b7ccca394ee113b3f",
         "nonce": "b4e37699b9b057b2f48d01039ec88a5c726696c89fca2dad15d8196ec025a49d",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-12T16:58:03.683Z",
+      "epoch": 330,
+      "signal_hash": "f2a5fead6686477ecc9e0472c38f72492a12957136026c7789858129648201d6",
+      "signal_status": "executed",
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "82d5d5dbb2cc3d8b53921dc3235660f2a335d07b96425398d391b727ec24d1a7",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:d7e6eeb306fdfcd455afb346a516d12e26b0c043bedbb3e1f6134e025b93f8fb:093ecc690b9f75795caba6fd3d16432e650f202c22ae94169f3ad6796bc1e8db",
+        "signature": "0x53552a34a9982fe040b529c24a5aa233078a589b71ef8ad68b9d315f8b19a151348ba2b514f3a6047c07d0cdbd2f436b7dc02ece0d3d052f10571b744029aa751b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "17b160d2d7428880fae17b962ad94569c955dd04081c1bb8d76d237b78704e8f",
+        "nonce": "5926b74281737936bd148c7ea034775cb44efae90e94211ace830cc73785dafc",
         "bound": true,
         "gpu_evidence": true
       }
