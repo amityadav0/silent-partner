@@ -341,3 +341,16 @@ The vault is on the leaderboard with a Community badge. From the season run that
 
 The registry was upgraded in place (`migrate`, tx [`7QMkpExr…`](https://testnet.nearblocks.io/txns/7QMkpExrzpaXnrNBbonfpzzYd7fG7oRN9jRPBVxtRMRj); wasm sha256 `46ea4ebf…c3c1`) with reading keys and letters. Calm Owl's leader, also its only holder, registered a reading key ([`7oa9bMTB…`](https://testnet.nearblocks.io/txns/7oa9bMTBAheCoomdoHe2qemppR96wZ9wNt7cQoS8JT2V)) and posted a letter sealed for current holders ([`E36puJsw…`](https://testnet.nearblocks.io/txns/E36puJswRcD8QWarnbyRvT7MUmDiEwDQLq94qxUVvDn2)). Read back from the chain, the ciphertext doesn't contain the text. The reading key opens it, and for any other account `openLetter` returns null. The vault page shows "1 letter", redacted.
 
+## NAV window follows the asset's path; Calm Owl refilled (D-H-7, D-J-6, 2026-11-12)
+
+Before the fix, Trend Rider's window stood at NEAR −7.1% since its anchor and the vault at −3.1%, since it had sold (`get_band_state`). A buy near the low and a rebound would put an honest NAV above the old cap (NEAR's return over the window + 300 bps). The fixed contract splits the window at leader signals. It was deployed to the four AI vaults with no migration (`operator/scripts/upgrade-code.ts`; epochs and shares unchanged, `get_band_path` answers). The first deploy counted operator trades too, and it was replaced within minutes by the signal-only version (wasm sha256 `eb4aec1dc647e93c901128d8b0147a3e50622bc81c3937362155e0ba300c9816`, non-reproducible testnet build):
+
+| Step | Tx |
+|---|---|
+| deploy sp-trend-8952.testnet | [`GAHMDBen…`](https://testnet.nearblocks.io/txns/GAHMDBenkNNCx5iHdra4nyiT9LPksydQNWH6kotfucVe) |
+| deploy sp-convict-8952.testnet | [`5jbJJkqJ…`](https://testnet.nearblocks.io/txns/5jbJJkqJAigDqVNTnait2LUGWhLWfrz1DrhAscLGtnTK) |
+| deploy sp-contra-8952.testnet | [`3dMcRNfT…`](https://testnet.nearblocks.io/txns/3dMcRNfTj5jzCNEDwo62Y72dZ28zCug5L5143sKR6mMY) |
+| deploy sp-voltgt-8952.testnet | [`EBT51Vq7…`](https://testnet.nearblocks.io/txns/EBT51Vq7hSVmgnYjjBVR9fFgMxFCniZACRkHn97kUaCT) |
+| first deploys, superseded (trend, convict, contra, voltgt) | [`9oTWwDda…`](https://testnet.nearblocks.io/txns/9oTWwDda5vZrf6TnmdX7cVmA821BJxvJxbACKyedt7NB), [`DiProDnM…`](https://testnet.nearblocks.io/txns/DiProDnMFtocSNkkg8MYaQFD2QbRL5RSs8a4q5va5NrU), [`13JqFL9Z…`](https://testnet.nearblocks.io/txns/13JqFL9ZL3fc9PLBE8TG6Fj8Hi8FeEwpWV4TKpbHeB3j), [`HiqywyFR…`](https://testnet.nearblocks.io/txns/HiqywyFR4ZX1qJXGkXHemwhS5GmB7cUYaDar1uz2UgsX) |
+| 3 NEAR from `sp-lai-92991` to Calm Owl (`c0.sp-sop-92991.testnet`, out of NEAR since 2026-11-11) | [`6moUePvW…`](https://testnet.nearblocks.io/txns/6moUePvW6ri3pcauH3eKugJttum1g4bBXoUesaRomBk8) |
+

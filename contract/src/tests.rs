@@ -1644,3 +1644,106 @@ fn migrates_v3_state_adding_stops() {
     m.set_stop_loss(1500, acc("follower.testnet"));
     assert!(m.get_stop_loss(acc("follower.testnet")).is_some());
 }
+
+// ---------------- active trading inside the 24h window ----------------
+
+/// A leader signal recorded on chain (the contract checks the leader's signature in
+/// `record_signal`; here it's pushed directly).
+pub(crate) fn leader_signal(v: &mut Vault) {
+    let index = v.signals.len() as u64;
+    v.signals.push(Signal {
+        index,
+        hash: format!("{index:064x}"),
+        leader_sig: String::new(),
+        fill_hash: "00".repeat(32),
+        executed_ms: 0,
+        recorded_ms: 0,
+        epoch: v.epoch,
+    });
+}
+
+/// NAV of a share return `ret_bps` against the last bounded post's share price.
+fn nav_vs_last(v: &Vault, ret_bps: i128) -> u128 {
+    let p_last = v.band_ref.as_ref().unwrap().share_price.0 as i128;
+    ((p_last * (10_000 + ret_bps) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128) as u128
+}
+
+/// Season regression (sp-trend / sp-convict): NEAR falls 7% while the vault sits in
+/// USDC, the leader buys near the low, and NEAR climbs back. The honest NAV is ~7%
+/// above the window's anchor while NEAR is flat on the window, which the endpoint
+/// bound (flat + 300 bps) used to reject. A recorded trade splits the window into
+/// runs, so it now passes. Without a trade the same NAV is still a lie and fails.
+#[test]
+fn active_trader_passes_window_but_fake_timing_fails() {
+    for traded in [true, false] {
+        let mut v = oracle_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 1000;
+        assert!(post_with_price(&mut v, 10_000_000, Some(px(400_000_000)), t));
+        // NEAR −7% in four steps, the vault in USDC: flat NAV
+        for p in [390_000_000, 380_000_000, 375_000_000, 372_000_000] {
+            t += 1000;
+            let flat = v.book_nav;
+            assert!(post_with_price(&mut v, flat, Some(px(p)), t), "flat NAV while out of NEAR");
+        }
+        // the leader signals "100% NEAR" at the low; the trade costs 0.3%
+        if traded {
+            leader_signal(&mut v);
+            v.trades_since_anchor += 1;
+        }
+        // NEAR climbs back to 400 in four steps; the vault is 100% NEAR
+        let mut prev = 372_000_000i64;
+        for (i, p) in [380_000_000i64, 388_000_000, 395_000_000, 400_000_000].into_iter().enumerate() {
+            t += 1000;
+            let r = math::oracle_return_bps(prev, -8, p, -8).unwrap();
+            let ret = r - if i == 0 { 30 } else { 0 };
+            let nav = nav_vs_last(&v, ret);
+            let ok = post_with_price(&mut v, nav, Some(px(p)), t);
+            if traded {
+                assert!(ok, "honest active trader rejected at step {i}");
+            } else if !ok {
+                // the fake timing gain hits the window cap before NEAR is back
+                let gain = math::share_return_bps(math::PRICE_SCALE, math::price(v.book_nav, v.total_shares));
+                assert!(gain <= 300 + 10, "fake gain {gain} bps got past the window");
+                break;
+            }
+            assert!(traded || i < 3, "untraded vault claimed the full round trip");
+            prev = p;
+        }
+        let gain = math::share_return_bps(math::PRICE_SCALE, math::price(v.book_nav, v.total_shares));
+        if traded {
+            assert!(gain > 500, "honest round trip ends ~+7% before the 20% fee on new highs ({gain} bps)");
+            let path = v.get_band_path().unwrap();
+            assert!(path.down.0 < math::PRICE_SCALE && path.up.0 > math::PRICE_SCALE);
+        } else {
+            assert!(gain <= 310, "no trade: the window still caps the timing claim ({gain} bps)");
+        }
+    }
+}
+
+/// Runs only open at leader signals: posting often, or claiming perfect timing over a
+/// choppy path, stays inside the endpoint bound without them, even when the operator
+/// signs trades of its own (a dust trade per post opens nothing).
+#[test]
+fn choppy_path_without_trades_keeps_endpoint_bound() {
+    let mut v = oracle_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let mut t = T0_MS + 1000;
+    assert!(post_with_price(&mut v, 10_000_000, Some(px(400_000_000)), t));
+    // NEAR zigzags ±2% twenty times; the lie claims every up-move and none of the down
+    let mut accepted_up = 0;
+    for k in 0..20 {
+        t += 1000;
+        let (p, r) = if k % 2 == 0 { (408_000_000, 200) } else { (400_000_000, 0) };
+        v.trades_since_anchor += 1; // operator-requested trade, no leader signal
+        let nav = nav_vs_last(&v, r + 50);
+        if post_with_price(&mut v, nav, Some(px(p)), t) && r > 0 {
+            accepted_up += 1;
+        }
+    }
+    let gain = math::share_return_bps(math::PRICE_SCALE, math::price(v.book_nav, v.total_shares));
+    assert!(
+        gain <= 200 + 300 + 10,
+        "zigzag lie gained {gain} bps with no trade ({accepted_up} up-posts accepted)"
+    );
+}

@@ -42,7 +42,9 @@ Top-ups made on 2026-11-10, from spare test accounts that don't spend during the
 | `sp-lmeanrev-92991.testnet` | `sp-voltgt-8952.testnet` | 1.5 | [`HaVnAVGm…`](https://testnet.nearblocks.io/txns/HaVnAVGme3PqUtsMXQTChDMadLZM2nxdNERJaS8QT5EC) |
 | `sp-lmeanrev-92991.testnet` | `sp-trend-8952.testnet` | 1.5 | [`9cH5CMmv…`](https://testnet.nearblocks.io/txns/9cH5CMmv8hVqTZfhCUhtnQYZ7Yz1dazNmsPZ2Mc9ViN1) |
 
-**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. Spares with NEAR left after this round: `sp-vault-60270` (6.8, keep at least 2 for its listed vault), `sp-lai-92991` (5.0), `sp-lmanual-92991` (4.0), `sp-lmeanrev-92991` (2.0), `sp-fund-61557` (1.5). Then run:
+**Community vaults refill themselves.** Calm Owl (`c0.sp-sop-92991.testnet`) and any vault launched from the site have no access key, and Calm Owl ran dry on 2026-11-11 (refilled with 3 NEAR from `sp-lai-92991.testnet` on 2026-11-12, tx [`6moUePvW…`](https://testnet.nearblocks.io/txns/6moUePvW6ri3pcauH3eKugJttum1g4bBXoUesaRomBk8)). Each season tick now sends 1 NEAR from the operator to any community vault, or any vault in `vaults.json` `auto_topup` (Calm Owl is listed), that has less than 3 days of spend left. It never takes the operator below 3 NEAR, and the transfers are listed in `last-run.json` as `topups` (D-J-6). Such a vault only shows up as a low-balance warning if a top-up fails. Then top up the operator.
+
+**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. Spares with NEAR left (read 2026-11-12): `sp-vault-60270` (6.8, keep at least 2 for its listed vault), `sp-lai-92991` (2.0), `sp-lmanual-92991` (4.0), `sp-lmeanrev-92991` (2.0), `sp-fund-61557` (1.5). Then run:
 
 ```sh
 near tokens <spare>.testnet send-near <account>.testnet '2 NEAR' network-config testnet sign-with-keychain send

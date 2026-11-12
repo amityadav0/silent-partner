@@ -176,6 +176,29 @@ pub struct BandRef {
     pub at_ms: u64,
 }
 
+/// The risky asset's path through the current 24h window, split into runs at the
+/// weight changes the leader actually made: signals recorded on chain, each verified
+/// against the leader's signal key, so the operator can't add one alone (operator-
+/// requested trades don't count, or a dust trade per post would open a run each time). Within a run the vault's weight
+/// is constant, so its return lies between 0 and the run's asset return; across
+/// runs, between the products of the runs' down- and up-moves. Kept under its own
+/// storage key, so live vaults need no state migration.
+#[near(serializers = [json, borsh])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BandPath {
+    /// The window this path belongs to (`band_anchor.at_ms`).
+    pub anchor_at_ms: u64,
+    /// Products of (1 + max(0, r)) and (1 + min(0, r)) over the closed runs, × 1e18.
+    pub up: U128,
+    pub down: U128,
+    /// The price where the open run started.
+    pub run_mid: U128,
+    /// Leader signals recorded at the last bounded post.
+    pub signals: u64,
+}
+
+const BAND_PATH_KEY: &[u8] = b"band_path";
+
 /// A Pyth-compatible price feed for the vault's risky asset in base units
 /// (`get_price_no_older_than(price_id, age) -> Option<Price>`), e.g.
 /// `pyth-oracle.near` with the NEAR/USD feed.
@@ -723,6 +746,11 @@ impl Vault {
         (self.band_ref.clone(), self.band_anchor.clone(), self.trades_since_anchor)
     }
 
+    /// The 24h window's run-split price path (see `BandPath`).
+    pub fn get_band_path(&self) -> Option<BandPath> {
+        self.band_anchor.as_ref().map(|a| self.band_path_now(a))
+    }
+
     /// Verify two signed quotes and return the price point they give (panics if refused).
     pub fn price_from_quotes(&self, price_quotes: Vec<SignedQuote>) -> PricePoint {
         let q = self.cfg.nav_quotes.as_ref().unwrap_or_else(|| env::panic_str("vault has no nav_quotes"));
@@ -1188,20 +1216,32 @@ impl Vault {
         if p.observed_ms <= r.point.observed_ms {
             return Err("price not newer than the last post's".into());
         }
-        let check = |what: &str, from: &BandRef, up_budget: i128, down_extra: i128| -> Result<(), String> {
+        // `down_env`/`up_env`: the lowest and highest share return the asset's moves allow
+        // (bps); `None` means a constant weight: [min(0, r), max(0, r)].
+        let check = |what: &str, from: &BandRef, env: Option<(i128, i128)>, up_budget: i128, down_extra: i128| -> Result<(), String> {
             let ra = math::mid_return_bps(from.point.mid.0, p.mid.0).ok_or("bad price")?;
+            let (down_env, up_env) = env.map_or((ra.min(0), ra.max(0)), |(d, u)| (d.min(ra.min(0)), u.max(ra.max(0))));
             let rv = math::share_return_bps(from.share_price.0, share);
             let spread = p.half_spread_bps as i128 + from.point.half_spread_bps as i128;
-            let (lo, hi) = (ra.min(0) - (up_budget + down_extra + spread), ra.max(0) + up_budget + spread);
+            let (lo, hi) = (down_env - (up_budget + down_extra + spread), up_env + up_budget + spread);
             if rv >= lo && rv <= hi {
                 Ok(())
             } else {
                 Err(fmt(what, rv, lo, hi, ra))
             }
         };
-        check("per post", r, b.tolerance, b.slippage)?;
+        check("per post", r, None, b.tolerance, b.slippage)?;
         if let Some(a) = &self.band_anchor {
-            check("24h window", a, b.window_up, b.slippage * self.trades_since_anchor.max(1) as i128)?;
+            // Across the window the weight may change at each trade the leader made, so
+            // the envelope follows the asset's path run by run, not just its endpoint.
+            let (_, down_env, up_env) = self.band_path_step(a, r, p).ok_or("bad price")?;
+            check(
+                "24h window",
+                a,
+                Some((down_env, up_env)),
+                b.window_up,
+                b.slippage * self.trades_since_anchor.max(1) as i128,
+            )?;
         }
         Ok(())
     }
@@ -1209,6 +1249,10 @@ impl Vault {
     /// After an accepted bounded post: it becomes the reference, and it anchors a new
     /// 24h window when there is none or the current one is over.
     fn record_band(&mut self, p: PricePoint) {
+        let step = match (&self.band_anchor, &self.band_ref) {
+            (Some(a), Some(last)) => self.band_path_step(a, last, &p).map(|s| s.0),
+            _ => None,
+        };
         let after_burns = math::price(self.book_nav, self.total_shares);
         let r = BandRef {
             point: p,
@@ -1226,8 +1270,58 @@ impl Vault {
         if self.band_anchor.as_ref().is_none_or(|a| r.at_ms >= a.at_ms + BAND_WINDOW_MS) {
             self.band_anchor = Some(r.clone());
             self.trades_since_anchor = 0;
+            self.write_band_path(&self.band_path_now(&r));
+        } else if let Some(s) = step {
+            self.write_band_path(&s);
         }
         self.band_ref = Some(r);
+    }
+
+    /// The stored path for the window anchored at `anchor`, or a fresh one: no closed
+    /// runs, the open run starting at the anchor, markers as they are now (a vault
+    /// upgraded mid-window keeps the endpoint bound until its next trade).
+    fn band_path_now(&self, anchor: &BandRef) -> BandPath {
+        env::storage_read(BAND_PATH_KEY)
+            .and_then(|b| near_sdk::borsh::from_slice::<BandPath>(&b).ok())
+            .filter(|b| b.anchor_at_ms == anchor.at_ms)
+            .unwrap_or_else(|| BandPath {
+                anchor_at_ms: anchor.at_ms,
+                up: U128(math::PRICE_SCALE),
+                down: U128(math::PRICE_SCALE),
+                run_mid: anchor.point.mid,
+                signals: self.signals.len() as u64,
+            })
+    }
+
+    fn write_band_path(&self, b: &BandPath) {
+        env::storage_write(BAND_PATH_KEY, &near_sdk::borsh::to_vec(b).unwrap());
+    }
+
+    /// The window path after a post priced at `p` (`last` is the previous bounded post):
+    /// the path to store, and the share-return envelope (low, high) in bps vs the anchor.
+    /// If the leader signalled since `last`, the open run closes at `last` and the segment
+    /// `last → p` is a run of its own (the weight changed somewhere inside it); otherwise
+    /// the open run extends to `p`.
+    fn band_path_step(&self, anchor: &BandRef, last: &BandRef, p: &PricePoint) -> Option<(BandPath, i128, i128)> {
+        let mut b = self.band_path_now(anchor);
+        let bps = math::BPS as i128;
+        let apply = |m: u128, r: i128| math::mul_div(m, (bps + r).max(0) as u128, math::BPS);
+        let traded = b.signals != self.signals.len() as u64;
+        let (up, down) = if traded {
+            for (from, to) in [(b.run_mid.0, last.point.mid.0), (last.point.mid.0, p.mid.0)] {
+                let r = math::mid_return_bps(from, to)?;
+                b.up = U128(apply(b.up.0, r.max(0))?);
+                b.down = U128(apply(b.down.0, r.min(0))?);
+            }
+            b.run_mid = p.mid;
+            (b.up.0, b.down.0)
+        } else {
+            let r = math::mid_return_bps(b.run_mid.0, p.mid.0)?;
+            (apply(b.up.0, r.max(0))?, apply(b.down.0, r.min(0))?)
+        };
+        b.signals = self.signals.len() as u64;
+        let to_bps = |m: u128| (m as i128 - math::PRICE_SCALE as i128) * bps / math::PRICE_SCALE as i128;
+        Some((b, to_bps(down), to_bps(up)))
     }
 
     /// Fee above the HWM, then: withdrawals priced at the previous post burn at

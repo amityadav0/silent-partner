@@ -33,6 +33,7 @@ import { badgeSvg, cardPng, cardSvg } from "../src/season/card.js";
 import { viewCall } from "../src/intents.js";
 import { communityKeys, communityPersona, unseal, type Launch } from "../src/season/community.js";
 import { ackSignals, launches, operatorAccount, pendingSignals, provision } from "../src/season/provision.js";
+import { needsTopup, TOPUP } from "../src/season/topup.js";
 import { computeAlerts, pushNtfy, telegram, type AlertEvent, type Snapshot, type TgState, type VaultState } from "../src/season/alerts.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
@@ -245,12 +246,29 @@ for (const v of cardVaults) {
 // < 10 days of budget left. Balances are public on-chain anyway.
 const DAILY: [string, number][] = [[S.operator, 0.35], ...(((S as any).oracle?.writer ? [[(S as any).oracle.writer, 0.03]] : []) as [string, number][]), ...S.vaults.filter((v) => v.strategy !== "drill").map((v) => [v.id, 0.29] as [string, number]), ...community.map((l) => [l.vault!, 0.29] as [string, number])];
 const warnings: Record<string, unknown>[] = [];
+const topups: Record<string, unknown>[] = [];
+const freeNear = async (id: string) => {
+  const r = await fetch(env.rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: id } }) });
+  const a = ((await r.json()) as any).result;
+  return Number(BigInt(a.amount)) / 1e24 - a.storage_usage * 1e-5;
+};
+// Auto top-up: community vaults (no keys of their own) plus vaults.json `auto_topup`.
+const AUTO = new Set([...community.map((l) => l.vault!), ...(((S as any).auto_topup ?? []) as string[])]);
 for (const [id, perDay] of DAILY) {
   try {
-    const r = await fetch(env.rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: id } }) });
-    const a = ((await r.json()) as any).result;
-    const free = Number(BigInt(a.amount)) / 1e24 - a.storage_usage * 1e-5;
-    if (free / perDay < 10) {
+    let free = await freeNear(id);
+    if (AUTO.has(id) && opKey && needsTopup(free, perDay, await freeNear(S.operator))) {
+      try {
+        const o = await (await operatorAccount(env.rpc, S.operator, opKey)).sendMoney(id, BigInt(TOPUP.amount) * 10n ** 24n);
+        const t = { topup: id, near: TOPUP.amount, from: S.operator, tx: o.transaction.hash };
+        topups.push(t);
+        console.log(JSON.stringify(t));
+        free = await freeNear(id);
+      } catch (x) {
+        console.log(JSON.stringify({ topup_error: id, error: String((x as Error).message).slice(0, 160) }));
+      }
+    }
+    if (free / perDay < 10 && !(AUTO.has(id) && free / perDay >= TOPUP.belowDays)) {
       const w = { warning: "low balance: top up from the spare testnet accounts", account: id, free_near: +free.toFixed(2), days_left: +(free / perDay).toFixed(1) };
       warnings.push(w);
       console.log(JSON.stringify(w));
@@ -277,7 +295,7 @@ sealDir(plain, join(sealed, "state"), files, stateKey);
 for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
 const ranAt = new Date().toISOString();
-writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, community: communityLog, results: results.map(redact) }, null, 2) + "\n");
+writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, topups, community: communityLog, results: results.map(redact) }, null, 2) + "\n");
 // Recent signals per vault (hashes only), so the vault page can match a trade to its on-chain record.
 const recentFile = join(sealed, "recent-signals.json");
 let recent: Record<string, Record<string, unknown>[]> = {};

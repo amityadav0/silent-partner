@@ -285,6 +285,37 @@ proptest! {
         }
     }
 
+    /// An honest active trader is never blocked by the 24h window: the leader changes
+    /// the NEAR weight at random posts (each change is a leader signal and a trade costing
+    /// up to the max slippage), dozens of posts land inside one window, and every honest NAV passes.
+    #[test]
+    fn honest_active_trading_passes_window(w0 in 0u32..=1000, steps in prop::collection::vec((-400i64..=400, prop::option::of(0u32..=1000), 0u32..=100), 5..40)) {
+        let mut v = oracle_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 1000;
+        let mut near: i64 = 400_000_000;
+        let mut w = w0;
+        prop_assert!(post_with_price(&mut v, 10_000_000, Some(px(near)), t));
+        for (move_bps, new_w, cost_bps) in steps {
+            t += 1000;
+            let mut cost = 0i128;
+            if let Some(nw) = new_w {
+                // the trade happens at this post's start; the new weight earns this segment
+                w = nw;
+                cost = cost_bps as i128;
+                crate::tests::leader_signal(&mut v);
+                v.trades_since_anchor += 1;
+            }
+            let next = (near as i128 * (10_000 + move_bps as i128) / 10_000) as i64;
+            let r_near = math::oracle_return_bps(near, -8, next, -8).unwrap();
+            let p_last = v.band_ref.as_ref().unwrap().share_price.0 as i128;
+            let ret = r_near * w as i128 / 1000 - cost;
+            let nav = ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            prop_assert!(post_with_price(&mut v, nav, Some(px(next)), t), "honest {} bps at weight {} rejected (asset {} bps)", ret, w, r_near);
+            near = next;
+        }
+    }
+
     /// A matured withdrawal never pays more than the lower of its two prices,
     /// and never lowers the price of the holders who stay.
     #[test]

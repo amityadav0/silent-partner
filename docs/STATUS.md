@@ -100,6 +100,11 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] G1 AI leader builder (/create/ai), G2 open season: registry contract, season provisioning, sealed strategies and signals, Community badge, calmest return (D-G-1 to D-G-3); Calm Owl launched end to end on testnet
 - [x] G3 alerts (D-G-4) · G4 My partners (D-G-5) · G5 partner letters (D-G-6) · G6 share loops (D-G-7) · G7 first-run sheet (D-G-8)
 
+## Nov 12: active-trading NAV window, Calm Owl refill
+- [x] Calm Owl (`c0`) topped up (3 NEAR), and community vaults are now refilled by the season tick (D-J-6)
+- [x] 24h NAV window follows the asset's path split at leader signals, so honest active traders pass and fake timing still fails; tests, threat-model row 18, AI vaults upgraded in place (D-H-7)
+- [ ] reproducible mainnet wasm rebuilt for D-H-7, NEEDS-AMIT §3 hash updated
+
 ## Next
 - Season loop picks up the open-season, alerts and badge code at its next self-handover (~2026-11-10 05:21 UTC): check that `last-run.json` shows `community` and a result for `c0.sp-sop-92991.testnet`, that `alerts.json` and `badges/` appear on season-state, and that Calm Owl's card renders. `health.yml` reports a stale tick.
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.
