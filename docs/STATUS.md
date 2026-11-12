@@ -113,4 +113,4 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - Mainnet still waits for Amit (§1 round trip, §3 OK; new artifact hash in §3, plus the plain-nonce check before payouts). P7 on Nov 14.
 
 ## Blockers
-- Waiting on Amit: §1 the $1 round trip, then §3 the mainnet OK. §4–6 (video, X post, application) are his.
+- §1 $1 round trip **done on mainnet 2026-11-12** (docs/mainnet.md). Role accounts funded; vault deploy waits for Amit's explicit OK. Waiting on Amit: §3 deploy. §4–6 (video, X post, application) are his.

@@ -28,4 +28,22 @@ Every role is an implicit account. Keys exist only in `~/.near-credentials/mainn
 | USDC `storage_deposit` for the leader | `5JCe2G8jjCJiyhnLrn5gYdmJ1gjnzywcYSyFUzddWgV9` | ok |
 | USDC `storage_deposit` for the follower | `CtUt692fo5yVpn5oUbbnDwGSWhb4CP58QM1SuXoDnrCu` | ok |
 
-Next: deploy and init the vault. The wasm is checked: sha256 `7d4e87ae…47c7`, the same as §3.
+| Amit → hub, 8 USDC | (from Amit's wallet) | hub USDC 8,000,000 |
+| Hub → intents.near, 1 USDC (`ft_transfer_call`, empty msg) | `3q8xEzEPpRzRLd5Ye6TEgUc7kZk3W2NWaD7cUdva9V7p` | public intents USDC 1,000,000 |
+
+## §1 round trip: done (2026-11-12 13:39–13:40 UTC)
+
+Public → confidential → public, 1 USDC, through 1Click with our partner JWT. Fees 0. Full scrubbed log: [probes/p1-roundtrip-live.json](probes/p1-roundtrip-live.json).
+
+| Leg | Intent hash | NEAR txs | Time |
+|---|---|---|---|
+| Shield | `VdxMVspsVvfx8i8sU9GNSpx6y5T2mNz4JwGWGUK4anA` | `HquRCMBdGgyYHtFR7BkawfwgyUEErWEu3XNz7F62TRyy` | ~10 s to SUCCESS |
+| Unshield | `7cYMSJvopvzMa6QQCDaEonGnNeDVXaQNe3AJX3qXwt4U` | `GTpZK21yCC2RdC1qL8ex62m4THcCgzjoKa1PQtGzc7ec`, `BaYuN3JkPpR4dLMDWJxRh6mccQYiBYoC6kX6o87TmVw5` | ~10 s to SUCCESS |
+
+Balances: before, the confidential balance was empty. After the shield it showed 1,000,000 with `source: "private"`. After the unshield the confidential balance was empty again and the public `intents.near` balance was back at 1,000,000.
+
+## Next
+
+Deploy and init the vault. The wasm is checked: sha256 `7d4e87ae…47c7`, the same as §3. The args are in [mainnet-init.live.json](mainnet-init.live.json).
+
+Leftover funds go back to `amityadav.near` after the demo window ends (Nov 25). That includes deleting the vault account with `amityadav.near` as the beneficiary, which returns its storage NEAR.

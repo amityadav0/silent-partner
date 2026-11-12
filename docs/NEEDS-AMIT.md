@@ -4,7 +4,7 @@ This list holds only what needs you: signatures or real funds, mainnet deploys, 
 
 ## 1. $1 round trip: public → confidential → public (P1b)
 
-**Status:** waiting for your OK and your signature. Nothing has been signed or sent yet.
+**Status: done 2026-11-12.** Amit funded the hub. Shield and unshield both reached SUCCESS in about 10 s each, and the 1 USDC is back on the public balance. Txs are in [mainnet.md](mainnet.md). The steps below are kept for reference.
 
 **Why:** it proves the confidential leg works end to end with our partner JWT, before any vault money depends on it.
 
