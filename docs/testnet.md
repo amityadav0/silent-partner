@@ -358,3 +358,14 @@ Before the fix, Trend Rider's window stood at NEAR −7.1% since its anchor and 
 
 The season loop was restarted on `5900208`. At its first tick (2026-11-12 08:51:58 UTC), all six AI leaders (Allocator, Trend Rider, Contrarian, Vol Target, Conviction and Calm Owl) got a NEAR AI receipt. Each is a `provider_tee` signature by enclave key `0xfe0071895500a9755c18044948ab4f4e1a7f337e` over `<model>:<sha256(request)>:<sha256(response)>`, and the model's TDX quote binds that key and the tick's nonce (`bound: true`), with NVIDIA GPU evidence present. The browser checker (`web/lib/receipt.ts`), run against that tick's `last-run.json` and `attestations.json`, passed signature, model, memo and quote binding for all six. The memo in each leader-signed signal is now `sha256(signed text : quote digest)`.
 
+
+## Per-post dip credit (D-H-8, 2026-11-12)
+
+Deploy-only upgrades: the state read back unchanged and the band path is intact.
+
+| Vault | Tx |
+|---|---|
+| sp-trend-8952.testnet | `2x172EmHDvQkwaEjSsDDsNW1tU8YhTApEtKgGCwhRbin` |
+| sp-convict-8952.testnet | `GtZ91gpPEr5BtLTeCwrToUsXykKCWTSDKJV6Ets6wFhg` |
+| sp-contra-8952.testnet | `BHP6KWF8hy1oSvxnVXgWakgzun2dWAvfZ7osfgLT6LN9` |
+| sp-voltgt-8952.testnet | `6d8tFVHCBa9uY728sH23ZQ5F2GJHHHRs4WpLtvDShinV` |

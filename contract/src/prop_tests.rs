@@ -273,7 +273,9 @@ proptest! {
                 v.trades_since_anchor += 1;
             }
             // a lie past the per-post band: up = tolerance 50 (conf 0), down = slippage 100 + 50
-            let edge = if up { r_near.max(0) + 50 } else { r_near.min(0) - 150 };
+            // (plus the previous post's dip below the envelope, which this post may recover, D-H-8)
+            let credit = v.band_dip_for(v.band_ref.as_ref().unwrap());
+            let edge = if up { r_near.max(0) + 50 + credit } else { r_near.min(0) - 150 };
             let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
             let (epoch, book) = (v.epoch, v.book_nav);
             let (lie_nav, honest_nav) = (nav_at(lie_ret, &v), nav_at(ret, &v));

@@ -1747,3 +1747,44 @@ fn choppy_path_without_trades_keeps_endpoint_bound() {
         "zigzag lie gained {gain} bps with no trade ({accepted_up} up-posts accepted)"
     );
 }
+
+/// Season regression (sp-contra, 2026-11-12 14:40 UTC, tx 87BsmFqc…): a ~90% NEAR vault
+/// with no trades. The 14:23 post marked NEAR on a wide 1Click sell quote, so the share fell
+/// 153 bps while the asset fell 86. The next honest post recovered that dip (+191 vs the
+/// asset's +107) and broke the per-post bound. The dip is now credited to the next post
+/// only (D-H-8). Without a dip the same +191 is still rejected, and the credit never covers
+/// more than the dip.
+#[test]
+fn per_post_dip_is_recoverable_once() {
+    for (dip_b, ret_c, want) in [(-153i128, 191i128, true), (-77, 191, false), (-153, 191 + 67 + 30, false)] {
+        let mut v = oracle_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 1000;
+        assert!(post_with_price(&mut v, 10_000_000, Some(px(338_539_870)), t));
+        t += 1000;
+        let nav = nav_vs_last(&v, dip_b);
+        assert!(post_with_price(&mut v, nav, Some(px(335_641_441)), t), "the low mark passes the lower band ({dip_b} bps)");
+        t += 1000;
+        let nav = nav_vs_last(&v, ret_c);
+        assert_eq!(post_with_price(&mut v, nav, Some(px(339_241_739)), t), want, "dip {dip_b}, recovery {ret_c}");
+    }
+}
+
+/// The credit is spent by the post after the dip: a later post gets none.
+#[test]
+fn dip_credit_does_not_carry_past_the_next_post() {
+    let mut v = oracle_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let mut t = T0_MS + 1000;
+    assert!(post_with_price(&mut v, 10_000_000, Some(px(338_539_870)), t));
+    t += 1000;
+    let nav = nav_vs_last(&v, -153);
+    assert!(post_with_price(&mut v, nav, Some(px(335_641_441)), t));
+    // a fair post at an unchanged price spends the credit
+    t += 1000;
+    let nav = nav_vs_last(&v, 0);
+    assert!(post_with_price(&mut v, nav, Some(px(335_641_442)), t));
+    t += 1000;
+    let nav = nav_vs_last(&v, 191);
+    assert!(!post_with_price(&mut v, nav, Some(px(339_241_739)), t), "a stale dip must not widen a later post");
+}

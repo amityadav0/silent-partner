@@ -198,6 +198,9 @@ pub struct BandPath {
 }
 
 const BAND_PATH_KEY: &[u8] = b"band_path";
+/// (reference post's `at_ms`, bps): how far the last accepted post fell below the
+/// asset's per-post envelope. The next post may recover exactly that (D-H-8).
+const BAND_DIP_KEY: &[u8] = b"band_dip";
 
 /// A Pyth-compatible price feed for the vault's risky asset in base units
 /// (`get_price_no_older_than(price_id, age) -> Option<Price>`), e.g.
@@ -659,8 +662,9 @@ impl Vault {
                 env::log_str(&format!("silent-partner.nav_rejected epoch={epoch} nav={} reason={why}", nav.0));
                 return PromiseOrValue::Value(None);
             }
+            let share_pre = math::price(nav.0, self.total_shares);
             let post = self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature);
-            self.record_band(p);
+            self.record_band(p, share_pre);
             return PromiseOrValue::Value(Some(post));
         }
         let Some(o) = self.cfg.nav_oracle.clone() else {
@@ -714,8 +718,9 @@ impl Vault {
         if let Err(why) = self.check_band(nav.0, &point) {
             return reject(why);
         }
+        let share_pre = math::price(nav.0, self.total_shares);
         let post = self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature);
-        self.record_band(point);
+        self.record_band(point, share_pre);
         Some(post)
     }
 
@@ -1218,19 +1223,19 @@ impl Vault {
         }
         // `down_env`/`up_env`: the lowest and highest share return the asset's moves allow
         // (bps); `None` means a constant weight: [min(0, r), max(0, r)].
-        let check = |what: &str, from: &BandRef, env: Option<(i128, i128)>, up_budget: i128, down_extra: i128| -> Result<(), String> {
+        let check = |what: &str, from: &BandRef, env: Option<(i128, i128)>, up_budget: i128, down_extra: i128, up_extra: i128| -> Result<(), String> {
             let ra = math::mid_return_bps(from.point.mid.0, p.mid.0).ok_or("bad price")?;
             let (down_env, up_env) = env.map_or((ra.min(0), ra.max(0)), |(d, u)| (d.min(ra.min(0)), u.max(ra.max(0))));
             let rv = math::share_return_bps(from.share_price.0, share);
             let spread = p.half_spread_bps as i128 + from.point.half_spread_bps as i128;
-            let (lo, hi) = (down_env - (up_budget + down_extra + spread), up_env + up_budget + spread);
+            let (lo, hi) = (down_env - (up_budget + down_extra + spread), up_env + up_budget + spread + up_extra);
             if rv >= lo && rv <= hi {
                 Ok(())
             } else {
                 Err(fmt(what, rv, lo, hi, ra))
             }
         };
-        check("per post", r, None, b.tolerance, b.slippage)?;
+        check("per post", r, None, b.tolerance, b.slippage, self.band_dip_for(r))?;
         if let Some(a) = &self.band_anchor {
             // Across the window the weight may change at each trade the leader made, so
             // the envelope follows the asset's path run by run, not just its endpoint.
@@ -1241,6 +1246,7 @@ impl Vault {
                 Some((down_env, up_env)),
                 b.window_up,
                 b.slippage * self.trades_since_anchor.max(1) as i128,
+                0,
             )?;
         }
         Ok(())
@@ -1248,12 +1254,21 @@ impl Vault {
 
     /// After an accepted bounded post: it becomes the reference, and it anchors a new
     /// 24h window when there is none or the current one is over.
-    fn record_band(&mut self, p: PricePoint) {
+    /// `share_pre`: this post's share price before fee and burns, the same basis `check_band` used.
+    fn record_band(&mut self, p: PricePoint, share_pre: u128) {
         let step = match (&self.band_anchor, &self.band_ref) {
             (Some(a), Some(last)) => self.band_path_step(a, last, &p).map(|s| s.0),
             _ => None,
         };
         let after_burns = math::price(self.book_nav, self.total_shares);
+        let dip = match (&self.band_ref, self.band_params()) {
+            (Some(last), Some(b)) => math::mid_return_bps(last.point.mid.0, p.mid.0).map_or(0, |ra| {
+                let rv = math::share_return_bps(last.share_price.0, share_pre);
+                let cap = b.slippage + b.tolerance + p.half_spread_bps as i128 + last.point.half_spread_bps as i128;
+                (ra.min(0) - rv).clamp(0, cap)
+            }),
+            _ => 0,
+        };
         let r = BandRef {
             point: p,
             share_price: U128(after_burns),
@@ -1274,7 +1289,17 @@ impl Vault {
         } else if let Some(s) = step {
             self.write_band_path(&s);
         }
+        env::storage_write(BAND_DIP_KEY, &near_sdk::borsh::to_vec(&(r.at_ms, dip as i64)).unwrap());
         self.band_ref = Some(r);
+    }
+
+    /// Credit for the next per-post check: the last post's dip below the envelope, if
+    /// `last` is still the reference it was measured against.
+    fn band_dip_for(&self, last: &BandRef) -> i128 {
+        env::storage_read(BAND_DIP_KEY)
+            .and_then(|b| near_sdk::borsh::from_slice::<(u64, i64)>(&b).ok())
+            .filter(|(at, _)| *at == last.at_ms)
+            .map_or(0, |(_, d)| d.max(0) as i128)
     }
 
     /// The stored path for the window anchored at `anchor`, or a fresh one: no closed
