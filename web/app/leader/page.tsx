@@ -4,7 +4,7 @@ import { ASSETS, OPERATOR_API, TGAS, VAULTS } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { feeEarned, fmtUnits, priceOf, view, type SignalRec } from "@/lib/vault";
 import { newSignalKey, publicKeyOf, randomNonce, signSignal, type Signal } from "@/lib/signal";
-import { Redact, short, useQueryParam, useVault } from "../ui";
+import { PageSkeleton, Redact, short, useQueryParam, useVault } from "../ui";
 import { ShareKit } from "./sharekit";
 import { metaOf } from "@/lib/vaults";
 import { REGISTRY, launchOfVault, seal, type Launch } from "@/lib/community";
@@ -56,7 +56,7 @@ export default function LeaderConsole() {
     setForm((f) => ({ ...f, type: "target", from: base, to: risk, pct: targetParam }));
   }, [data, targetParam]);
 
-  if (!id || !data) return <p className="muted">Reading vault…</p>;
+  if (!id || !data) return <PageSkeleton tiles={3} />;
   const isLeader = accountId === data.cfg.leader;
   const keyMatches = secret && onchainKey && publicKeyOf(secret) === onchainKey;
   const baseSym = sym(data.cfg.base_asset_id), baseDec = ASSETS[data.cfg.base_asset_id]?.decimals ?? 6;

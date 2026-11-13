@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, NETWORK, TGAS, explorerFor, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, drawdownWindow, fmtUnits, leaderStake, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
-import { LeaderChips, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { LeaderChips, PageSkeleton, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { META, metaOf, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, launchOfVault } from "@/lib/community";
 import { EmergencyBanner } from "./emergency";
@@ -75,7 +75,7 @@ export default function VaultPage() {
 
   if (id === null) return <p>Missing <code>?id=</code>. Pick a vault on the <Link href="/leaderboard/">leaderboard</Link>.</p>;
   if (error) return <p className="neg">{error}</p>;
-  if (!data || !m) return <p className="muted">Reading the vault&apos;s signed prices from NEAR…</p>;
+  if (!data || !m) return <PageSkeleton label="Reading the vault&apos;s signed prices from NEAR…" />;
   const { vault, cfg, navs } = data;
 
   async function withdraw() {
@@ -158,7 +158,7 @@ export default function VaultPage() {
             {!viewer ? (
               <p className="muted mt-1 text-sm">Connect a wallet to see your shares. Only you and the chain know them; the leader never sees a list.</p>
             ) : !mine ? (
-              <p className="muted mt-1 text-sm">Reading…</p>
+              <div className="skeleton mt-2" style={{ height: 18, width: 220 }} aria-label="Reading your position" />
             ) : (
               <>
                 <p className="mt-1 text-sm tabular-nums">

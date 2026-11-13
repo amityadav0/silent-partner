@@ -10,7 +10,7 @@ import { BLEND, blendPick, mixDrawdown, split, type Band } from "@/lib/portfolio
 import { fmtUnits, loadVault, maxDrawdown, priceOf, status, view, type Position, type VaultData } from "@/lib/vault";
 import { metaOf, type VaultMeta } from "@/lib/vaults";
 import { useWallet } from "@/lib/wallet";
-import { useQueryParam } from "../ui";
+import { SkeletonRows, useQueryParam } from "../ui";
 
 type V = { d: VaultData; m: VaultMeta; ret: number; dd: number };
 type Holding = { v: V; shares: bigint; value: bigint; deposited: bigint | null; claimed: bigint };
@@ -89,7 +89,7 @@ export default function Partners() {
             <table className="t" data-testid="holdings">
               <thead><tr><th>Leader</th><th>Value</th><th>Share of total</th><th>Your P&amp;L</th><th>Vault worst drawdown</th><th /></tr></thead>
               <tbody>
-                {holdings === null && <tr><td colSpan={6} className="muted">Reading your vaults…</td></tr>}
+                {holdings === null && <SkeletonRows cols={6} rows={3} />}
                 {holdings?.length === 0 && <tr><td colSpan={6} className="muted">No vaults yet. Pick a leader, or try a blend below.</td></tr>}
                 {holdings?.map((h) => {
                   const p = h.deposited !== null ? h.value + h.claimed - h.deposited : null;

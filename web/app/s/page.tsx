@@ -5,7 +5,7 @@ import { ASSETS } from "@/lib/config";
 import { seasonUrl } from "@/lib/vault";
 import { aumBucket, cardUrl, drawdownWindow, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
 import { useState } from "react";
-import { Redact, Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { PageSkeleton, Redact, Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
 
 /** Public share card for one vault: returns and proof, nothing else. */
@@ -26,7 +26,7 @@ export default function Share() {
   }, [data]);
   if (id === null) return <p>Missing <code>?id=</code>.</p>;
   if (error) return <p className="neg">{error}</p>;
-  if (!data || !m) return <p className="muted">Reading vault from NEAR…</p>;
+  if (!data || !m) return <PageSkeleton />;
   const allOk = m.v.bad.length === 0 && data.navs.length > 0;
   return (
     <section className="mx-auto max-w-xl" data-testid="share">

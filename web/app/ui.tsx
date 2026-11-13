@@ -248,3 +248,31 @@ export function short(s: string, n = 6) {
   if (/^[a-z0-9_.-]{2,28}$/.test(s) && /[a-z]/.test(s) && s.includes(".")) return s;
   return s.length > 2 * n + 1 ? `${s.slice(0, n)}…${s.slice(-n)}` : s;
 }
+
+/** V7: the page's shape while its signed data loads from NEAR, so nothing jumps when it arrives. */
+export function PageSkeleton({ label = "Reading signed data from NEAR…", tiles = 4 }: { label?: string; tiles?: number }) {
+  return (
+    <section aria-busy="true" data-testid="skeleton">
+      <span className="sr-only">{label}</span>
+      <div className="skeleton" style={{ height: 22, width: 140 }} />
+      <div className="skeleton mt-3" style={{ height: 44, width: "min(420px, 80%)" }} />
+      <div className="stats mt-6">
+        {Array.from({ length: tiles }, (_, i) => <div key={i} className="tile"><div className="skeleton" style={{ height: 12, width: "60%" }} /><div className="skeleton mt-3" style={{ height: 28, width: "45%" }} /></div>)}
+      </div>
+      <div className="skeleton mt-6" style={{ height: 220, width: "100%" }} />
+      <p className="muted mt-3 text-sm" aria-hidden="true">{label}</p>
+    </section>
+  );
+}
+
+export function SkeletonRows({ cols, rows = 4 }: { cols: number; rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }, (_, r) => (
+        <tr key={r} aria-hidden="true" data-testid="skeleton-row">
+          {Array.from({ length: cols }, (_, c) => <td key={c}><div className="skeleton" style={{ height: 14, width: c === 0 ? 120 : 56 }} /></td>)}
+        </tr>
+      ))}
+    </>
+  );
+}

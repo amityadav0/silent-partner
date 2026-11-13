@@ -5,7 +5,7 @@ import { VAULTS } from "@/lib/config";
 import { calmScore, leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, windowStats, type VaultData } from "@/lib/vault";
 import { metaOf as houseMeta, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, loadLaunches } from "@/lib/community";
-import { Redact, Ret, RiskDots, StatusChip } from "../ui";
+import { Redact, Ret, RiskDots, SkeletonRows, StatusChip } from "../ui";
 import { useRouter } from "next/navigation";
 import { badgeOf } from "@/lib/vaults";
 
@@ -80,7 +80,7 @@ export default function Leaderboard() {
             <tr><th>Leader</th><th>Worst drawdown</th><th>Return</th><th>Own money in</th><th>Holdings</th><th>Verified</th><th><span className="sr-only">Open</span></th></tr>
           </thead>
           <tbody>
-            {rows === null && <tr><td colSpan={7} className="muted">Reading every leader&apos;s signed prices from NEAR…</td></tr>}
+            {rows === null && <SkeletonRows cols={7} rows={6} />}
             {rows?.length === 0 && <tr><td colSpan={7} className="muted">No leaders yet. The first one could be you: <Link href="/create/ai/">lead a vault</Link>.</td></tr>}
             {sorted?.map((r) => {
               const m = r.m, st = status(r.d.vault);

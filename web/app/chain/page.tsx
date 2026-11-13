@@ -9,7 +9,7 @@ import { ASSETS, BASE_PATH, NEAR_EXPLORER } from "@/lib/config";
 import { checkDisclosure, holdings, type Check, type Disclosure } from "@/lib/disclosure";
 import { fmtUnits, priceOf, view, type Claim, type SignalRec } from "@/lib/vault";
 import { metaOf } from "@/lib/vaults";
-import { ModeChip, Redact, short, useQueryParam, useVault } from "../ui";
+import { ModeChip, PageSkeleton, Redact, short, useQueryParam, useVault } from "../ui";
 
 const DEFAULT = "sp-manual-92991.testnet";
 const DEFAULT_FOLLOWER = "sp-follower-60270.testnet";
@@ -50,7 +50,7 @@ export default function ChainPage() {
   const checks: Check[] | null = useMemo(() => (data && extra && disc && disc !== "none" ? checkDisclosure(disc, data.navs, extra.signals) : null), [data, extra, disc]);
 
   if (error) return <p className="neg">{error}</p>;
-  if (!data) return <p className="muted">Reading vault from NEAR…</p>;
+  if (!data) return <PageSkeleton tiles={3} />;
   const { vault, cfg, navs } = data;
   const b = cfg.base_asset_id, d = dec(b);
   const price = priceOf(vault.price);
