@@ -10,16 +10,16 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9623723850814981,
+      "price": 0.9562785880083967,
       "peak": 1.0085308546861929,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.9063534438895267,
+      "price": 0.9058708295019678,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -83,6 +83,12 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-meanrev-92991.testnet",
+      "kind": "drawdown",
+      "text": "Mean-reversion bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-13T22:33:44.098Z"
+    },
     {
       "vault": "sp-contra-8952.testnet",
       "kind": "drawdown",
