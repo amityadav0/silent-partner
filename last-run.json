@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-13T21:57:33.299Z",
+  "ranAt": "2026-11-13T22:16:12.475Z",
   "marketData": true,
   "oracle": {
-    "tx": "2Upuwzwe9qcPq4KiXHr8G8xQrGee8ChN3qmR1YYv4PS7"
+    "tx": "4fFQz45TFrM9hYJWyg9UFgLtxK1E5YzJurboq4extyQ2"
   },
   "warnings": [],
   "topups": [],
@@ -10,21 +10,23 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 467,
+      "epoch": 468,
       "nav": "763515712",
-      "tx": "8eTX89Fn3ysYAJ4yXhYzPSGQZicoHdh9Y7t7wddF6XTx"
+      "tx": "6pXSg6BoX8jHxJfnEW7eT7yMYnWbE1ny5Ws9kQzx4DKg"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 466,
-      "nav": "795068850",
-      "tx": "9APPGGX3WoFMWqXYDJ2mAm46fJej5CP4yR5WQ953BevP"
+      "epoch": 467,
+      "nav": "790820388",
+      "tx": "4YWRyAZJQH5uhppN1dJ73hExr9okwYAhqTZcZfBJi5p3",
+      "signal_hash": "0462d6a30dacfc9740230cd27f0fb810f1c868e6143f6d859ac165347c9686d7",
+      "signal_status": "executed"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 463,
-      "nav": "637266971",
-      "tx": "9Rwf8dEwABY7WhDkEmkWSUgBmX8iRzurbcga4iyQyNPj",
+      "epoch": 464,
+      "nav": "634988143",
+      "tx": "GDjzhxQx4HDM1jXghLbSDhHZhaRKhTPxBR1KPiU6zLfg",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "unavailable",
       "ai_error": "NEAR AI 502: holding",
@@ -34,9 +36,9 @@
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 392,
-      "nav": "518172217",
-      "tx": "5sckjRb7DnyUJH5AAk9wRyutFgDi4ASEUyvPgTdRuyTx",
+      "epoch": 393,
+      "nav": "513914373",
+      "tx": "5SHDqzWPTMb7JFWWmPwX1ATd23ntqukBfv4CRGVWw3ZK",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "unavailable",
       "ai_error": "NEAR AI 502: holding",
@@ -46,9 +48,9 @@
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 443,
-      "nav": "607649386",
-      "tx": "e2Jf1YEc7pQVpQcH2U9NTwNgNX1pBofiXfT5y3oCDHF",
+      "epoch": 444,
+      "nav": "603631984",
+      "tx": "6BH9MrwJK96EEmeQcv1ERG51kyrgE2iZvHV8vbTq26p3",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "unavailable",
       "ai_error": "NEAR AI 502: holding",
@@ -58,45 +60,19 @@
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 442,
-      "nav": "624773491",
-      "tx": "J9H42F5HK1r9aVDTu4H9HDCNLWofQHzXRXEG5EJabqce",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "unavailable",
-      "ai_error": "NEAR AI 502: holding",
-      "ai_tokens": null,
-      "ai_target_band": "hold",
-      "ai_rationale_hash": null
+      "error": "NAV rejected (4WD86fr2SME5ZQTWbhZAk1kzaaCiHTxwpmxLXsXfcNG9): silent-partner.nav_rejected epoch=443 nav=620474762 reason=no fresh oracle price"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 430,
-      "nav": "325883826",
-      "tx": "9jyUL68Y8xUsdfzCcuN6KXjfS8dxPtykf7dfNYugioxX",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "unavailable",
-      "ai_error": "NEAR AI 502: holding",
-      "ai_tokens": null,
-      "ai_target_band": "hold",
-      "ai_rationale_hash": null
+      "error": "NAV rejected (A9inUKRu88DDrnkP3rQr3cF1EuPdnmGWCWzmdwZsEJyH): silent-partner.nav_rejected epoch=431 nav=321724819 reason=no fresh oracle price"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 447,
-      "nav": "641458883",
-      "tx": "4KiyrJ2beLwPenprks2GcAEezH89ioMrpJrboifsu9nZ"
+      "error": "NAV rejected (BVz6RwMBgHwVpgeSXNgNyTbV6xNvBaxqnwBxYvpwHd4m): silent-partner.nav_rejected epoch=448 nav=637164435 reason=no fresh oracle price"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 240,
-      "nav": "92848370",
-      "tx": "7XuQsAFmJfKujP7V6j4kAPCXMe2cmk8ZTdnkumj9kdG1",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_status": "unavailable",
-      "ai_error": "NEAR AI 502: holding",
-      "ai_tokens": null,
-      "ai_target_band": "hold",
-      "ai_rationale_hash": null
+      "error": "NAV rejected (8BPiBiyDQahMYUFwf18EsPcLrSYyYgYxKvmdKsi2zTd3): silent-partner.nav_rejected epoch=241 nav=91960067 reason=no fresh oracle price"
     }
   ]
 }
