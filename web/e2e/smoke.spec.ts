@@ -422,7 +422,7 @@ test("AI vault: an error-only latest tick still shows the last decision and its 
   await page.route("**/season-state/last-run.json", (r) => r.fulfill({ json: { ranAt: "2026-11-12T14:40:00Z", results: [{ vault: id, error: "NAV out of band" }] } }));
   await page.route("**/season-state/attestations.json", (r) => r.fulfill({ json: { [receipt.quote_sha256]: { ...fx.attestation, seen: "2026-11-12T14:25:00Z" } } }));
   await page.route("**/season-state/decisions.json", (r) =>
-    r.fulfill({ json: { [id]: [{ ranAt: "2026-11-12T14:25:00Z", ai_model: model, ai_status: "ok", ai_target_band: "40–60%", ai_rationale_hash: memo, signal_hash: null, ai_receipt: receipt }] } }),
+    r.fulfill({ json: { [id]: [{ ranAt: new Date().toISOString(), ai_model: model, ai_status: "ok", ai_target_band: "40–60%", ai_rationale_hash: memo, signal_hash: null, ai_receipt: receipt }] } }),
   );
   await page.goto(`/vault/?id=${id}`);
   const ai = page.getByTestId("ai-decisions");
