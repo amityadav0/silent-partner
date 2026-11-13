@@ -6,6 +6,7 @@ import { VAULTS } from "@/lib/config";
 import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
 import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { COPY_DEFAULT } from "@/lib/copy";
+import { WatchButton } from "./watch";
 import { Redact } from "./ui";
 
 type LiveEvent = { t: number; what: string; vault: string; id: string; ok: boolean; mainnet?: boolean };
@@ -162,6 +163,7 @@ export default function Landing() {
           <div className="flex flex-wrap items-center gap-3">
             <Link href={`/copy/?id=${COPY_DEFAULT}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy">Copy Contrarian with $100: no wallet, 10 seconds</Link>
             <Link href="/leaderboard/" className="btn btn-lg">Follow privately</Link>
+            <WatchButton />
             <a href="#tour" className="quiet" data-testid="tour-button">Try it in 60 s</a>
           </div>
         </div>

@@ -312,3 +312,9 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .term-q { font: inherit; color: var(--ink-2); text-decoration: underline dotted; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: help; }
 .term-mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 11px; line-height: 1; vertical-align: 1px; }
 .term-tip { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: var(--row); color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+
+/* V4: watch lightbox */
+.watch-dialog { padding: 0; border: 0; border-radius: 14px; background: #000; width: min(960px, 94vw); max-width: none; overflow: visible; }
+.watch-dialog::backdrop { background: rgb(0 0 0 / 0.72); }
+.watch-video { display: block; width: 100%; height: auto; border-radius: 14px; }
+.watch-close { position: absolute; top: -40px; right: 0; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #fff; color: #000; font-size: 14px; cursor: pointer; }

@@ -68,3 +68,17 @@ test("V3: /how explains it in three pictures and plain words, technical names be
   await page.getByRole("link", { name: "How it works" }).first().click();
   await expect(page).toHaveURL(/\/how\/$/);
 });
+
+test("V4: Watch opens the demo muted, with captions, in a lightbox", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("watch").click();
+  const v = page.getByTestId("watch-video");
+  await expect(v).toBeVisible();
+  expect(await v.evaluate((el: HTMLVideoElement) => el.muted)).toBe(true);
+  await expect(v.locator("track[kind=captions][default]")).toHaveCount(1);
+  const vtt = await page.request.get("/demo/captions.vtt");
+  expect(await vtt.text()).toMatch(/^WEBVTT/);
+  expect((await page.request.head("/demo/silent-partner-demo.mp4")).status()).toBe(200);
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("watch-video")).toHaveCount(0);
+});

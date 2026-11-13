@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "node scripts/modal-css.mjs",
     "dev": "next dev -p 3000",
-    "prebuild": "node scripts/modal-css.mjs",
+    "prebuild": "mkdir -p public/demo && cp ../docs/demo/silent-partner-demo.mp4 public/demo/silent-partner-demo.mp4 && chmod 644 public/demo/silent-partner-demo.mp4",
     "build": "next build",
     "serve": "python3 -m http.server 3000 -d out",
     "typecheck": "tsc --noEmit",
