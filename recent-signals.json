@@ -119,6 +119,14 @@
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
+    },
+    {
+      "ranAt": "2026-11-13T01:29:49.538Z",
+      "epoch": 382,
+      "signal_hash": "e4208aedddfada09556168e7e28860b94b515dd4663332d7b896e1f03ef343c2",
+      "signal_status": "executed",
+      "ai_target_band": null,
+      "ai_rationale_hash": null
     }
   ],
   "sp-meanrev-92991.testnet": [
@@ -303,14 +311,6 @@
   ],
   "sp-contra-8952.testnet": [
     {
-      "ranAt": "2026-11-11T05:43:00.855Z",
-      "epoch": 187,
-      "signal_hash": "0a0855aeaaa28c1379b6c5d6b1c647f45801a350d53bc78032f4373694071633",
-      "signal_status": "executed",
-      "ai_target_band": "40–60%",
-      "ai_rationale_hash": "9ce939212c2691861792e19423e0f59bb4260a0c9411ae60ada282cd424a5fbb"
-    },
-    {
       "ranAt": "2026-11-11T12:00:47.179Z",
       "epoch": 213,
       "signal_hash": "8d93fcdb44f74b1a3fd350037db42deffe2823e1c4714e5c976f206d5aee30bc",
@@ -461,6 +461,25 @@
       "signal_status": "executed",
       "ai_target_band": "80–100%",
       "ai_rationale_hash": "32040140bf87efb1f3c1823f24d31b8b7ef093b924b90a677c572f86f1eddbf5"
+    },
+    {
+      "ranAt": "2026-11-13T01:29:49.538Z",
+      "epoch": 361,
+      "signal_hash": "9022cb16cd7cdd57d2ac670b69e511c0662c6b8df9cfd2c0e3940ef839712cb1",
+      "signal_status": "executed",
+      "ai_target_band": "80–100%",
+      "ai_rationale_hash": "07226ec9e165f4bf7a23e9ce7ee12254b88206c603b13329df5abd523b6ba8b5",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:3b4286b486c8fe7e59113df21917c3597ebca434d32e9ef18475176e2dd0559e:dde36e67d101633eb303f001e49873df5f90234ded2bd477246e3eec35297fac",
+        "signature": "0x56074af772bd79cd8c1065e3077b5e3384908161bd4902c6fc1fe2dffef92ebe144025903b46d490c565c2bf0fccf8f063320ecf4493b243eb3ca862e4befa5e1b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "cc217bddadf906e202a28fbe75cfd3a6c4b364474e35fc499dfd60337688db4b",
+        "nonce": "b665576547f164eb8bc0b500b6fde797357035a84ca6a445a6f12412710c6dd2",
+        "bound": true,
+        "gpu_evidence": true
+      }
     }
   ],
   "sp-voltgt-8952.testnet": [
