@@ -1,5 +1,7 @@
 // "Your silent copy" (V1/V2): the words a follower shares. Only the simulated copy's real change
 // goes in; no personal data, no invented numbers.
+import { medianGapMs } from "./costs";
+
 export const COPY_DEFAULT = "sp-contra-8952.testnet";
 const SITE = "https://amityadav0.github.io/silent-partner";
 
@@ -49,10 +51,8 @@ export function shareText(x: ShareInput): string {
 
 /** "~12 min", or "any minute now" when the cadence says it is due. Cadence = median gap of recent updates. */
 export function nextUpdateWords(times: number[], now = Date.now()): string | null {
-  if (times.length < 3) return null;
-  const w = times.slice(-11);
-  const gaps = w.slice(1).map((t, i) => t - w[i]).sort((x, y) => x - y);
-  const median = gaps[Math.floor(gaps.length / 2)];
+  const median = medianGapMs(times);
+  if (median === null) return null;
   const left = times[times.length - 1] + median - now;
   if (left <= 60_000) return "any minute now";
   const m = Math.round(left / 60_000);

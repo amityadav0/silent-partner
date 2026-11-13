@@ -321,3 +321,8 @@ Each decision is dated, with its reason.
 - **Follower share text.** Under 3 price updates since joining, the share text is the leader's verified record ("just started silently copying …"). From 3 updates on, it is the copy's own change.
 - **Desktop share.** Without the Web Share API, "Share" copies the link and shows "Link copied ✓" for 2 s. The text goes through "Post on X".
 - **Leader badge.** It reads "✓ verified on chain · N price updates · X% own money in". The drawdown stays on the full card. The X-bio line follows the same wording.
+
+## D-D-1/2/3: what a depositor reads before the button (Nov 13)
+- **/trust** (Risks in the nav, footer, follow panel). It says plainly: no professional audit; the mainnet vault keeps a full-access key until Nov 25, then the vault is wound down and the account deleted. Roles are cards, not a table, so they read at 390 px.
+- **What you pay.** Only numbers we can stand behind: perf_fee_bps from the vault's config, 20 bps 1Click appFees (D-P3-2), no deposit or withdrawal fee in the contract, and a 0 unshield fee (§1 round trip). The cross-chain fee is the live quote's in − out. The worked example assumes you entered at the high-water mark.
+- **Timeline in clock time.** Withdrawal ≈ 2 × the median gap of the vault's last 10 updates (testnet ~30 min; mainnet ~6 h at the 3 h keeper), not the INBOX's guessed ~2 h. The emergency exit opens after 24 h (NAV_STALE_MS). Rejected options: fixed per-network constants (they drift from reality) and epoch counts (the plain-words rule).

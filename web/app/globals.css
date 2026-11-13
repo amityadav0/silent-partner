@@ -335,3 +335,11 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
   .copy-card .quiet { min-height: 44px; padding-inline: 0.5rem; }
 }
 @media (max-width: 480px) { .copy-record svg { width: 100%; } .copy-value > .num.muted { font-size: 14px; } }
+
+/* D2/D3: what you pay, and what happens after Follow */
+.cost-box, .timeline { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 14px; background: var(--row); }
+.cost-box .row-kv { padding: 8px 0; font-size: 13px; align-items: flex-start; }
+.cost-box .row-kv > :first-child { flex: 0 0 auto; white-space: nowrap; }
+.timeline ol { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.timeline li::marker { color: var(--muted); }
+.role-card { padding-top: 12px; border-top: 1px solid var(--line); }

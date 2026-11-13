@@ -60,6 +60,7 @@ export function Nav() {
       <nav className="site-links" aria-label="Main">
         {link("/leaderboard/", "Leaders")}
         {link("/how/", "How it works")}
+        {link("/trust/", "Risks")}
         {link("/create/", "Lead a vault", "/create/ai/")}
       </nav>
       <div className="site-tools">
@@ -89,6 +90,7 @@ export function Footer() {
         <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
         <span className="flex flex-wrap gap-4">
           <Link href="/partners/">My partners</Link>
+          <Link href="/trust/">Risks &amp; trust</Link>
           <Link href="/chain/">What the chain sees</Link>
           <Link href="/leader/">Leader console</Link>
           <a href={`${REPO}#readme`}>Docs</a>

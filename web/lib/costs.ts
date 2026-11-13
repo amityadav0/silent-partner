@@ -1,0 +1,43 @@
+// What a depositor pays and how long things take (D2, D3). Every number here is
+// either a contract parameter or measured from the vault's own signed price updates.
+
+/** 1Click's partner fee on each trade (appFees on every quote we take; D-P3-2). */
+export const SWAP_FEE_BPS = 20;
+/** No price update for this long → anyone can open emergency exit (NAV_STALE_MS). */
+export const EMERGENCY_MS = 24 * 3_600_000;
+
+/** Median gap between the last ~10 price updates, or null with fewer than 3. */
+export function medianGapMs(times: number[]): number | null {
+  if (times.length < 3) return null;
+  const w = times.slice(-11);
+  const gaps = w.slice(1).map((t, i) => t - w[i]).sort((x, y) => x - y);
+  return gaps[Math.floor(gaps.length / 2)];
+}
+
+/** "~15 min", "~3 h", "~2 days". */
+export function durationWords(ms: number): string {
+  const m = Math.round(ms / 60_000);
+  if (m < 90) return `~${Math.max(1, m)} min`;
+  const h = Math.round(m / 60);
+  if (h < 36) return `~${h} h`;
+  return `~${Math.round(h / 24)} days`;
+}
+
+/** A withdrawal is priced at the next update and paid at the one after: about two gaps. */
+export function withdrawEta(times: number[]): string | null {
+  const g = medianGapMs(times);
+  return g === null ? null : durationWords(2 * g);
+}
+
+/** Performance fee on a gain above the high-water mark, assuming you enter at the high. */
+export function perfFee(amount: number, ret: number, feeBps: number): number {
+  return Math.max(0, amount * ret) * (feeBps / 10_000);
+}
+
+/** "$1,000 for a month at +5% → fee $10 (20% of the $50 gain)". */
+export function feeExample(feeBps: number, amount = 1000, ret = 0.05): string {
+  const gain = amount * ret;
+  const fee = perfFee(amount, ret, feeBps);
+  const $ = (x: number) => `$${x.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  return `${$(amount)} for a month at +${(ret * 100).toFixed(0)}% → fee ${$(fee)} (${feeBps / 100}% of the ${$(gain)} gain). A month at a loss → fee $0.`;
+}

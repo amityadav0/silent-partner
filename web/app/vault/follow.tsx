@@ -8,6 +8,7 @@ import { CHAINS, crossQuote, crossQuoteBody, type CrossQuote } from "@/lib/cross
 import { useWallet } from "@/lib/wallet";
 import { fmtUnits, toUnits, view, type VaultData } from "@/lib/vault";
 import { PaperFollowPanel, usePaper } from "./paper";
+import { CostBox, FollowTimeline } from "./costs";
 
 /** On testnet the price, fee and ETA come from a real 1Click dry quote for the mainnet
  *  route; the vault is a testnet account, so the quote's recipient is a stand-in
@@ -162,10 +163,9 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
       <div data-testid="follow-facts">
         <div className="row-kv"><span>You enter at</span><span className="num">{price.toFixed(4)} / share</span></div>
         <div className="row-kv"><span>Copy slippage vs leader</span><span className="num pos">0.00%</span></div>
-        <div className="row-kv"><span>Performance fee</span><span><span className="num">{cfg.perf_fee_bps / 100}%</span>, only on new highs</span></div>
-        <div className="row-kv"><span>Withdrawal</span><span>2 price updates, fair price</span></div>
-        <div className="row-kv"><span>If we disappear</span><span>exit in 24 h</span></div>
       </div>
+
+      <CostBox feeBps={cfg.perf_fee_bps} quoteFee={q && c ? `${(Number(amount) - Number(q.amountOut) / 1e6).toFixed(4)} USDC` : null} />
 
       {offerStop && (
         <div className="stop-box" data-testid="stop-offer">
@@ -183,6 +183,8 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
         <PaperFollowPanel navs={navs} paper={paper} />
         <a href="../partners/" className="quiet">All your partners, or blend several →</a>
       </div>
+
+      <FollowTimeline times={navs.map((n) => n.timestamp_ms)} price={price} sym={sym} />
 
       {q && c && (
         <div className="text-sm" data-testid="cc-result">

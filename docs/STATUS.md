@@ -107,6 +107,11 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] H1 welcome sheet only on a first landing visit · H2 ranking after 12 verified posts · R2 recent verified events on the landing · S2–S4 demo script, X post split, pre-recording checklist
 - [x] R1 verifiable AI decisions: NEAR AI TEE receipts and attestation quotes, checked in the browser (D-AI-4)
 
+## Nov 13: depositor's questions (D1–D10)
+- D1 /trust: risks, who controls what, the full-access key until Nov 25, what's public. Linked from the nav, footer and follow panel.
+- D2 "What you pay" before the Follow button (and on the mainnet read-only vault), with a worked fee example.
+- D3 "What happens after you click Follow", with the withdrawal time measured from each vault's own update cadence.
+
 ## Nov 13: persona walkthrough fixes (U1–U13)
 - [x] U1 hero down to two actions · U2 copy card shows the leader's verified record, sparkline, last update ✓, next update and Notify me · U3 share text uses the leader's record under 3 updates · U4 "Link copied ✓" feedback · U5 badge is proof, not a drawdown · U6 demo-desk label · U7 diagram words moved to captions · U8 Playwright mobile project for the full flow
 - [x] U9 "vs holding NEAR" on the leaderboard, the vault stats, the copy card and the share text (D-U-9; `near-usd.json` on season-state) · U10 "Held up best this week" · U11 dynamic hero pick · U12 tour "Open →" buttons · U13 "TEE ✓" chips on AI rows
