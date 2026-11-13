@@ -82,3 +82,13 @@ test("V4: Watch opens the demo muted, with captions, in a lightbox", async ({ pa
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("watch-video")).toHaveCount(0);
 });
+
+test("V5: the leader console has a share kit: post, badge and an invite link that credits the leader", async ({ page }) => {
+  await page.goto("/leader/?id=sp-contra-8952.testnet");
+  const kit = page.getByTestId("share-kit");
+  await expect(kit).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("share-kit-text")).toContainText("my trades are sealed. my returns are verified on chain. copy me without seeing me →");
+  const url = (await page.getByTestId("share-kit-link").getAttribute("data-url"))!;
+  expect(url).toMatch(/^https:\/\/amityadav0\.github\.io\/silent-partner\/v\/sp-contra-8952\.testnet\/\?ref=.+/);
+  await expect(page.getByTestId("share-kit-x")).toHaveAttribute("href", /x\.com\/intent\/post\?text=my%20trades%20are%20sealed/);
+});

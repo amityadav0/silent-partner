@@ -5,6 +5,7 @@ import { useWallet } from "@/lib/wallet";
 import { feeEarned, fmtUnits, priceOf, view, type SignalRec } from "@/lib/vault";
 import { newSignalKey, publicKeyOf, randomNonce, signSignal, type Signal } from "@/lib/signal";
 import { Redact, short, useQueryParam, useVault } from "../ui";
+import { ShareKit } from "./sharekit";
 import { metaOf } from "@/lib/vaults";
 import { REGISTRY, launchOfVault, seal, type Launch } from "@/lib/community";
 import { WriteLetter } from "../vault/letters";
@@ -131,6 +132,8 @@ export default function LeaderConsole() {
           <div className="tile-h">Your positions are visible only to you and the operator that fills them. They never go on chain.</div>
         </div>
       </div>
+
+      <ShareKit id={id} leader={data.cfg.leader} />
 
       {!accountId && <div className="panel mt-4 text-sm">Connect the leader&apos;s wallet to manage the signal key. <button className="btn ml-2" onClick={signIn}>Connect</button></div>}
       {accountId && !isLeader && <div className="panel mt-4 text-sm">Signed in as <code>{accountId}</code>, who is not this vault&apos;s leader. Signals are only accepted from the leader&apos;s registered key.</div>}
