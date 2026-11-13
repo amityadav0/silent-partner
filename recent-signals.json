@@ -311,14 +311,6 @@
   ],
   "sp-contra-8952.testnet": [
     {
-      "ranAt": "2026-11-11T12:46:55.437Z",
-      "epoch": 216,
-      "signal_hash": "01bccf0b3f7c017a94eed9d8474061d5674942ef4e247396fc5692f2eb5ecbf6",
-      "signal_status": "executed",
-      "ai_target_band": "0–20%",
-      "ai_rationale_hash": "4fd120900e0e3b6c345f5cdd800510495b9902a5f5ae9f285b66cf027e6db9ff"
-    },
-    {
       "ranAt": "2026-11-11T13:19:39.893Z",
       "epoch": 219,
       "signal_hash": "ed917ec8f34d5f57ad22371a85a4e2a5aee123e9cd1c4a99f4881408fc388321",
@@ -510,6 +502,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "c4e933bab20b93de91622706b85e5f91d2184c67b08b5b26cf10dfd7dd3eb6a0",
         "nonce": "b8d3f2181a9ec026bd570bde91f98f64345304482dbafe1afa36bd32be8f35f4",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-13T03:13:19.226Z",
+      "epoch": 368,
+      "signal_hash": "db85121eed7c09a7f688f73e3cd4bcb0372ebe2584b83c8c06e57321e0fbce02",
+      "signal_status": "executed",
+      "ai_target_band": "60–80%",
+      "ai_rationale_hash": "e53543addec2ad2e3a707758587933ab13be5b1fa4e157c505096ac931700fc2",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:5be3ec5cba5e877b9fde2a21d90ae4856c43d684547664dfccb47b3204a69d70:c1c273092260634358f474950c7af80890093fb16e9d81dfc6265a282bdf695a",
+        "signature": "0x950bc7100036a492065d278d2e537209cd726424ba6f3bdf27211dd1911fa2205b15adb7f038555d7209b09d97f7b451699d711fa332a0d08d95297c8681daf91b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "1278454b6123a57809cb417c1ba2f169d24c024509621dc45dcbb0ebcc140f8e",
+        "nonce": "d98a4f7a7479fae76b7f9dbed5995810b2fdb20bec5ad7f0a4ca5377b444077b",
         "bound": true,
         "gpu_evidence": true
       }
@@ -877,14 +888,6 @@
   ],
   "sp-convict-8952.testnet": [
     {
-      "ranAt": "2026-11-12T07:15:27.020Z",
-      "epoch": 282,
-      "signal_hash": "b56d8893aa015e2f7fce7ab723c387be8cc8177c673a031390f76d2838b8ef59",
-      "signal_status": "executed",
-      "ai_target_band": "80–100%",
-      "ai_rationale_hash": "148ca683d8772fc7c7624f064d374f458d1d58a10ba167e9991790ffd8aed494"
-    },
-    {
       "ranAt": "2026-11-12T07:30:47.915Z",
       "epoch": 283,
       "signal_hash": "d0d17fa351e6c821f3d5c6d0690ef1d46847f794f4f704e9caa9f6db6a535862",
@@ -1200,28 +1203,28 @@
         "bound": true,
         "gpu_evidence": true
       }
-    }
-  ],
-  "sp-trend-8952.testnet": [
+    },
     {
-      "ranAt": "2026-11-12T15:10:46.620Z",
-      "epoch": 269,
-      "signal_hash": "f44f850005af3786c79993246609c52199b054b11ffb51889404d8d841a7e5fd",
+      "ranAt": "2026-11-13T03:13:19.226Z",
+      "epoch": 357,
+      "signal_hash": "04009b686d3834303b5f9740bc4dfc2e81d13268b0a1161c1eeca1d540b91dfe",
       "signal_status": "executed",
-      "ai_target_band": "0–20%",
-      "ai_rationale_hash": "d9b7c9e09889ac6fc2fad3b54d76f3a4dcc71504e108e52babc51e7cb5f00f9c",
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "e24a9c9f3ac1d425c41b9d52ab602b124f9a1f390d2a860dde26f4fd529f566c",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:14642c0521f77008241ce6cf0f876af17ea8625a29a5f0fd2f823d904baff0f2:db6cc1ae981e7367ab037b5ad31d051fc8ac6b911fb0e9784ee4211706c5d622",
-        "signature": "0xa0e8ffcfd1fec470390c3dcd58bdd37eb776809094c0cddb00d8030fdb0d52ed00b6943b8b8f463c9333e9df030ccf34c9f5ac06c80c1c96f777ef6e5e2e0ce11c",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:2c3a894c213de0b791d3b9ee4a4487c485b6c278c4d2b3fb08d44bdc3e6d4247:bcb4f0957254e21e5c6cd8efe65a5c2c25967b788d3eced496548075cf1eb678",
+        "signature": "0xee619eaeb1f61bbdd439aa6a0fd4ece63ace7988f53270c4530c0c6f52acdc9376cf8efacca181209d955b1876b4e553baae9b66101b991a0544cea28b57f1701c",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "f2bbd0a30954c9530b88058575d2318b07aef56a58cc1d8a26e7a0544ed71b02",
-        "nonce": "1601d9edf4999ea197614574bf77ea3917ae18f2f7b0ea53e7d44e9c6a7c778c",
+        "quote_sha256": "1278454b6123a57809cb417c1ba2f169d24c024509621dc45dcbb0ebcc140f8e",
+        "nonce": "d98a4f7a7479fae76b7f9dbed5995810b2fdb20bec5ad7f0a4ca5377b444077b",
         "bound": true,
         "gpu_evidence": true
       }
-    },
+    }
+  ],
+  "sp-trend-8952.testnet": [
     {
       "ranAt": "2026-11-12T19:12:31.356Z",
       "epoch": 285,
@@ -1579,6 +1582,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "c4e933bab20b93de91622706b85e5f91d2184c67b08b5b26cf10dfd7dd3eb6a0",
         "nonce": "b8d3f2181a9ec026bd570bde91f98f64345304482dbafe1afa36bd32be8f35f4",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-13T03:13:19.226Z",
+      "epoch": 315,
+      "signal_hash": "7ab0b2fa0400bf139078ee687bf332e9e33d7a6e96e5037d1a93d5704eda538e",
+      "signal_status": "executed",
+      "ai_target_band": "0–20%",
+      "ai_rationale_hash": "32c1410b076beca33313c938d6508fdec1561811b85d84549fe6b6b61f439b98",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:f547060564891520c8385f386c295948d8dc887393a46ace0374f6ada74bf950:f5504929caf3a02f95b2f731cb8797c55922a1d8f1c03fea9f0fc7423fa791d8",
+        "signature": "0xdea3221f1cb16cd2509767ec541194ac4fc1975db5c0dd9ea4b49dd6447622eb19a53013436a527302afe2c3f3071f59c794ab5dd579d303004eae40eba8dfe61b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "1278454b6123a57809cb417c1ba2f169d24c024509621dc45dcbb0ebcc140f8e",
+        "nonce": "d98a4f7a7479fae76b7f9dbed5995810b2fdb20bec5ad7f0a4ca5377b444077b",
         "bound": true,
         "gpu_evidence": true
       }
