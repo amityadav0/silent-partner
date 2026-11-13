@@ -291,3 +291,9 @@ Each decision is dated, with its reason.
   - **What it never does.** Shield, trade or pay. Those stay manual, and `operator/scripts/keeper-sync.sh` refreshes the keeper's fill log after each manual step.
   - **If it leaks.** Prices can move only inside the quote band, positions are exposed, and no funds can move.
   - **Rejected.** B (launchd on the Mac, which dies when the Mac sleeps). A full-access operator key in CI (it could shield and pay). Committing an encrypted fill log to a branch, so the keeper could append its own NAV entries (more moving parts for no gain; the head only has to be 32-byte hex).
+- **D-P5-13 (2026-11-13) The keeper doesn't rely on cron, and refuses a stale fill log (K2, K3).**
+  - **Cron is unreliable here.** The keeper's first cron slot never fired, and the health check ran only 5 times in 26 h instead of every 30 min.
+  - **Backup triggers.** Every 15-min season tick also dispatches `keeper.yml`, which skips unless the last post is ≥2.5 h old, and dispatches `health.yml` hourly. Health alerts by opening the "uptime" issue when the last accepted mainnet post is over 6 h old, after dispatching the keeper itself.
+  - **Stale-log check.** `KEEPER_FILL_LOG` is a static secret, so before posting the keeper checks three things: its log contains the head of the last accepted post, every fill a recorded leader signal points to, and payouts adding up to the claims' `paid`. If not, it fails the run (`::error::`, GitHub emails the owner) instead of posting a NAV that misses a manual trade or payout. A manual shield that nothing else records would show up as a NAV outside the quote band, which the contract rejects.
+  - **Auto-sync.** `op.ts` runs `keeper-sync.sh` after every mainnet shield, signal, epoch or pay, including failed ones.
+  - **Tests.** `test/keeper.test.ts`, plus a live dry run with a truncated log, which failed as intended.

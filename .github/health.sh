@@ -10,6 +10,9 @@ set -uo pipefail
 SITE=${SITE:-https://amityadav0.github.io/silent-partner/}
 RPC=${RPC:-https://rpc.testnet.fastnear.com}
 VAULT=${VAULT:-sp-momo-92991.testnet}
+MAINNET_RPC=${MAINNET_RPC:-https://rpc.mainnet.fastnear.com}
+MAINNET_VAULT=${MAINNET_VAULT:-1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e}
+MAINNET_STALE_MIN=${MAINNET_STALE_MIN:-360}
 STALE_MIN=${STALE_MIN:-45}
 NAV_STALE_MIN=${NAV_STALE_MIN:-60}
 WAIT_MIN=${WAIT_MIN:-20}
@@ -22,10 +25,11 @@ tick_age_min() {
   local at; at=$(run_json | jq -r .ranAt) || return 1
   echo $(( ($(now) - $(date -u -d "$at" +%s 2>/dev/null || date -j -u -f "%Y-%m-%dT%H:%M:%S" "${at%.*}" +%s)) / 60 ))
 }
-nav_age_min() {
+nav_age_min() { # [rpc] [vault]
+  local rpc=${1:-$RPC} vault=${2:-$VAULT}
   local args; args=$(printf '{}' | base64)
-  local ms; ms=$(curl -s -m 30 "$RPC" -H 'content-type: application/json' \
-    -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"query\",\"params\":{\"request_type\":\"call_function\",\"finality\":\"final\",\"account_id\":\"$VAULT\",\"method_name\":\"get_vault\",\"args_base64\":\"$args\"}}" \
+  local ms; ms=$(curl -s -m 30 "$rpc" -H 'content-type: application/json' \
+    -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"query\",\"params\":{\"request_type\":\"call_function\",\"finality\":\"final\",\"account_id\":\"$vault\",\"method_name\":\"get_vault\",\"args_base64\":\"$args\"}}" \
     | jq -r '.result.result | implode | fromjson | .last_nav_ms') || return 1
   echo $(( ($(now) - ms / 1000) / 60 ))
 }
@@ -49,6 +53,15 @@ fi
 nav=$(nav_age_min) || nav=9999
 echo "$VAULT last NAV: ${nav} min ago"
 (( nav > NAV_STALE_MIN )) && problems+=("$VAULT: last NAV ${nav} min ago (RPC $RPC)")
+
+# 3b. Mainnet vault: the keeper (keeper.yml, every 3 h + every season tick) must keep the
+# last accepted post well inside the 24 h emergency. Over 6 h: dispatch the keeper, alert.
+mnav=$(nav_age_min "$MAINNET_RPC" "$MAINNET_VAULT") || mnav=9999
+echo "mainnet vault last accepted post: ${mnav} min ago"
+if (( mnav > MAINNET_STALE_MIN )); then
+  if [[ $DRY == 1 ]]; then echo "DRY: would run: gh workflow run keeper.yml"; else gh workflow run keeper.yml || true; fi
+  problems+=("MAINNET vault: last accepted price post ${mnav} min ago (emergency at 1440). keeper.yml was dispatched; if it fails, post by hand: cd operator && echo yes | npx tsx --env-file=../.env.mainnet scripts/op.ts epoch")
+fi
 
 # 4. NEAR AI and balances, from the tick's public summary
 summary=$(run_json)

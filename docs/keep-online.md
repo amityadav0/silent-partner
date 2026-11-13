@@ -16,7 +16,7 @@ The hosted demo is the Pages site plus the testnet paper season (`.github/workfl
 
 Try the check locally without side effects: `GH_REPO=amityadav0/silent-partner DRY=1 bash .github/health.sh`.
 
-**Mainnet vault keeper (D-P5-12).** The GitHub job `keeper.yml` runs every 3 h and posts the mainnet vault's NAV when the last post is ≥2.5 h old. Its key can call only `post_nav`, with a 0.5 NEAR allowance on the operator account, which holds ~0.99 NEAR. A red keeper run means a post didn't land. Rerun it from the Actions tab, or post by hand with `cd operator && echo yes | npx tsx --env-file=../.env.mainnet scripts/op.ts epoch`. Act within 24 h of the last post, or anyone can put the vault into emergency mode. After a manual shield, trade or payout, run `operator/scripts/keeper-sync.sh`.
+**Mainnet vault keeper (D-P5-12).** The GitHub job `keeper.yml` runs every 3 h and posts the mainnet vault's NAV when the last post is ≥2.5 h old. Its key can call only `post_nav`, with a 0.5 NEAR allowance on the operator account, which holds ~0.99 NEAR. A red keeper run means a post didn't land. Rerun it from the Actions tab, or post by hand with `cd operator && echo yes | npx tsx --env-file=../.env.mainnet scripts/op.ts epoch`. Act within 24 h of the last post, or anyone can put the vault into emergency mode. `op.ts` refreshes the keeper's fill log after every mainnet step by running `operator/scripts/keeper-sync.sh`. If the keeper's log is behind the chain, it fails the run instead of posting. The season loop dispatches the keeper every tick and the health check hourly, because cron on this repo is unreliable. Health opens the "uptime" issue if the last mainnet post is over 6 h old.
 
 ## Top-up thresholds (testnet NEAR)
 

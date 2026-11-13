@@ -92,6 +92,7 @@ jobs:
           NEARAI_API_KEY: ${{ secrets.NEARAI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SEASON_STATE_DIR: ../season-state
+          KEEPER_DISPATCH_TOKEN: ${{ github.token }}
           TICKS: "22"
         run: |
           set +e
@@ -106,6 +107,10 @@ jobs:
             echo "tick $i exit $code"
             (cd ../season-state && git add -A && { git diff --cached --quiet || git commit -qm "season tick $(date -u +%FT%TZ)"; } \
               && for t in 1 2 3 4 5; do git pull -q --rebase && git push -q && break; sleep $((t * 5)); done)
+            # backup trigger for the mainnet keeper: cron is unreliable on this repo; it skips if not due
+            GH_TOKEN="$KEEPER_DISPATCH_TOKEN" gh workflow run keeper.yml --repo "$GITHUB_REPOSITORY" --ref master >/dev/null 2>&1 || echo "keeper dispatch failed"
+            # and the health check hourly (it alerts if the mainnet post is over 6 h old)
+            [ $((i % 4)) -eq 0 ] && { GH_TOKEN="$KEEPER_DISPATCH_TOKEN" gh workflow run health.yml --repo "$GITHUB_REPOSITORY" --ref master >/dev/null 2>&1 || echo "health dispatch failed"; }
             [ "$i" -lt "$TICKS" ] && sleep $(( 900 - (SECONDS - start) > 0 ? 900 - (SECONDS - start) : 0 ))
           done
           exit 0

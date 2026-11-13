@@ -12,6 +12,7 @@
 // will do and waits for "yes". Config and gates come from config.ts:
 // MAINNET_WRITES=1 for chain writes, DRY_RUN=0 + MAINNET_LIVE_OK=1 for live 1Click.
 import { createInterface } from "node:readline/promises";
+import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
@@ -43,6 +44,14 @@ async function confirm(what: string) {
   if (a.trim() !== "yes") { console.log("aborted"); process.exit(1); }
 }
 
+// K3: every mainnet step that can change the fill log refreshes the keeper's copy afterwards,
+// even when the step fails (a rejected NAV still appends a note).
+if (env.network === "mainnet" && ["shield", "signal", "epoch", "pay"].includes(cmd)) {
+  process.on("exit", () => {
+    const r = spawnSync("sh", [new URL("./keeper-sync.sh", import.meta.url).pathname], { encoding: "utf8" });
+    console.log(r.status === 0 ? r.stdout.trim() : `WARNING: keeper-sync failed (${(r.stderr || "").trim().slice(0, 200)}). Run operator/scripts/keeper-sync.sh by hand.`);
+  });
+}
 console.log(J({ network: env.network, vault: env.contractId, dryRun: env.op.dryRun, chainWrites: env.op.chainWrites, vault_account: v.vault_account, epoch: v.epoch, book_nav: v.book_nav }));
 switch (cmd) {
   case "status": {
