@@ -1,6 +1,7 @@
 "use client";
 import { badgeOf, metaOf, modeLabel, type VaultMeta } from "@/lib/vaults";
 import Link from "next/link";
+import { SystemStatus } from "./status";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NETWORK, networkOf } from "@/lib/config";
@@ -91,6 +92,8 @@ export function Footer() {
         <span className="flex flex-wrap gap-4">
           <Link href="/partners/">My partners</Link>
           <Link href="/trust/">Risks &amp; trust</Link>
+          <Link href="/faq/">FAQ</Link>
+          <Link href="/about/">About</Link>
           <Link href="/chain/">What the chain sees</Link>
           <Link href="/leader/">Leader console</Link>
           <a href={`${REPO}#readme`}>Docs</a>
@@ -99,7 +102,10 @@ export function Footer() {
           <a href={`${REPO}/blob/master/docs/testnet.md`}>Testnet record</a>
           <Link href="/track/">Bring your track record</Link>
         </span>
-        <span>Testnet paper season · not investment advice</span>
+        <SystemStatus />
+        <p className="terms" data-testid="terms">
+          <b>Terms, in short.</b> The leaderboard is a testnet paper season: no real money. This is not investment advice: no promise of returns, no guarantees. The software is open source under the <a href={`${REPO}/blob/master/LICENSE`}>MIT license</a>, provided as is; if you use it with real funds, you do so at your own risk. <Link href="/trust/">Read the risks.</Link>
+        </p>
       </div>
     </footer>
   );
@@ -336,4 +342,24 @@ export async function copyText(text: string): Promise<boolean> {
     window.prompt("Copy", text);
     return false;
   }
+}
+
+/** D5: the one line every testnet page carries. */
+export function PaperLine() {
+  return (
+    <p className="paper-line" data-testid="paper-line">
+      Paper season: testnet tokens, real prices. <Link href="/faq/#testnet">What does that mean?</Link>
+    </p>
+  );
+}
+
+export const X_HANDLE = "amit29199";
+/** D5: real-money vaults aren't open yet. The waitlist is an X follow: no email, nothing stored. */
+export function RealMoneySoon() {
+  return (
+    <div className="stop-box" data-testid="real-money-soon">
+      <span className="text-[15px] font-medium">Real-money vaults open after the hackathon review</span>
+      <span className="text-sm leading-relaxed">Genesis proves the full path with real USDC, but it isn&apos;t open to deposits. To hear when vaults open, follow <a href={`https://x.com/${X_HANDLE}`}>@{X_HANDLE} on X</a>. We don&apos;t collect emails, so there&apos;s nothing to sign up for and nothing stored about you.</span>
+    </div>
+  );
 }

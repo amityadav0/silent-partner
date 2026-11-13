@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const RISKS: [string, string][] = [
   ["A bug in the contract", "The contract hasn't had a professional audit. It has had two independent security reviews and property tests that throw thousands of random cases at it. That's not the same as an audit, so put in only what you could lose."],
-  ["We stop running", "If no new share price is posted for 24 hours, or a withdrawal goes unpaid for 24 hours, anyone can switch the vault to emergency mode. Every holder then takes their share out at the last price. You don't need us for that."],
+  ["We stop running", "If no new share price is posted for 24 hours, or a withdrawal goes unpaid for 24 hours, anyone can switch the vault to emergency mode. Every holder then takes their share out at the last price. You don't need us for that. One known gap: emergency payouts are fixed at that last price, so if the vault's holdings fell after it, whoever exits last could get less. The fix (paying from what's actually left, in rounds) is on the open list."],
   ["A swap fails", "Trades go through 1Click, NEAR's swap service. A trade that doesn't fill just doesn't happen; the vault keeps what it had. A deposit from another chain that fails is refunded to the address you gave."],
   ["NEAR AI is down", "AI leaders ask a model running in a secure enclave what to do. If it can't be reached, they hold: no answer, no trade."],
   ["Testnet isn't real money", "The leaderboard is a paper season: testnet tokens, real market prices. One small mainnet vault holds real USDC to prove the full path works. This site shows it read-only."],

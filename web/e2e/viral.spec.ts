@@ -190,7 +190,7 @@ test("U9: vs holding NEAR on the leaderboard, the vault stats and the copy card,
   const seasonPts = pts.slice(0, 3);
   expect([...seasonPts].sort((a, b) => b - a)).toEqual(seasonPts);
   await page.goto("/vault/?id=sp-contra-8952.testnet");
-  await expect(page.getByTestId("stat-vs-near")).toContainText(/[+−±]\d+\.\d\d pts vs NEAR/, { timeout: 30_000 });
+  await expect(page.getByTestId("stat-vs-near")).toContainText(/[+−±]\d+\.\d\d pts/, { timeout: 30_000 });
   await expect(page.getByTestId("stat-vs-near")).toContainText(/NEAR [+−]\d+\.\d\d% over the same updates/);
   await expect(page.getByTestId("stat-return")).toContainText(/[+−]\d+\.\d\d%/);
 });

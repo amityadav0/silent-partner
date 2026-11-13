@@ -54,20 +54,27 @@ export function AiDecisions({ id }: { id: string }) {
           <span>Latest trade</span>
           <span>{last === undefined ? "…" : last ? `signal #${last.index}, ${when(last.executed_ms)}` : "none yet"}</span>
         </div>
-        {last && <div className="row-kv"><span>Signal hash on chain</span><span><code>{short(last.hash, 8)}</code></span></div>}
-        {last && (
-          <div className="row-kv" data-testid="ai-hash-check">
-            <span>Season log</span>
-            <span className={match ? "pos" : "muted"}>
-              {recent === null ? "…" : match ? `✓ same hash · target ${match.ai_target_band ?? "–"} · rationale ${short(match.ai_rationale_hash ?? "–", 6)}` : "no log entry for this trade yet"}
-            </span>
-          </div>
-        )}
       </div>
       <Receipts recent={recent} decisions={decisions} signals={signals} atts={atts} />
-      <p className="muted text-sm leading-normal">
-        The exact target and the reasoning stay sealed. The leader-signed signal commits to the reasoning by its hash, and the contract checked the leader&apos;s signature when it recorded the trade. Your browser matched the season log&apos;s hash to the on-chain record just now.
-      </p>
+      {last && (
+        <details className="tech-record" data-testid="ai-tech">
+          <summary><span>Technical record</span><span className="muted text-sm">signal hash and season-log check</span></summary>
+          <div className="mt-2">
+            {last && <div className="row-kv"><span>Signal hash on chain</span><span><code>{short(last.hash, 8)}</code></span></div>}
+            {last && (
+              <div className="row-kv" data-testid="ai-hash-check">
+                <span>Season log</span>
+                <span className={match ? "pos" : "muted"}>
+                  {recent === null ? "…" : match ? `✓ same hash · target ${match.ai_target_band ?? "–"} · rationale ${short(match.ai_rationale_hash ?? "–", 6)}` : "no log entry for this trade yet"}
+                </span>
+              </div>
+            )}
+          </div>
+          <p className="muted text-sm leading-normal">
+            The exact target and the reasoning stay sealed. The leader-signed signal commits to the reasoning by its hash, and the contract checked the leader&apos;s signature when it recorded the trade. Your browser matched the season log&apos;s hash to the on-chain record just now.
+          </p>
+        </details>
+      )}
     </div>
   );
 }

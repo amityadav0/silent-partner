@@ -58,6 +58,7 @@ test("vault page: chart, every NAV signature verified, deposit and withdraw cont
   const attested = page.getByTestId("stat-attested");
   await expect(attested).toContainText(/(\d+) \/ \1/);
   await expect(attested).toContainText("verified in your browser");
+  await page.getByTestId("tech-record").locator("summary").click();
   await expect(page.getByTestId("nav-table").locator("tbody tr").first()).toBeVisible();
   await expect(page.getByTestId("nav-table")).not.toContainText("✗");
   await expect(page.getByTestId("follow-cta")).toHaveText("Follow privately");
@@ -171,6 +172,7 @@ test("AI vault: latest on-chain trade and the season-log hash check", async ({ p
   await page.goto("/vault/?id=sp-contra-8952.testnet#ai");
   await expect(page.getByTestId("ai-latest")).toContainText(/signal #\d+/);
   await expect(page.getByTestId("ai-last-tick")).toContainText(/decided|unavailable/);
+  await page.getByTestId("ai-tech").locator("summary").click();
   await expect(page.getByTestId("ai-hash-check")).toContainText(/same hash|no log entry/);
   // decision receipts: each one passes the browser checks, or none exist yet
   await expect(page.getByTestId("ai-receipts")).toBeVisible();

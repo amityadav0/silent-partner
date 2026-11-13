@@ -261,7 +261,7 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .vault-main { flex: 999 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
 .vault-aside { flex: 1 1 320px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 22px; box-shadow: 0 30px 60px -36px var(--shadow); }
 .vault-aside h2 { font-size: 24px; line-height: 1.15; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
 .amount { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line-strong); border-radius: 14px; padding: 0 16px; background: var(--bg); }
 .amount input { flex: 1; min-width: 0; background: transparent !important; border: 0 !important; font-size: 24px; font-weight: 500; padding-inline: 0 !important; }
 .stop-box { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: var(--row); }
@@ -343,3 +343,27 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .timeline ol { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .timeline li::marker { color: var(--muted); }
 .role-card { padding-top: 12px; border-top: 1px solid var(--line); }
+.paper-line { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+/* D8: technical detail folded, still one click away for judges */
+.tech-record { margin-top: 18px; }
+.tech-record > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); font-weight: 500; }
+.tech-record > summary::-webkit-details-marker { display: none; }
+.tech-record > summary > :first-child::after { content: " ▸"; color: var(--muted); }
+.tech-record[open] > summary > :first-child::after { content: " ▾"; }
+/* D9: system status */
+.sys-status { display: inline-flex; align-items: baseline; gap: 8px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.sys-status b { font-weight: 500; color: var(--ink-2); }
+.sys-dot { flex: none; width: 8px; height: 8px; border-radius: 99px; background: var(--line-strong); transform: translateY(-1px); }
+.sys-ok .sys-dot { background: #2f9e5b; }
+.sys-warn .sys-dot { background: #d49a00; }
+.sys-warn b { color: #9a6b00; }
+.sys-bad .sys-dot { background: #c0392b; }
+.sys-bad b { color: #c0392b; }
+.terms { font-size: 12.5px; line-height: 1.55; color: var(--muted); max-width: 72ch; margin: 0; }
+.terms b { color: var(--ink-2); font-weight: 500; }
+.follow-jump { display: none; }
+@media (max-width: 1000px) { .follow-jump { display: inline-flex; } }
+@media (max-width: 760px) {
+  .limits .row-kv { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .limits .row-kv > :last-child { text-align: left; justify-content: flex-start; }
+}

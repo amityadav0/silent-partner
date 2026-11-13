@@ -36,6 +36,7 @@ import { viewCall } from "../src/intents.js";
 import { communityKeys, communityPersona, unseal, type Launch } from "../src/season/community.js";
 import { ackSignals, launches, operatorAccount, pendingSignals, provision } from "../src/season/provision.js";
 import { needsTopup, TOPUP } from "../src/season/topup.js";
+import { addStake, stakeBps, type StakeDoc } from "../src/season/stake.js";
 import { computeAlerts, pushNtfy, telegram, type AlertEvent, type Snapshot, type TgState, type VaultState } from "../src/season/alerts.js";
 
 const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
@@ -236,6 +237,13 @@ const STYLE: Record<string, [string, string]> = {
   "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
 };
 mkdirSync(join(sealed, "cards"), { recursive: true });
+const stakeFile = join(sealed, "stake.json");
+let stakeDoc: StakeDoc = { vaults: {} };
+try {
+  if (existsSync(stakeFile)) stakeDoc = JSON.parse(readFileSync(stakeFile, "utf8"));
+} catch {
+  /* start a fresh history */
+}
 mkdirSync(join(sealed, "badges"), { recursive: true });
 const cardVaults = [...S.vaults.filter((v) => v.strategy !== "drill"), ...community.map((l) => ({ id: l.vault!, strategy: `community-${l.kind}`, name: l.name, style: l.style }))];
 for (const v of cardVaults) {
@@ -247,6 +255,7 @@ for (const v of cardVaults) {
       if (page.length < 100) break;
     }
     const g = await viewCall<{ leader_shares: string; total_shares: string }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
+    stakeDoc = addStake(stakeDoc, v.id, [[Date.now(), stakeBps(g.leader_shares, g.total_shares)]], Date.now());
     const [badge, style] = STYLE[v.strategy] ?? [v.strategy === "community-ai" ? "AI" : "Human", (v as { style?: string }).style ?? ""];
     const bsvg = badgeSvg({ navs, leaderShares: g.leader_shares, totalShares: g.total_shares });
     writeFileSync(join(sealed, "badges", `${v.id}.png`), cardPng(bsvg, 2 * Number(bsvg.match(/width="([\d.]+)"/)![1])));
@@ -255,6 +264,7 @@ for (const v of cardVaults) {
     console.log(JSON.stringify({ card_error: v.id, error: String((x as Error).message).slice(0, 120) }));
   }
 }
+writeFileSync(stakeFile, JSON.stringify({ ...stakeDoc, ranAt: new Date().toISOString() }) + "\n");
 
 // Keep-online check (D-S-11): warn when an account the season spends from has
 // < 10 days of budget left. Balances are public on-chain anyway.

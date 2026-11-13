@@ -131,7 +131,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
 
   const arrived = q ? Number(q.amountOut) / 1e6 : 0;
   return (
-    <aside className="vault-aside" data-testid="follow-panel">
+    <aside className="vault-aside" id="follow" data-testid="follow-panel">
       <h2>Follow {name}</h2>
       {ref && <span className="muted -mt-3 text-[13px]" data-testid="invited-by">Invited by {ref}</span>}
 
@@ -182,6 +182,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
         {!c && !active && <span className="muted text-[13px]">Deposits are closed on this vault.</span>}
         <PaperFollowPanel navs={navs} paper={paper} />
         <a href="../partners/" className="quiet">All your partners, or blend several →</a>
+        <span className="muted text-[13px]" data-testid="follow-faq"><a href="../faq/">Questions</a> · <a href="../trust/">Risks &amp; trust</a></span>
       </div>
 
       <FollowTimeline times={navs.map((n) => n.timestamp_ms)} price={price} sym={sym} />

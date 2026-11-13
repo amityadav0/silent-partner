@@ -27,3 +27,37 @@ describe("what happens after Follow (D3)", () => {
     expect(durationWords(72 * 60 * M)).toBe("~3 days");
   });
 });
+
+import { isNewLeader, recordWords, tradeRateWords } from "../lib/record";
+describe("track record (D4)", () => {
+  const D = 86_400_000;
+  const times = Array.from({ length: 382 }, (_, i) => i * 15 * M);
+  it("record length and the new-leader rule", () => {
+    expect(recordWords(times, 4.2 * D)).toBe("4 days · 382 price updates");
+    expect(recordWords([0], 6 * 3_600_000)).toBe("6 hours · 1 price update");
+    expect(isNewLeader(times, 13 * D)).toBe(true);
+    expect(isNewLeader(times, 15 * D)).toBe(false);
+  });
+  it("trade rate", () => {
+    expect(tradeRateWords(0, times, 4 * D)).toBe("no trades yet");
+    expect(tradeRateWords(12, times, 4 * D)).toBe("≈ 3 trades a day");
+    expect(tradeRateWords(2, times, 7 * D)).toBe("≈ 2 trades a week");
+  });
+});
+
+import { judge } from "../lib/health";
+describe("system status (D9)", () => {
+  const now = 100 * 3_600_000;
+  const ok = { mainnetMs: now - 3_600_000, seasonMs: now - 5 * M, ai: "ok" as const, keeper: "ok" as const };
+  it("normal", () => {
+    const j = judge(ok, now);
+    expect(j.level).toBe("ok");
+    expect(`${j.headline} · ${j.parts.join(" · ")}`).toBe("All systems normal · last mainnet price 1 h ago · keeper ✓ · NEAR AI ✓");
+  });
+  it("amber and red in plain words", () => {
+    expect(judge({ ...ok, mainnetMs: now - 5 * 3_600_000 }, now)).toMatchObject({ level: "warn", headline: "Running late: the mainnet price is 5 h old (it should update every 3 h)" });
+    expect(judge({ ...ok, ai: "down" }, now).headline).toContain("AI leaders are holding");
+    expect(judge({ ...ok, mainnetMs: now - 13 * 3_600_000 }, now).level).toBe("bad");
+    expect(judge({ ...ok, seasonMs: now - 4 * 3_600_000 }, now).headline).toContain("testnet prices stopped 4 h ago");
+  });
+});

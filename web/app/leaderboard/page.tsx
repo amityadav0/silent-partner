@@ -5,7 +5,7 @@ import { VAULTS } from "@/lib/config";
 import { calmScore, leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, windowStats, type VaultData } from "@/lib/vault";
 import { metaOf as houseMeta, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, loadLaunches } from "@/lib/community";
-import { Redact, Ret, RiskDots, SkeletonRows, StatusChip, useNear, VsNearTag } from "../ui";
+import { PaperLine, Redact, Ret, RiskDots, SkeletonRows, StatusChip, useNear, VsNearTag } from "../ui";
 import { ratio2, vsNear, type NearSeries, type VsNear } from "@/lib/bench";
 import { loadTee } from "@/lib/tee";
 import { useRouter } from "next/navigation";
@@ -72,6 +72,7 @@ export default function Leaderboard() {
         <div className="flex max-w-2xl flex-col gap-3">
           <h1>Leaders</h1>
           <p className="text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>Calmest first. Every number is checked by your browser, and no one&apos;s positions are published, not even to followers.</p>
+          <PaperLine />
         </div>
         <div className="seg flex-wrap" role="group" aria-label="Sort leaders" style={{ borderRadius: 24 }}>
           {(Object.keys(SORTS) as Key[]).map((k) => (

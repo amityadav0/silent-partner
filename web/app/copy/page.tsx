@@ -12,7 +12,7 @@ import { track } from "@/lib/funnel";
 import { leaderStake, maxDrawdown, priceOf, verifyNavs, type VaultData } from "@/lib/vault";
 import { copyVsNear, ptsWords, vsNear } from "@/lib/bench";
 import { useAlertToggle } from "../vault/alerts";
-import { copyText, LeaderChips, Redact, Sparkline, useFlash, useNear, useQueryParam, useVault } from "../ui";
+import { copyText, LeaderChips, PaperLine, Redact, Sparkline, useFlash, useNear, useQueryParam, useVault } from "../ui";
 
 const usd = (x: number) => `${x < 0 ? "−" : ""}$${Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -66,6 +66,7 @@ export default function SilentCopy() {
   if (!id || !meta || f === undefined || !data) {
     return (
       <section className="copy-wrap">
+        <PaperLine />
         <div className="panel copy-card" data-testid="silent-copy-loading" aria-busy="true">
           <span className="eyebrow">Your silent copy</span>
           <div className="skeleton" style={{ height: 36, width: "55%" }} />
@@ -79,6 +80,7 @@ export default function SilentCopy() {
   if (!f || !pos) {
     return (
       <section className="copy-wrap">
+        <PaperLine />
         <div className="panel copy-card" data-testid="silent-copy-empty">
           <LeaderChips id={id} meta={meta} />
           <h1 className="text-3xl">Copy {meta.name} with $100</h1>
@@ -122,6 +124,7 @@ export default function SilentCopy() {
   }
   return (
     <section className="copy-wrap">
+      <PaperLine />
       <div className="panel copy-card" data-testid="silent-copy">
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow">Your silent copy</span>

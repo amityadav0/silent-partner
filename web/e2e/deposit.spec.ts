@@ -14,7 +14,7 @@ test("D1: /trust says what can go wrong, who controls what, the full-access key 
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Risks" })).toHaveAttribute("href", /\/trust\/?$/);
   await expect(page.locator("footer").getByRole("link", { name: "Risks & trust" })).toBeVisible();
   await page.goto(`/vault/?id=${VAULT}`);
-  await expect(page.getByTestId("follow-panel").getByRole("link", { name: /Risks & trust/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("follow-panel").getByRole("link", { name: /Risks & trust/ }).first()).toBeVisible({ timeout: 30_000 });
 });
 
 test("D2: What you pay sits before the Follow button, with the real fee and a worked example", async ({ page }) => {
@@ -44,4 +44,67 @@ test("D2/D3: the read-only mainnet vault shows the same cost box and timeline", 
   const ro = page.getByTestId("mainnet-readonly");
   await expect(ro.getByTestId("cost-box")).toContainText("20% of new gains", { timeout: 30_000 });
   await expect(ro.getByTestId("timeline-exit")).toContainText(/about ~\d+ (min|h)/);
+});
+
+test("D4: record length, the new-leader chip, limits in numbers and the leader's stake over time", async ({ page }) => {
+  await page.goto(`/vault/?id=${VAULT}`);
+  await expect(page.getByTestId("record-length")).toHaveText(/^\d+ (days?|hours) · [\d,]+ price updates?$/, { timeout: 30_000 });
+  await expect(page.getByTestId("new-leader")).toHaveText("New leader: short history"); // the season started Nov 9
+  const lim = page.getByTestId("limits");
+  await expect(lim.getByTestId("limits-near")).toContainText("0–100%");
+  await expect(lim.getByTestId("limits-near")).toContainText("clamped");
+  await expect(lim.getByTestId("limits-rate")).toContainText(/trades? a (day|week)|so far|no trades/);
+  await expect(lim).toContainText("USDC and wNEAR only");
+  await expect(lim.getByTestId("limits-stake")).toContainText(/\d+\.\d% now, from \d+\.\d% on/);
+  await expect(lim.getByTestId("limits-stake").getByTestId("sparkline")).toBeVisible();
+});
+
+test("D5: one paper-season line on testnet pages; mainnet says real-money vaults open later, waitlist without email", async ({ page }) => {
+  for (const url of [`/vault/?id=${VAULT}`, "/leaderboard/", `/copy/?id=${VAULT}`]) {
+    await page.goto(url);
+    await expect(page.getByTestId("paper-line")).toHaveText(/^Paper season: testnet tokens, real prices\./);
+  }
+  await page.goto("/vault/?id=1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e");
+  const soon = page.getByTestId("real-money-soon");
+  await expect(soon).toContainText("Real-money vaults open after the hackathon review", { timeout: 30_000 });
+  await expect(soon.getByRole("link", { name: /@amit29199/ })).toHaveAttribute("href", "https://x.com/amit29199");
+  await expect(soon).toContainText("don't collect emails");
+  await expect(page.getByTestId("paper-line")).toHaveCount(0);
+  await expect(page.locator("input[type=email]")).toHaveCount(0);
+});
+
+test("D6/D7: /about names the builder and the review; the FAQ has 10 answers, linked from the hero and the follow panel", async ({ page }) => {
+  await page.goto("/about/");
+  await expect(page.getByTestId("about-who")).toContainText("Amit Yadav");
+  await expect(page.getByTestId("about-review")).toContainText("Two independent security reviews");
+  await expect(page.getByTestId("about-review")).toContainText("No professional audit yet");
+  await page.goto("/faq/");
+  await expect(page.getByTestId("faq-item")).toHaveCount(10);
+  await expect(page.locator("#testnet")).toContainText("paper season");
+  await page.goto("/");
+  await expect(page.getByTestId("hero-faq").getByRole("link", { name: "questions" })).toHaveAttribute("href", /\/faq\/?$/);
+  await page.goto(`/vault/?id=${VAULT}`);
+  await expect(page.getByTestId("follow-faq").getByRole("link", { name: "Questions" })).toBeVisible({ timeout: 30_000 });
+});
+
+test("D8: price updates, signal hashes and the season log sit behind Technical record, one click away", async ({ page }) => {
+  await page.goto(`/vault/?id=${VAULT}`);
+  await expect(page.getByTestId("stats")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("nav-table")).toBeHidden();
+  await page.getByTestId("tech-record").locator("summary").click();
+  await expect(page.getByTestId("nav-table")).toBeVisible();
+  await expect(page.getByTestId("ai-hash-check")).toBeHidden();
+  await page.getByTestId("ai-tech").locator("summary").click();
+  await expect(page.getByTestId("ai-hash-check")).toBeVisible();
+});
+
+test("D9/D10: a system status line in the footer and on vault pages, and short terms in the footer", async ({ page }) => {
+  await page.goto(`/vault/?id=${VAULT}`);
+  const st = page.getByTestId("sys-status");
+  await expect(st).toHaveCount(2);
+  await expect(st.first()).toHaveAttribute("data-level", /^(ok|warn|bad)$/, { timeout: 30_000 });
+  await expect(st.first()).toContainText(/All systems normal|Running late|Problem/);
+  await expect(st.first()).toContainText("last mainnet price");
+  const terms = page.getByTestId("terms");
+  for (const t of ["paper season", "not investment advice", "no guarantees", "MIT license", "own risk"]) await expect(terms).toContainText(t);
 });

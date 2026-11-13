@@ -167,6 +167,7 @@ export default function Landing() {
             <Link href={`/copy/?id=${encodeURIComponent(pick)}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy" data-pick={pick}>Copy {metaOf(pick).name} with $100: no wallet, 10 seconds</Link>
             <WatchButton />
           </div>
+          <p className="muted text-sm" data-testid="hero-faq">Before you put money in: <Link href="/faq/">questions</Link> · <Link href="/trust/">risks</Link> · <Link href="/about/">who built it</Link></p>
         </div>
         <Ticket />
       </section>

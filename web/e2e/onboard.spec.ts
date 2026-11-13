@@ -32,7 +32,8 @@ test("V6: a first real follow (register + mint 100 test USDC, then deposit) land
   await ks.setKey("testnet", FOLLOWER, KeyPair.fromString(JSON.parse(readFileSync(CRED, "utf8")).private_key));
   const near = await connect({ networkId: "testnet", nodeUrl: "https://rpc.testnet.fastnear.com", keyStore: ks } as never);
   const acct = await near.account(FOLLOWER);
-  const vault = "sp-vault-60270.testnet";
+  // a season vault: its price updates every 15 min, so deposits are open (the hand-posted Genesis vault goes stale)
+  const vault = "sp-momo-92991.testnet";
   const sharesOf = async () => BigInt(((await acct.viewFunction({ contractId: vault, methodName: "get_shares", args: { account_id: FOLLOWER } })) as [string, string])[0]);
   const before = await sharesOf();
   const t0 = Date.now();

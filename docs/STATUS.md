@@ -111,6 +111,12 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - D1 /trust: risks, who controls what, the full-access key until Nov 25, what's public. Linked from the nav, footer and follow panel.
 - D2 "What you pay" before the Follow button (and on the mainnet read-only vault), with a worked fee example.
 - D3 "What happens after you click Follow", with the withdrawal time measured from each vault's own update cadence.
+- D4 record length and "New leader" chip; Track record and limits panel (NEAR range, trades a day, assets, slippage); leader stake line from season-state/stake.json (backfilled from archival views, then every tick).
+- D5 Genesis says real-money vaults open after the review, with an X follow as the waitlist (no email); a paper-season line on testnet pages.
+- D6 /about, D7 /faq (10), linked from the hero, follow panel and footer.
+- D8 technical tables behind "Technical record ▸"; jump-to-follow on phones.
+- D9 system status line (footer and vault pages): mainnet price age, keeper, NEAR AI, season; amber or red in plain words.
+- D10 short terms in the footer (paper season, not advice, no guarantees, MIT, own risk).
 
 ## Nov 13: persona walkthrough fixes (U1–U13)
 - [x] U1 hero down to two actions · U2 copy card shows the leader's verified record, sparkline, last update ✓, next update and Notify me · U3 share text uses the leader's record under 3 updates · U4 "Link copied ✓" feedback · U5 badge is proof, not a drawdown · U6 demo-desk label · U7 diagram words moved to captions · U8 Playwright mobile project for the full flow

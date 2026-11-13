@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, NETWORK, TGAS, explorerFor, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, drawdownWindow, fmtUnits, leaderStake, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
-import { LeaderChips, PageSkeleton, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useNear, useQueryParam, useVault, VsNearTag } from "../ui";
+import { LeaderChips, PageSkeleton, PaperLine, RealMoneySoon, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useNear, useQueryParam, useVault, VsNearTag } from "../ui";
 import { vsNear } from "@/lib/bench";
 import { META, metaOf, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, launchOfVault } from "@/lib/community";
@@ -19,6 +19,8 @@ import { Alerts } from "./alerts";
 import { Letters } from "./letters";
 import { LinkedTrackRecord } from "./linked";
 import { CostBox, FollowTimeline } from "./costs";
+import { Limits, RecordChips } from "./limits";
+import { SystemStatus } from "../status";
 import { copyLine, type PaperFollow } from "@/lib/paper";
 
 /** Chart overlay for a paper follow: index into [inception, ...navs] where it starts. */
@@ -108,6 +110,8 @@ export default function VaultPage() {
   const foreign = networkOf(data.id) !== NETWORK;
   return (
     <section>
+      {!foreign && meta.mode === "paper" && <PaperLine />}
+      <div className="mb-4"><SystemStatus /></div>
       <div className="vault-grid">
         <div className="vault-main">
           <div className="flex flex-col gap-3">
@@ -115,18 +119,20 @@ export default function VaultPage() {
               <LeaderChips id={data.id} meta={meta} />
               <ModeChip id={data.id} meta={meta} />
               {st !== "active" && <StatusChip s={st} />}
+              <RecordChips times={navs.map((n) => n.timestamp_ms)} />
               <Link href={`/s/?id=${data.id}`} className="text-sm">Share</Link>
               <InviteButton id={data.id} leader={cfg.leader} />
             </div>
             <h1>{meta.name}</h1>
             <p className="max-w-2xl text-lg leading-relaxed" style={{ color: "var(--ink-2)" }}>{meta.style}. What it holds right now is sealed.</p>
+            {!foreign && <a href="#follow" className="btn btn-primary follow-jump self-start" data-testid="follow-jump">Follow {meta.name}: cost and steps ↓</a>}
           </div>
           <EmergencyBanner id={data.id} vault={vault} cfg={cfg} shares={mine?.shares ?? 0n} dec={m.dec} sym={m.sym} onDone={reload} />
 
           <div className="stats" data-testid="stats">
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
-            <Stat label="vs holding NEAR" value={<VsNearTag v={near === undefined ? undefined : vs} />} hint={vs ? `NEAR ${vs.near >= 0 ? "+" : "−"}${Math.abs(vs.near * 100).toFixed(2)}% over the same updates` : "same window, same updates"} testid="stat-vs-near" />
+            <Stat label="vs holding NEAR" value={<VsNearTag compact v={near === undefined ? undefined : vs} />} hint={vs ? `NEAR ${vs.near >= 0 ? "+" : "−"}${Math.abs(vs.near * 100).toFixed(2)}% over the same updates` : "same window, same updates"} testid="stat-vs-near" />
             <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
             <Stat label="Verified price updates" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: updates ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>
@@ -142,6 +148,8 @@ export default function VaultPage() {
               </div>
             }
           />
+
+          <Limits id={data.id} meta={meta} cfg={cfg} vault={vault} times={navs.map((n) => n.timestamp_ms)} />
 
           {meta.leaderKind === "ai" && <AiDecisions id={data.id} />}
 
@@ -161,6 +169,7 @@ export default function VaultPage() {
               <p className="muted mt-1 text-sm leading-relaxed">
                 Everything on this page is read live from NEAR mainnet and checked in your browser. This site&apos;s wallet is on testnet, so deposits and withdrawals for this vault aren&apos;t offered here. Every mainnet transaction is listed in <a href="https://github.com/amityadav0/silent-partner/blob/master/docs/mainnet.md">docs/mainnet.md</a>.
               </p>
+              <div className="mt-4"><RealMoneySoon /></div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <CostBox feeBps={cfg.perf_fee_bps} />
                 <FollowTimeline times={navs.map((n) => n.timestamp_ms)} price={m.price} sym={m.sym} />
@@ -195,30 +204,33 @@ export default function VaultPage() {
         {!foreign && <FollowPanel name={meta.name} data={data} price={m.price} dec={m.dec} sym={m.sym} active={st === "active"} shares={mine && accountId ? mine.shares : 0n} paper={paper} onDone={reload} />}
       </div>
 
-      <h2>Price updates</h2>
-      <p className="muted mt-1 text-xs">Each post is signed by the operator&apos;s attestation key <code>{short(cfg.attestation_key, 8)}</code> and pins the head of its hash-chained fill log.</p>
-      <div className="panel scroll-x mt-3 p-0">
-        <table className="t" data-testid="nav-table">
-          <thead><tr><th>#</th><th>Time</th><th>Share price</th><th>Positions</th><th>Fee shares</th><th>Withdrawn</th><th>Fill log head</th><th>Sig</th></tr></thead>
-          <tbody>
-            {[...navs].reverse().slice(0, allNavs ? undefined : 20).map((n) => (
-              <tr key={n.epoch}>
-                <td>{n.epoch}</td>
-                <td>{new Date(n.timestamp_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                <td>{priceOf(n.price).toFixed(6)}</td>
-                <td><Redact widths={[44, 24]} h={12} label="Positions sealed" /></td>
-                <td>{BigInt(n.fee_shares) > 0n ? BigInt(n.fee_shares).toLocaleString() : "–"}</td>
-                <td>{BigInt(n.withdrawn) > 0n ? `${fmtUnits(n.withdrawn, m.dec)} ${m.sym}` : "–"}</td>
-                <td><code className="text-xs">{short(n.fills_head, 6)}</code></td>
-                <td>{m.v.bad.includes(n.epoch) ? <span className="neg">✗</span> : <span className="pos">✓</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {navs.length > 20 && (
-        <button className="quiet mt-2" onClick={() => setAllNavs(!allNavs)} data-testid="nav-all">{allNavs ? "Show the latest 20" : `Show all ${navs.length} posts`}</button>
-      )}
+      <details className="tech-record" data-testid="tech-record">
+        <summary><span>Technical record</span><span className="muted text-sm">every signed price update, fill-log heads and signatures</span></summary>
+        <h2 className="mt-4">Price updates</h2>
+        <p className="muted mt-1 text-xs">Each post is signed by the operator&apos;s attestation key <code>{short(cfg.attestation_key, 8)}</code> and pins the head of its hash-chained fill log.</p>
+        <div className="panel scroll-x mt-3 p-0">
+          <table className="t" data-testid="nav-table">
+            <thead><tr><th>#</th><th>Time</th><th>Share price</th><th>Positions</th><th>Fee shares</th><th>Withdrawn</th><th>Fill log head</th><th>Sig</th></tr></thead>
+            <tbody>
+              {[...navs].reverse().slice(0, allNavs ? undefined : 20).map((n) => (
+                <tr key={n.epoch}>
+                  <td>{n.epoch}</td>
+                  <td>{new Date(n.timestamp_ms).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+                  <td>{priceOf(n.price).toFixed(6)}</td>
+                  <td><Redact widths={[44, 24]} h={12} label="Positions sealed" /></td>
+                  <td>{BigInt(n.fee_shares) > 0n ? BigInt(n.fee_shares).toLocaleString() : "–"}</td>
+                  <td>{BigInt(n.withdrawn) > 0n ? `${fmtUnits(n.withdrawn, m.dec)} ${m.sym}` : "–"}</td>
+                  <td><code className="text-xs">{short(n.fills_head, 6)}</code></td>
+                  <td>{m.v.bad.includes(n.epoch) ? <span className="neg">✗</span> : <span className="pos">✓</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {navs.length > 20 && (
+          <button className="quiet mt-2" onClick={() => setAllNavs(!allNavs)} data-testid="nav-all">{allNavs ? "Show the latest 20" : `Show all ${navs.length} posts`}</button>
+        )}
+      </details>
       <p className="muted mt-3 break-words text-xs">
         Contract <a href={`${explorerFor(data.id)}/address/${data.id}`}>{data.id}</a> · <Term tip="A NEAR Confidential Intents account whose key is an MPC key derived for this contract (NEAR Chain Signatures). No person holds it; the contract signs only transfers back into the vault or to a holder's own payout.">private trading account</Term> <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
       </p>

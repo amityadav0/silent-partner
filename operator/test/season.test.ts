@@ -285,3 +285,16 @@ describe("NEAR/USD history for the vs-NEAR benchmark (U9)", () => {
     expect(m.p).toEqual([3, 3.2, 2.5, 2.4]);
   });
 });
+
+import { addStake, stakeBps } from "../src/season/stake.js";
+describe("leader stake history (D4)", () => {
+  it("bps and thinning: every point for 2 days, one per 6 h before", () => {
+    expect(stakeBps("1765", "10000")).toBe(1765);
+    expect(stakeBps("1", "0")).toBe(0);
+    const H = 3_600_000, now = 10 * 24 * H;
+    let d = addStake({ vaults: {} }, "v", Array.from({ length: 48 }, (_, i) => [i * H, 1000 + i] as [number, number]), now);
+    expect(d.vaults.v.t).toEqual([0, 6 * H, 12 * H, 18 * H, 24 * H, 30 * H, 36 * H, 42 * H]);
+    d = addStake(d, "v", [[now - H, 1500], [now, 1600]], now);
+    expect(d.vaults.v.bps.slice(-2)).toEqual([1500, 1600]);
+  });
+});
