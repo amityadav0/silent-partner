@@ -302,3 +302,22 @@ Each decision is dated, with its reason.
   - **Publishing.** Each season tick writes the totals to `season-state/funnel.json`, and STATUS.md keeps snapshots.
   - **Rejected.** GoatCounter (needs an account in Amit's name). Plausible (paid). A self-hosted endpoint (we have no server). Counting through GitHub dispatch (would need a token in the browser).
   - **Risk.** The counter is a third party with a 30-requests-per-10-s limit. Losing it loses counts, never the site.
+
+## D-U-9: "vs holding NEAR" from a published NEAR/USD history (Nov 13)
+- **Need.** Show every leader's return next to what holding NEAR did over the same window, measured at the same signed price updates. The posts don't carry a NEAR price.
+- **Chosen.** The season job publishes `season-state/near-usd.json`: CoinGecko hourly points for 90 days plus 5-minute points for the last day, merged into the previous file so the history outlives CoinGecko's window. The browser reads NEAR at each post's timestamp by interpolation. If the file is missing, the browser asks CoinGecko directly (30 days). If both fail, the column shows "—".
+- **Window.** From the post just before the window (or the vault's start at price 1, timed at its first post) to the latest post. `pts` = vault return − NEAR return, in percentage points. Raw return stays next to it everywhere.
+- **Rejected.**
+  - Adding the NEAR mark to each post: a contract change, a mainnet redeploy and no history.
+  - The testnet MockFeed oracle: it holds only the latest price.
+  - Browser-only CoinGecko: rate-limited per visitor. Kept only as the fallback.
+- **Copy.** The card and the share text mention beating NEAR only when it's true (pts > 0).
+
+## D-U-10/11: highlight and hero pick follow the benchmark (Nov 13)
+- **Highlight card.** If any ranked season leader made money this week, it shows "Calmest return this week" (return ÷ worst dip). If none did, it shows "Held up best this week" (vs-NEAR ÷ worst dip). Ratios are shown to 2 dp and never as "−0.00".
+- **Hero pick.** The hero copies the season leader with the best 7-day vs-NEAR among those with at least 12 browser-verified updates, falling back to Contrarian. The copy page, its share text and its `/v/<id>/` link card all follow the vault actually copied. The site-wide `og.png` stays the brand image.
+
+## D-U-3/4/5: what a follower and a leader share (Nov 13)
+- **Follower share text.** Under 3 price updates since joining, the share text is the leader's verified record ("just started silently copying …"). From 3 updates on, it is the copy's own change.
+- **Desktop share.** Without the Web Share API, "Share" copies the link and shows "Link copied ✓" for 2 s. The text goes through "Post on X".
+- **Leader badge.** It reads "✓ verified on chain · N price updates · X% own money in". The drawdown stays on the full card. The X-bio line follows the same wording.

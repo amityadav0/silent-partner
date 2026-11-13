@@ -107,6 +107,11 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] H1 welcome sheet only on a first landing visit · H2 ranking after 12 verified posts · R2 recent verified events on the landing · S2–S4 demo script, X post split, pre-recording checklist
 - [x] R1 verifiable AI decisions: NEAR AI TEE receipts and attestation quotes, checked in the browser (D-AI-4)
 
+## Nov 13: persona walkthrough fixes (U1–U13)
+- [x] U1 hero down to two actions · U2 copy card shows the leader's verified record, sparkline, last update ✓, next update and Notify me · U3 share text uses the leader's record under 3 updates · U4 "Link copied ✓" feedback · U5 badge is proof, not a drawdown · U6 demo-desk label · U7 diagram words moved to captions · U8 Playwright mobile project for the full flow
+- [x] U9 "vs holding NEAR" on the leaderboard, the vault stats, the copy card and the share text (D-U-9; `near-usd.json` on season-state) · U10 "Held up best this week" · U11 dynamic hero pick · U12 tour "Open →" buttons · U13 "TEE ✓" chips on AI rows
+- e2e: 81 desktop + 1 mobile pass. Perf: LCP 1.3 s and CLS 0 on landing, leaderboard, vault and copy.
+
 ## Next
 - Season loop picks up the open-season, alerts and badge code at its next self-handover (~2026-11-10 05:21 UTC): check that `last-run.json` shows `community` and a result for `c0.sp-sop-92991.testnet`, that `alerts.json` and `badges/` appear on season-state, and that Calm Owl's card renders. `health.yml` reports a stale tick.
 - Season items 1–7 are done. Watch the season cron: the workflow is active, but GitHub hadn't fired a scheduled run 70 minutes after it landed (2026-11-09 04:16 UTC); both manual runs succeeded. If it stays silent, trigger with `gh workflow run season.yml`.

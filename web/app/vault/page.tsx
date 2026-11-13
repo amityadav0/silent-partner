@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ASSETS, NETWORK, TGAS, explorerFor, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { aumBucket, drawdownWindow, fmtUnits, leaderStake, maxDrawdown, priceOf, returns, status, toUnits, verifyNavs, view, type Claim } from "@/lib/vault";
-import { LeaderChips, PageSkeleton, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
+import { LeaderChips, PageSkeleton, Redact, Ret, ReturnsChart, Stat, ModeChip, StatusChip, short, useNear, useQueryParam, useVault, VsNearTag } from "../ui";
+import { vsNear } from "@/lib/bench";
 import { META, metaOf, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, launchOfVault } from "@/lib/community";
 import { EmergencyBanner } from "./emergency";
@@ -72,6 +73,14 @@ export default function VaultPage() {
     const last = data.navs.at(-1);
     return { dec, sym: ASSETS[data.cfg.base_asset_id]?.symbol ?? "base", ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(data.navs), win: drawdownWindow(data.navs), stake: leaderStake(data.vault), v: verifyNavs(data.id, data.cfg.attestation_key, data.navs), price: priceOf(data.vault.price) };
   }, [data]);
+  const near = useNear();
+  const vs = useMemo(() => (data ? vsNear(data.navs, near ?? null) : null), [data, near]);
+  // #ai and other anchors: the panels render after the chain read, so scroll once they exist
+  useEffect(() => {
+    if (!data || !location.hash) return;
+    const t = setTimeout(() => document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ block: "start" }), 300);
+    return () => clearTimeout(t);
+  }, [data]);
 
   if (id === null) return <p>Missing <code>?id=</code>. Pick a vault on the <Link href="/leaderboard/">leaderboard</Link>.</p>;
   if (error) return <p className="neg">{error}</p>;
@@ -116,6 +125,7 @@ export default function VaultPage() {
           <div className="stats" data-testid="stats">
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
+            <Stat label="vs holding NEAR" value={<VsNearTag v={near === undefined ? undefined : vs} />} hint={vs ? `NEAR ${vs.near >= 0 ? "+" : "−"}${Math.abs(vs.near * 100).toFixed(2)}% over the same updates` : "same window, same updates"} testid="stat-vs-near" />
             <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
             <Stat label="Verified price updates" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: updates ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>

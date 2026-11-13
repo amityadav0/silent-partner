@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NETWORK, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { loadVault, pct, type VaultData } from "@/lib/vault";
+import { loadNear, ptsWords, type NearSeries, type VsNear } from "@/lib/bench";
 
 const REPO = "https://github.com/amityadav0/silent-partner";
 
@@ -122,6 +123,29 @@ export function useVault(id: string | null | undefined) {
     };
   }, [id, tick]);
   return { data, error, reload: () => setTick((t) => t + 1) };
+}
+
+/** NEAR/USD history for "vs holding NEAR"; undefined while loading, null if unavailable. */
+export function useNear(): NearSeries | null | undefined {
+  const [s, setS] = useState<NearSeries | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    loadNear().then((x) => live && setS(x));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return s;
+}
+
+/** "+1.23 pts vs NEAR", with what NEAR itself did in the title. */
+export function VsNearTag({ v, testid = "vs-near", compact = false }: { v: VsNear | null | undefined; testid?: string; compact?: boolean }) {
+  if (!v) return <span className="muted" data-testid={testid}>—</span>;
+  return (
+    <span className={v.pts > 0 ? "vs-up" : undefined} data-testid={testid} data-pts={v.pts.toFixed(4)} title={`Holding NEAR over the same window: ${pct(v.near)}`}>
+      {compact ? ptsWords(v.pts).replace(" vs NEAR", "") : ptsWords(v.pts)}
+    </span>
+  );
 }
 
 export function Stat({ label, value, hint, testid, risk }: { label: string; value: ReactNode; hint?: string; testid?: string; risk?: boolean }) {
@@ -275,4 +299,39 @@ export function SkeletonRows({ cols, rows = 4 }: { cols: number; rows?: number }
       ))}
     </>
   );
+}
+
+/** A tiny share-price line (no axes): the shape of the record at a glance. */
+export function Sparkline({ values, width = 140, height = 36, label = "Share price" }: { values: number[]; width?: number; height?: number; label?: string }) {
+  if (values.length < 2) return null;
+  const lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+  const pts = values.map((v, i) => `${((i / (values.length - 1)) * (width - 2) + 1).toFixed(1)},${(height - 1 - ((v - lo) / span) * (height - 2)).toFixed(1)}`).join(" ");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label} data-testid="sparkline" preserveAspectRatio="none" style={{ display: "block", flex: "none" }}>
+      <polyline points={pts} fill="none" stroke="var(--accent)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A label that reads "done ✓" for 2 s after a copy, then goes back. */
+export function useFlash(ms = 2000): [string | null, (what: string) => void] {
+  const [v, setV] = useState<string | null>(null);
+  const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
+  return [v, (what: string) => {
+    setV(what);
+    if (t.current) clearTimeout(t.current);
+    t.current = setTimeout(() => setV(null), ms);
+  }];
+}
+
+/** Clipboard with a prompt fallback (old Safari, insecure contexts). Resolves true when copied. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    window.prompt("Copy", text);
+    return false;
+  }
 }

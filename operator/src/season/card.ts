@@ -88,19 +88,23 @@ export function cardSvg(o: { name: string; badge: string; style: string; vault: 
   <path d="${line}" fill="none" stroke="${C.accent}" stroke-width="5" stroke-linejoin="round"/>
   <text x="${X0}" y="598" font-family="${MONO}" font-size="19" fill="${C.muted}">Holdings</text>
   <rect x="${X0 + 112}" y="583" width="86" height="18" rx="2" fill="${C.ink}"/><rect x="${X0 + 205}" y="583" width="46" height="18" rx="2" fill="${C.ink}"/>
-  <text x="${X1}" y="598" text-anchor="end" font-family="${MONO}" font-size="19" fill="${C.muted}">${t.epochs} signed epochs · ${esc(o.vault)} · ${o.asOf.toISOString().slice(0, 16).replace("T", " ")} UTC</text>
+  <text x="${X1}" y="598" text-anchor="end" font-family="${MONO}" font-size="19" fill="${C.muted}">${t.epochs} signed price updates · ${esc(o.vault)} · ${o.asOf.toISOString().slice(0, 16).replace("T", " ")} UTC</text>
 </svg>`;
 }
 
-/** A small badge for a leader's site or profile: "Silent Partner ✓ | −4.1% worst DD · 58 epochs". */
-export function badgeSvg(o: { navs: NavPoint[] }): string {
-  const t = trackRecord(o.navs, "0", "0");
-  const right = `${t.maxDrawdown === 0 ? "0%" : `−${(t.maxDrawdown * 100).toFixed(1)}%`} worst DD · ${t.epochs} epochs`;
-  const lw = 36 + 16 * 7.9 + 12, rw = right.length * 7.9 + 24, W = lw + rw, H = 28;
+/**
+ * A small badge for a leader's site or profile (U5): "Silent Partner | ✓ verified on chain · 328 price
+ * updates · 31% own money in". Proof, not a brag number: the drawdown stays on the card, in full.
+ */
+export function badgeSvg(o: { navs: NavPoint[]; leaderShares?: string; totalShares?: string }): string {
+  const t = trackRecord(o.navs, o.leaderShares ?? "0", o.totalShares ?? "0");
+  const own = o.totalShares && Number(o.totalShares) > 0 ? ` · ${Math.round(t.leaderPct * 100)}% own money in` : "";
+  const right = `✓ verified on chain · ${t.epochs} price update${t.epochs === 1 ? "" : "s"}${own}`;
+  const lw = 36 + 14 * 7.9 + 12, rw = right.length * 7.9 + 24, W = lw + rw, H = 28;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <rect width="${W}" height="${H}" rx="6" fill="${C.ink}"/><rect x="${lw}" width="${rw}" height="${H}" rx="6" fill="${C.accent}"/><rect x="${lw}" width="8" height="${H}" fill="${C.accent}"/>
   <rect x="10" y="10" width="11" height="8" rx="1.5" fill="${C.paper}"/><rect x="23" y="10" width="5" height="8" rx="1.5" fill="${C.accent}"/>
-  <text x="36" y="19" font-family="${MONO}" font-size="13" fill="${C.paper}">Silent Partner ✓</text>
+  <text x="36" y="19" font-family="${MONO}" font-size="13" fill="${C.paper}">Silent Partner</text>
   <text x="${lw + 12}" y="19" font-family="${MONO}" font-size="13" fill="#FFFFFF">${esc(right)}</text>
 </svg>`;
 }

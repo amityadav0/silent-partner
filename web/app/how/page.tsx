@@ -14,8 +14,7 @@ function OneVault() {
   return (
     <svg viewBox="0 0 320 170" role="img" aria-label="A leader and three followers put money into one shared vault" className="how-art">
       <rect x="95" y="55" width="130" height="90" rx="14" fill="var(--surface)" stroke="var(--ink)" strokeWidth="2" />
-      <text x="160" y="96" textAnchor="middle" fontSize="15" fill="var(--ink)" fontWeight="600">one vault</text>
-      <text x="160" y="118" textAnchor="middle" fontSize="12" fill="var(--muted)">same trade, same price</text>
+      <text x="160" y="106" textAnchor="middle" fontSize="18" fill="var(--ink)" fontWeight="600">one vault</text>
       <circle cx="160" cy="22" r="14" fill="var(--accent)" />
       <text x="160" y="27" textAnchor="middle" fontSize="12" fill="#fff" fontWeight="700">L</text>
       <line x1="160" y1="37" x2="160" y2="55" stroke="var(--ink)" strokeWidth="2" />
@@ -39,8 +38,7 @@ function SealedTrades() {
           <rect x={120} y={y} width={[60, 44, 52][i]} height="12" rx="2" fill="var(--redact)" />
         </g>
       ))}
-      <text x="250" y="70" textAnchor="middle" fontSize="28">🤖</text>
-      <text x="250" y="100" textAnchor="middle" fontSize="12" fill="var(--muted)">sees nothing</text>
+      <text x="250" y="92" textAnchor="middle" fontSize="34">🤖</text>
       <line x1="222" y1="40" x2="278" y2="120" stroke="var(--warn, #c0392b)" strokeWidth="2.5" />
     </svg>
   );
@@ -50,22 +48,20 @@ function ExitWithoutUs() {
   return (
     <svg viewBox="0 0 320 170" role="img" aria-label="With the operator switched off for a day, a holder still takes their share out" className="how-art">
       <rect x="20" y="50" width="90" height="70" rx="12" fill="var(--row)" stroke="var(--ink-2)" strokeDasharray="5 4" />
-      <text x="65" y="82" textAnchor="middle" fontSize="13" fill="var(--muted)">operator</text>
-      <text x="65" y="100" textAnchor="middle" fontSize="12" fill="var(--muted)">off for 24 h</text>
+      <text x="65" y="90" textAnchor="middle" fontSize="15" fill="var(--muted)">off</text>
       <rect x="140" y="50" width="90" height="70" rx="12" fill="var(--surface)" stroke="var(--ink)" strokeWidth="2" />
-      <text x="185" y="90" textAnchor="middle" fontSize="14" fill="var(--ink)" fontWeight="600">vault</text>
+      <text x="185" y="91" textAnchor="middle" fontSize="16" fill="var(--ink)" fontWeight="600">vault</text>
       <path d="M232 85 H280" stroke="var(--accent)" strokeWidth="3" markerEnd="url(#arr)" />
       <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--accent)" /></marker></defs>
       <circle cx="298" cy="85" r="12" fill="var(--accent)" />
-      <text x="298" y="135" textAnchor="middle" fontSize="12" fill="var(--muted)">you, paid</text>
     </svg>
   );
 }
 
 const STEPS = [
-  { art: <OneVault />, h: "1. One vault, shared with the trader", p: "You don't copy the trader's orders after the fact. You put money into the same vault they trade, next to their own money (at least 10% of it is theirs, and the contract checks). Every trade fills once, for everyone, at one price." },
-  { art: <SealedTrades />, h: "2. Trades nobody can see coming", p: "On public copy platforms, everyone can watch the trader and jump in first, so followers fill last at a worse price. Here what the vault holds and when it trades stay sealed. The public sees only the share price, and your browser checks every one of them." },
-  { art: <ExitWithoutUs />, h: "3. An exit that doesn't need us", p: "If the people running the vault stop posting prices for a day, anyone can switch it to emergency mode, and every holder takes out their share at the last price. No permission, no support ticket." },
+  { art: <OneVault />, cap: "The leader and the followers in one vault: same trade, same price.", h: "1. One vault, shared with the trader", p: "You don't copy the trader's orders after the fact. You put money into the same vault they trade, next to their own money (at least 10% of it is theirs, and the contract checks). Every trade fills once, for everyone, at one price." },
+  { art: <SealedTrades />, cap: "A bot watching the chain sees nothing to jump ahead of.", h: "2. Trades nobody can see coming", p: "On public copy platforms, everyone can watch the trader and jump in first, so followers fill last at a worse price. Here what the vault holds and when it trades stay sealed. The public sees only the share price, and your browser checks every one of them." },
+  { art: <ExitWithoutUs />, cap: "Operator off for 24 hours: you still take your share out.", h: "3. An exit that doesn't need us", p: "If the people running the vault stop posting prices for a day, anyone can switch it to emergency mode, and every holder takes out their share at the last price. No permission, no support ticket." },
 ];
 
 export default function How() {
@@ -77,7 +73,10 @@ export default function How() {
       </div>
       {STEPS.map((s) => (
         <div key={s.h} className="panel how-step">
-          {s.art}
+          <figure className="how-fig" data-testid="how-fig">
+            {s.art}
+            <figcaption className="muted text-sm">{s.cap}</figcaption>
+          </figure>
           <div className="flex flex-col gap-2">
             <h2>{s.h}</h2>
             <p className="leading-relaxed" style={{ color: "var(--ink-2)" }}>{s.p}</p>

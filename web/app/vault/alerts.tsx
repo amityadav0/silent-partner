@@ -35,13 +35,33 @@ async function fetchEvents(vault: string): Promise<AlertEvent[]> {
   return ((await r.json()).events as AlertEvent[]).filter((e) => e.vault === vault);
 }
 
-export function Alerts({ vault }: { vault: string }) {
-  const [events, setEvents] = useState<AlertEvent[] | null>(null);
+/** The browser-notification switch for a vault, shared by the vault's Alerts panel and the copy card. */
+export function useAlertToggle(vault: string) {
   const [on, setOn] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   useEffect(() => {
-    fetchEvents(vault).then(setEvents, () => setEvents([]));
     setOn(store.get(ON(vault)) === "1" && typeof Notification !== "undefined" && Notification.permission === "granted");
+  }, [vault]);
+  async function toggle() {
+    if (on) {
+      store.set(ON(vault), null);
+      return setOn(false);
+    }
+    if (typeof Notification === "undefined") return setNote("This browser can't show notifications. Use the phone option on the vault page.");
+    const p = await Notification.requestPermission();
+    if (p !== "granted") return setNote("Notifications are blocked for this site in your browser settings.");
+    store.set(ON(vault), "1");
+    setNote(null);
+    setOn(true);
+  }
+  return { on, note, toggle };
+}
+
+export function Alerts({ vault }: { vault: string }) {
+  const [events, setEvents] = useState<AlertEvent[] | null>(null);
+  const { on, note, toggle } = useAlertToggle(vault);
+  useEffect(() => {
+    fetchEvents(vault).then(setEvents, () => setEvents([]));
   }, [vault]);
 
   // While the site is open: check every 5 minutes and notify anything new.
@@ -59,19 +79,6 @@ export function Alerts({ vault }: { vault: string }) {
     const t = setInterval(check, 5 * 60_000);
     return () => clearInterval(t);
   }, [on, vault]);
-
-  async function toggle() {
-    if (on) {
-      store.set(ON(vault), null);
-      return setOn(false);
-    }
-    if (typeof Notification === "undefined") return setNote("This browser can't show notifications. Use the phone option below.");
-    const p = await Notification.requestPermission();
-    if (p !== "granted") return setNote("Notifications are blocked for this site in your browser settings.");
-    store.set(ON(vault), "1");
-    setNote(null);
-    setOn(true);
-  }
 
   const topic = ntfyTopic(vault);
   return (

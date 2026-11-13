@@ -41,3 +41,39 @@ export function summary(s: Series) {
     low_24h: +Math.min(...p).toFixed(4),
   };
 }
+
+/**
+ * NEAR/USD history for the "vs holding NEAR" benchmark (U9): hourly points for `days` days,
+ * the last day at 5-minute resolution, merged into what was published before (so the
+ * history outlives CoinGecko's window). Points older than 2 days are thinned to one per hour.
+ */
+export async function nearHistory(prev: Series | null, recent: Series | null, days = 90, fetchImpl: typeof fetch = fetch): Promise<Series> {
+  let long: Series | null = null;
+  try {
+    const r = await fetchImpl(`https://api.coingecko.com/api/v3/coins/near/market_chart?vs_currency=usd&days=${days}`, { headers: { accept: "application/json" } });
+    if (r.ok) {
+      const j = (await r.json()) as { prices: [number, number][] };
+      if (j.prices?.length) long = { t: j.prices.map((x) => x[0]), p: j.prices.map((x) => x[1]) };
+    }
+  } catch {
+    /* keep what we have */
+  }
+  return mergeSeries([prev, long, recent], Date.now());
+}
+
+export function mergeSeries(parts: (Series | null)[], now: number): Series {
+  const m = new Map<number, number>();
+  for (const s of parts) if (s) s.t.forEach((t, i) => Number.isFinite(s.p[i]) && s.p[i] > 0 && m.set(Math.round(t), s.p[i]));
+  const cut = now - 2 * 86_400_000, hours = new Set<number>();
+  const t: number[] = [], p: number[] = [];
+  for (const k of [...m.keys()].sort((a, b) => a - b)) {
+    if (k < cut) {
+      const h = Math.floor(k / 3_600_000);
+      if (hours.has(h)) continue;
+      hours.add(h);
+    }
+    t.push(k);
+    p.push(+m.get(k)!.toFixed(5));
+  }
+  return { t, p };
+}

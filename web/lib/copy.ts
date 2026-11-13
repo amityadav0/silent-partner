@@ -14,8 +14,58 @@ export function sinceWords(ms: number): string {
   return `in ${Math.round(h / 24)} days`;
 }
 
-export function shareText(name: string, p: number, sinceMs: number): string {
-  return `silently copying ${name} on @NEARProtocol: ${pctWords(p)} ${sinceWords(sinceMs)}. i can't see their trades. neither can bots.`;
+/** "−3.8%": a dip with one decimal. */
+export const dipWords = (dd: number) => (dd <= 0 ? "0%" : `−${(dd * 100).toFixed(1)}%`);
+const ptsShort = (pts: number) => `${pts.toFixed(2)} pts`;
+
+export type ShareInput = {
+  name: string;
+  /** price updates since the copy started */
+  updates: number;
+  /** the copy's change, as a fraction */
+  copyPct: number;
+  sinceMs: number;
+  /** the leader's verified record: return since start and worst dip (fractions) */
+  record: { ret: number; dd: number };
+  /** percentage points vs holding NEAR since joining (copy) and since start (record); null if unknown */
+  copyVsNear?: number | null;
+  recordVsNear?: number | null;
+};
+
+/**
+ * What a follower posts (U3, U9). Fewer than 3 price updates since joining: the leader's verified
+ * record, because "+0.00% in 1 min" says nothing. From 3 updates on: the copy's own change. The
+ * NEAR comparison goes in only when it is positive; it is never invented.
+ */
+export function shareText(x: ShareInput): string {
+  const tail = "i can't see their trades. neither can bots.";
+  if (x.updates < 3) {
+    const vs = x.recordVsNear != null && x.recordVsNear > 0 ? ` (+${ptsShort(x.recordVsNear)} vs NEAR)` : "";
+    return `just started silently copying ${x.name} on @NEARProtocol. verified record: ${pctWords(x.record.ret)}${vs}, worst dip ${dipWords(x.record.dd)}. ${tail}`;
+  }
+  const vs = x.copyVsNear != null && x.copyVsNear > 0 ? `, beating NEAR by ${ptsShort(x.copyVsNear)}` : "";
+  return `silently copying ${x.name} on @NEARProtocol: ${pctWords(x.copyPct)} ${sinceWords(x.sinceMs)}${vs}. ${tail}`;
+}
+
+/** "~12 min", or "any minute now" when the cadence says it is due. Cadence = median gap of recent updates. */
+export function nextUpdateWords(times: number[], now = Date.now()): string | null {
+  if (times.length < 3) return null;
+  const w = times.slice(-11);
+  const gaps = w.slice(1).map((t, i) => t - w[i]).sort((x, y) => x - y);
+  const median = gaps[Math.floor(gaps.length / 2)];
+  const left = times[times.length - 1] + median - now;
+  if (left <= 60_000) return "any minute now";
+  const m = Math.round(left / 60_000);
+  return m < 90 ? `in ~${m} min` : `in ~${Math.round(m / 60)} h`;
+}
+
+/** "3 min ago", "2 h ago", "just now". */
+export function agoWords(ms: number): string {
+  const m = Math.floor(ms / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
 }
 
 /** The pre-rendered vault link (its own X/Telegram card), opening straight into a $100 copy. */

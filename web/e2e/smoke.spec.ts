@@ -177,11 +177,10 @@ test("AI vault: latest on-chain trade and the season-log hash check", async ({ p
   if (await page.getByTestId("ai-receipt").count()) await expect(page.getByTestId("ai-receipt").first()).toContainText("✓");
 });
 
-test("landing: 60-second tour with plain links", async ({ page }) => {
+test("landing: 60-second tour with Open buttons", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("tour-button").click();
   await expect(page.getByTestId("tour").locator("li")).toHaveCount(3);
-  await expect(page.getByTestId("tour")).toContainText("https://testnet.nearblocks.io/txns/");
+  await expect(page.getByTestId("tour-open").nth(2)).toHaveAttribute("href", /^https:\/\/testnet\.nearblocks\.io\/txns\//);
 });
 
 test("lead a vault: strategy sealed in the browser, bounds from the risk band, style line to approve", async ({ page }) => {
@@ -205,7 +204,9 @@ test("open season: the community vault is on the leaderboard with its badge, and
   const row = page.getByTestId("row-c0.sp-sop-92991.testnet");
   await expect(row).toContainText("Calm Owl");
   await expect(row.getByTestId("community")).toHaveText("Community");
-  await expect(page.getByTestId("calmest")).toContainText("Calmest return this week");
+  await expect(page.getByTestId("calmest-title")).toHaveText(/^(Calmest return this week|Held up best this week)$/);
+  await expect(page.getByTestId("calmest-ratio")).toHaveText(/^ · ratio −?\d+\.\d\d$/);
+  await expect(page.getByTestId("calmest-ratio")).not.toHaveText(/−0\.00/);
   await page.goto("/vault/?id=c0.sp-sop-92991.testnet");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calm Owl");
   await expect(page.getByTestId("community")).toBeVisible();
@@ -249,7 +250,7 @@ test("share loops: a vault link with its own preview, invite credit, badge and b
   expect(html).toContain('property="og:image" content="https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-momo-92991.testnet.png"');
   expect(html).toContain('name="twitter:card" content="summary_large_image"');
   await page.goto("/s/?id=sp-momo-92991.testnet");
-  await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst drop · \d+ price updates · positions sealed$/);
+  await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ verified on chain · \d+ price updates · \d+% own money in · positions sealed$/);
 });
 
 test("first visit: three steps on the landing page only, skippable, remembered", async ({ browser }) => {

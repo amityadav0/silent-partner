@@ -24,7 +24,7 @@ import { Confidential } from "../src/confidential.js";
 import { FillLog } from "../src/filllog.js";
 import { Operator } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
-import { nearUsd, type Series } from "../src/leaders/market.js";
+import { nearHistory, nearUsd, type Series } from "../src/leaders/market.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
 import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
 import type { Attestation } from "../src/leaders/receipt.js";
@@ -248,7 +248,7 @@ for (const v of cardVaults) {
     }
     const g = await viewCall<{ leader_shares: string; total_shares: string }>(env.rpc, v.id, "get_vault", {}, fetch, "optimistic");
     const [badge, style] = STYLE[v.strategy] ?? [v.strategy === "community-ai" ? "AI" : "Human", (v as { style?: string }).style ?? ""];
-    const bsvg = badgeSvg({ navs });
+    const bsvg = badgeSvg({ navs, leaderShares: g.leader_shares, totalShares: g.total_shares });
     writeFileSync(join(sealed, "badges", `${v.id}.png`), cardPng(bsvg, 2 * Number(bsvg.match(/width="([\d.]+)"/)![1])));
     writeFileSync(join(sealed, "cards", `${v.id}.png`), cardPng(cardSvg({ name: v.name, badge, style, vault: v.id, navs, leaderShares: g.leader_shares, totalShares: g.total_shares, asOf: new Date() })));
   } catch (x) {
@@ -352,6 +352,15 @@ try {
 }
 for (const a of attestations.values()) attDoc[createHash("sha256").update(Buffer.from(a.intel_quote.replace(/^0x/, ""), "hex")).digest("hex")] = { ...a, seen: ranAt };
 writeFileSync(attFile, JSON.stringify(Object.fromEntries(Object.entries(attDoc).slice(-50)), null, 1) + "\n");
+// NEAR/USD history (U9): the site's "vs holding NEAR" benchmark reads it at each post's time.
+try {
+  const f = join(sealed, "near-usd.json");
+  const prev = existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as Series) : null;
+  const h = await nearHistory(prev, market);
+  if (h.t.length) writeFileSync(f, JSON.stringify({ source: "coingecko near/usd", ranAt, t: h.t, p: h.p }) + "\n");
+} catch {
+  /* keep the last file */
+}
 // Funnel totals (V8): four aggregate counters the site bumps (no cookies, nothing per person).
 try {
   const funnel: Record<string, number> = {};

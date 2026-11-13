@@ -6,6 +6,8 @@ import { VAULTS } from "@/lib/config";
 import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
 import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { COPY_DEFAULT } from "@/lib/copy";
+import { loadNear } from "@/lib/bench";
+import { pickLeader } from "@/lib/pick";
 import { WatchButton } from "./watch";
 import { Redact } from "./ui";
 
@@ -15,6 +17,7 @@ const DRILL = "sp-drill-92991.testnet";
 function useLive() {
   const [s, setS] = useState<{ navs: number; verified: number; signals: number; events: LiveEvent[] } | null>(null);
   const [main, setMain] = useState<{ epoch: number; ok: boolean; events: LiveEvent[] } | null>(null);
+  const [pick, setPick] = useState<string>(COPY_DEFAULT);
   useEffect(() => {
     // The mainnet vault, kept apart from the testnet paper season's numbers.
     loadVault(MAINNET_VAULT).then((d) => {
@@ -26,6 +29,7 @@ function useLive() {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then(async (rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
+      loadNear().then((near) => setPick(pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season })), near).id));
       // Recent verified events: times and ✓ only. No amounts, no holders.
       const posts: LiveEvent[] = checked
         .filter(({ d }) => d.id !== DRILL && d.navs.length)
@@ -52,8 +56,7 @@ function useLive() {
       });
     });
   }, []);
-  if (!s) return null;
-  return { ...s, main, events: [...(main?.events ?? []), ...s.events] };
+  return { pick, live: s ? { ...s, main, events: [...(main?.events ?? []), ...s.events] } : null };
 }
 
 const when = (t: number) => {
@@ -128,10 +131,10 @@ function Ticket() {
 
 const SITE = "https://amityadav0.github.io/silent-partner";
 const DRILL_TX = "https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ";
-const TOUR: [string, string, string, string][] = [
-  ["Flip the ticket", "The same trade on a public platform and on Silent Partner: exposed, then sealed.", "#ticket", `${SITE}/#ticket`],
-  ["Check an AI trade", "Contrarian's latest trade on chain, matched in your browser to the hash of its sealed reasoning.", `${SITE}/vault/?id=sp-contra-8952.testnet#ai`, `${SITE}/vault/?id=sp-contra-8952.testnet#ai`],
-  ["See an exit without us", "The drill: with the operator switched off, a follower still paid themselves out.", DRILL_TX, DRILL_TX],
+const TOUR: [string, string, string][] = [
+  ["Flip the ticket", "The same trade on a public platform and on Silent Partner: exposed, then sealed.", "#ticket"],
+  ["Check an AI trade", "Contrarian's latest trade on chain, matched in your browser to the hash of its sealed reasoning.", `${SITE}/vault/?id=sp-contra-8952.testnet#ai`],
+  ["See an exit without us", "The drill: with the operator switched off, a follower still paid themselves out.", DRILL_TX],
 ];
 
 const CARDS: [string, string, string][] = [
@@ -152,7 +155,7 @@ const COMPARE: [string, string, string, string, string][] = [
 ];
 
 export default function Landing() {
-  const live = useLive();
+  const { pick, live } = useLive();
   return (
     <div className="bleed" data-testid="landing">
       <section className="wrap hero">
@@ -161,10 +164,8 @@ export default function Landing() {
           <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
           <p className="lede">On other platforms your copy is a public trade: bots see it first, you fill last. Here you share one sealed vault with the trader. Same trade, same price, nothing to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={`/copy/?id=${COPY_DEFAULT}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy">Copy Contrarian with $100: no wallet, 10 seconds</Link>
-            <Link href="/leaderboard/" className="btn btn-lg">Follow privately</Link>
+            <Link href={`/copy/?id=${encodeURIComponent(pick)}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy" data-pick={pick}>Copy {metaOf(pick).name} with $100: no wallet, 10 seconds</Link>
             <WatchButton />
-            <a href="#tour" className="quiet" data-testid="tour-button">Try it in 60 s</a>
           </div>
         </div>
         <Ticket />
@@ -191,12 +192,12 @@ export default function Landing() {
       <section id="tour" className="wrap pt-14" data-testid="tour">
         <span className="eyebrow">Try it in 60 seconds</span>
         <ol className="cards mt-4">
-          {TOUR.map(([t, d, href, label], i) => (
+          {TOUR.map(([t, d, href], i) => (
             <li className="card" key={t}>
               <span className="card-n">0{i + 1}</span>
               <h3>{t}</h3>
               <p>{d}</p>
-              <a href={href} className="break-all text-sm">{label}</a>
+              <a href={href} className="btn mt-auto self-start text-sm" data-testid="tour-open" aria-label={`Open: ${t}`}>Open →</a>
             </li>
           ))}
         </ol>

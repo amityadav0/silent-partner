@@ -113,6 +113,7 @@ h2 { font-family: var(--sans); font-weight: 600; font-size: 22px; line-height: 1
   .chip-bad, .chip-risk-high { background: var(--warn-bg); border-color: var(--warn-bg); color: var(--warn); }
 
   .pos { color: var(--accent); }
+  .vs-up { color: var(--accent); }
   .neg { color: var(--warn); }
   .mark { background: linear-gradient(transparent 72%, var(--mark) 72%); padding-inline: 2px; }
   .redact { display: inline-block; border-radius: 2px; background: var(--redact); vertical-align: middle; }
@@ -295,6 +296,8 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .copy-card { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
 .copy-value { display: flex; flex-direction: column; gap: 4px; }
 .copy-value > :first-child { font-size: 44px; line-height: 1.05; font-weight: 600; }
+.copy-record { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--row); }
+.copy-next { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .skeleton { border-radius: 6px; background: var(--row); }
 
 /* V1: on a phone the no-wallet CTA and the ticket toggle share the first screen */
@@ -305,9 +308,10 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 }
 
 /* V3: /how and "?" notes */
-.how-step { display: grid; grid-template-columns: minmax(0, 220px) 1fr; gap: 24px; align-items: center; }
-.how-art { width: 100%; height: auto; }
-@media (max-width: 640px) { .how-step { grid-template-columns: 1fr; } .how-art { max-width: 320px; } }
+.how-step { display: grid; grid-template-columns: minmax(0, 280px) 1fr; gap: 24px; align-items: center; }
+.how-fig { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.how-art { width: 100%; height: auto; overflow: visible; }
+@media (max-width: 640px) { .how-step { grid-template-columns: 1fr; } .how-fig { max-width: 340px; } }
 .term { position: relative; display: inline; }
 .term-q { font: inherit; color: var(--ink-2); text-decoration: underline dotted; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: help; }
 .term-mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 11px; line-height: 1; vertical-align: 1px; }
@@ -324,3 +328,10 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 /* V6: testnet onboarding strip */
 .onboard { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; border-color: var(--accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.demo-banner { border-color: var(--mark); background: color-mix(in srgb, var(--mark) 14%, var(--surface)); }
+/* U8: touch targets of at least 44 px on phones */
+@media (pointer: coarse), (max-width: 640px) {
+  .btn { min-height: 44px; }
+  .copy-card .quiet { min-height: 44px; padding-inline: 0.5rem; }
+}
+@media (max-width: 480px) { .copy-record svg { width: 100%; } .copy-value > .num.muted { font-size: 14px; } }

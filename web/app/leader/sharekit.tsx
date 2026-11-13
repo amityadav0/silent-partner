@@ -1,9 +1,10 @@
 "use client";
 // "Share your sealed track record" (V5): the leader's loop. A post for X, the vault's badge and an
 // invite link that credits the leader and opens with the vault's own preview card.
-import { useState } from "react";
 import { seasonUrl } from "@/lib/vault";
 import { track } from "@/lib/funnel";
+import { useState } from "react";
+import { copyText, useFlash } from "../ui";
 
 const SITE = "https://amityadav0.github.io/silent-partner";
 export const leaderPost = "my trades are sealed. my returns are verified on chain. copy me without seeing me →";
@@ -11,11 +12,11 @@ export const inviteUrl = (id: string, leader: string) => `${SITE}/v/${encodeURIC
 
 export function ShareKit({ id, leader }: { id: string; leader: string }) {
   const url = inviteUrl(id, leader);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, setCopied] = useFlash();
   const [badgeOk, setBadgeOk] = useState(true);
   const copy = (what: string, text: string) => {
     track("share_click");
-    navigator.clipboard?.writeText(text).then(() => setCopied(what), () => window.prompt("Copy", text));
+    copyText(text).then((ok) => ok && setCopied(what));
   };
   return (
     <div className="panel mt-4 flex flex-col gap-3" data-testid="share-kit">
@@ -26,8 +27,8 @@ export function ShareKit({ id, leader }: { id: string; leader: string }) {
       {badgeOk && <img src={seasonUrl(`badges/${id}.png`)} alt="Silent Partner badge for this vault" style={{ height: 28, width: "auto", alignSelf: "flex-start" }} onError={() => setBadgeOk(false)} />}
       <div className="flex flex-wrap gap-2">
         <a className="btn btn-primary" href={`https://x.com/intent/post?text=${encodeURIComponent(leaderPost)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" onClick={() => track("share_click")} data-testid="share-kit-x">Post on X</a>
-        <button className="btn" onClick={() => copy("post", `${leaderPost} ${url}`)}>{copied === "post" ? "Post copied" : "Copy post"}</button>
-        <button className="btn" onClick={() => copy("link", url)} data-testid="share-kit-link" data-url={url}>{copied === "link" ? "Invite link copied" : "Copy invite link"}</button>
+        <button className="btn" onClick={() => copy("post", `${leaderPost} ${url}`)}>{copied === "post" ? "Post copied ✓" : "Copy post"}</button>
+        <button className="btn" onClick={() => copy("link", url)} data-testid="share-kit-link" data-url={url}>{copied === "link" ? "Link copied ✓" : "Copy invite link"}</button>
       </div>
     </div>
   );

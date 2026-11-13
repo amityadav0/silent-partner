@@ -111,7 +111,15 @@ export default function LeaderConsole() {
 
   return (
     <section>
-      <span className="eyebrow">Private desk</span>
+      {!accountId ? (
+        <div className="panel demo-banner mb-4 flex flex-wrap items-center justify-between gap-3" data-testid="desk-demo">
+          <span><b>Demo: {launch?.name ?? metaOf(id).name}&apos;s desk</b> <span className="muted">(connect the leader wallet to see yours)</span></span>
+          <button className="btn" onClick={signIn}>Connect</button>
+        </div>
+      ) : !isLeader ? (
+        <div className="panel demo-banner mb-4 text-sm" data-testid="desk-not-yours">Viewing <b>{launch?.name ?? metaOf(id).name}&apos;s desk</b>. You&apos;re signed in as <code>{accountId}</code>, who isn&apos;t its leader, so nothing here is yours.</div>
+      ) : null}
+      <span className="eyebrow">{accountId && isLeader ? "Your private desk" : "Private desk"}</span>
       <h1 className="mt-2">{launch?.name ?? metaOf(id).name}</h1>
       <p className="muted mt-2 break-words text-sm">Leader console · vault <code>{id}</code> · leader <code>{data.cfg.leader}</code></p>
 

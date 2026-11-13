@@ -266,9 +266,22 @@ describe("track-record card", () => {
     expect(svg).toContain("#F5F0E6"); // paper, the light theme
     expect(cardPng(svg).subarray(0, 4).toString("hex")).toBe("89504e47");
   });
-  it("badge: worst drawdown and epochs, nothing else", () => {
-    const b = badgeSvg({ navs: [nav(0, 1.1), nav(1, 0.99), nav(2, 1.05)] });
-    expect(b).toContain("−10.0% worst DD · 3 epochs");
+  it("badge (U5): verified, price updates and own money in; the drawdown stays on the card", () => {
+    const b = badgeSvg({ navs: [nav(0, 1.1), nav(1, 0.99), nav(2, 1.05)], leaderShares: "31", totalShares: "100" });
+    expect(b).toContain("✓ verified on chain · 3 price updates · 31% own money in");
+    expect(b).not.toMatch(/worst|DD|epoch/);
     expect(cardPng(b, 400).subarray(0, 4).toString("hex")).toBe("89504e47");
+  });
+});
+
+import { mergeSeries } from "../src/leaders/market.js";
+describe("NEAR/USD history for the vs-NEAR benchmark (U9)", () => {
+  it("merges, dedupes and thins points older than 2 days to one per hour", () => {
+    const now = 10 * 86_400_000, H = 3_600_000;
+    const old = { t: [now - 5 * 86_400_000, now - 5 * 86_400_000 + 5 * 60_000, now - 5 * 86_400_000 + H], p: [3, 3.1, 3.2] };
+    const recent = { t: [now - 10 * 60_000, now - 5 * 60_000], p: [2.5, 2.4] };
+    const m = mergeSeries([old, null, recent, recent], now);
+    expect(m.t).toEqual([now - 5 * 86_400_000, now - 5 * 86_400_000 + H, now - 10 * 60_000, now - 5 * 60_000]);
+    expect(m.p).toEqual([3, 3.2, 2.5, 2.4]);
   });
 });

@@ -5,17 +5,20 @@ import { VAULTS } from "@/lib/config";
 import { calmScore, leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, windowStats, type VaultData } from "@/lib/vault";
 import { metaOf as houseMeta, type VaultMeta } from "@/lib/vaults";
 import { communityMeta, loadLaunches } from "@/lib/community";
-import { Redact, Ret, RiskDots, SkeletonRows, StatusChip } from "../ui";
+import { Redact, Ret, RiskDots, SkeletonRows, StatusChip, useNear, VsNearTag } from "../ui";
+import { ratio2, vsNear, type NearSeries, type VsNear } from "@/lib/bench";
+import { loadTee } from "@/lib/tee";
 import { useRouter } from "next/navigation";
 import { badgeOf } from "@/lib/vaults";
 
-type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number };
+type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number; vs?: VsNear | null };
 const WEEK = 7 * 24 * 3600_000;
-type Key = "dd" | "stake" | "ret";
+type Key = "dd" | "stake" | "ret" | "vs";
 const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
   dd: { label: "Calmest first", by: (a, b) => a.dd - b.dd },
   stake: { label: "Most skin in the game", by: (a, b) => b.stake - a.stake },
   ret: { label: "Return", by: (a, b) => b.ret - a.ret },
+  vs: { label: "vs holding NEAR", by: (a, b) => (b.vs?.pts ?? -1e9) - (a.vs?.pts ?? -1e9) },
 };
 
 /** A vault is ranked once it has this many browser-verified price posts; newer ones wait in "New this week". */
@@ -30,7 +33,11 @@ const rank = (r: Row) => (r.m.season ? 0 : 1);
 const KIND_TINT = { ai: "#2F3FD8", bot: "#2E7D6B", human: "#7A5C00", drill: "#655D50" } as const;
 
 export default function Leaderboard() {
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [raw, setRows] = useState<Row[] | null>(null);
+  const near = useNear();
+  const [tee, setTee] = useState<Record<string, boolean>>({});
+  // the benchmark: the same signed price updates, against holding NEAR over the same window
+  const rows = useMemo(() => raw?.map((r) => ({ ...r, vs: vsNear(r.d.navs, near ?? null) })) ?? null, [raw, near]);
   const [errors, setErrors] = useState<string[]>([]);
   const [sort, setSort] = useState<Key>("dd");
   const router = useRouter();
@@ -54,6 +61,7 @@ export default function Leaderboard() {
         ok.push({ d, m: metas.get(d.id) ?? houseMeta(d.id), ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), stake: leaderStake(d.vault), ok: v.ok, bad: v.bad.length });
       });
       setRows(ok);
+      loadTee(ok.filter((r) => r.m.leaderKind === "ai").map((r) => r.d.id)).then(setTee, () => {});
       setErrors(errs);
     })();
   }, []);
@@ -72,16 +80,16 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      <Calmest rows={rows} />
+      <Calmest rows={rows} near={near ?? null} />
 
       <div className="panel p-0">
         <table className="lb" data-testid="leaderboard">
           <thead>
-            <tr><th>Leader</th><th>Worst drawdown</th><th>Return</th><th>Own money in</th><th>Holdings</th><th>Verified</th><th><span className="sr-only">Open</span></th></tr>
+            <tr><th>Leader</th><th>Worst drawdown</th><th>Return</th><th title="The same window, if you had simply held NEAR">vs holding NEAR</th><th>Own money in</th><th>Holdings</th><th>Verified</th><th><span className="sr-only">Open</span></th></tr>
           </thead>
           <tbody>
-            {rows === null && <SkeletonRows cols={7} rows={6} />}
-            {rows?.length === 0 && <tr><td colSpan={7} className="muted">No leaders yet. The first one could be you: <Link href="/create/ai/">lead a vault</Link>.</td></tr>}
+            {rows === null && <SkeletonRows cols={8} rows={6} />}
+            {rows?.length === 0 && <tr><td colSpan={8} className="muted">No leaders yet. The first one could be you: <Link href="/create/ai/">lead a vault</Link>.</td></tr>}
             {sorted?.map((r) => {
               const m = r.m, st = status(r.d.vault);
               return (
@@ -92,7 +100,7 @@ export default function Leaderboard() {
                       <div className="flex min-w-0 flex-col gap-1">
                         <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
                         <span className="muted text-sm">{m.style}</span>
-                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge">{badgeOf(m)}</span>{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
+                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge">{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
                       </div>
                     </div>
                   </td>
@@ -101,6 +109,7 @@ export default function Leaderboard() {
                     <span className="dd-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, (r.dd / worst) * 100)}%` }} /></span>
                   </td>
                   <td className="num text-[17px]" data-label="Return" data-testid="ret"><Ret r={r.ret} /></td>
+                  <td className="num whitespace-nowrap text-[15px]" data-label="vs holding NEAR"><VsNearTag compact v={near === undefined ? undefined : r.vs} /></td>
                   <td className="num" data-label="Own money in" data-testid="stake">
                     <span className="pos">{(r.stake * 100).toFixed(1)}%</span>
                     <span className="stake-bar"><i style={{ width: `${Math.min(100, r.stake * 100)}%` }} /></span>
@@ -151,28 +160,35 @@ export default function Leaderboard() {
   );
 }
 
-/** This week's calmest return: return per unit of worst drawdown over 7 days. A highlight, not a prize. */
-function Calmest({ rows }: { rows: Row[] | null }) {
+/**
+ * This week's highlight, not a prize. When someone made money: the calmest return (return per unit
+ * of worst dip). When nobody did: who held up best against simply holding NEAR, per unit of worst dip.
+ */
+function Calmest({ rows, near }: { rows: Row[] | null; near: NearSeries | null }) {
   const best = useMemo(() => {
     if (!rows) return null;
     const since = Date.now() - WEEK;
     const scored = rows.filter((r) => r.m.season && ranked(r)).flatMap((r) => {
       const s = windowStats(r.d.navs, since);
-      return s && s.posts >= 4 ? [{ r, s, score: calmScore(s) }] : [];
+      return s && s.posts >= 4 ? [{ r, s, v: vsNear(r.d.navs, near, since) }] : [];
     });
-    return scored.sort((a, b) => b.score - a.score)[0] ?? null;
-  }, [rows]);
+    const up = scored.filter((x) => x.s.ret > 0).map((x) => ({ ...x, score: calmScore(x.s), held: false }));
+    if (up.length) return up.sort((a, b) => b.score - a.score)[0];
+    const held = scored.filter((x) => x.v).map((x) => ({ ...x, score: x.v!.pts / 100 / Math.max(x.s.dd, 0.0005), held: true }));
+    return held.sort((a, b) => b.score - a.score)[0] ?? null;
+  }, [rows, near]);
   if (!best) return null;
-  const { r, s } = best;
+  const { r, s, v, held, score } = best;
+  const p = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(2)}%`;
   return (
     <Link href={`/vault/?id=${r.d.id}`} className="panel flex flex-wrap items-center justify-between gap-4 no-underline" style={{ color: "var(--ink)" }} data-testid="calmest">
       <span className="flex flex-col gap-1">
-        <span className="eyebrow">Calmest return this week</span>
+        <span className="eyebrow" data-testid="calmest-title">{held ? "Held up best this week" : "Calmest return this week"}</span>
         <span className="text-xl font-semibold">{r.m.name}</span>
       </span>
       <span className="num text-[15px]">
-        {s.ret >= 0 ? "+" : "−"}{Math.abs(s.ret * 100).toFixed(2)}% for −{(s.dd * 100).toFixed(2)}% worst drawdown
-        <span className="muted"> · ratio {calmScore(s).toFixed(1)}</span>
+        {held && v ? <>{p(s.ret)} while NEAR {p(v.near)} · −{(s.dd * 100).toFixed(2)}% worst dip</> : <>{p(s.ret)} for −{(s.dd * 100).toFixed(2)}% worst dip{v ? <span className="muted"> · NEAR {p(v.near)}</span> : null}</>}
+        <span className="muted" data-testid="calmest-ratio"> · ratio {ratio2(score)}</span>
       </span>
     </Link>
   );

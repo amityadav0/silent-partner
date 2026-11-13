@@ -8,7 +8,7 @@ test("V1: on a phone, the no-wallet copy CTA and the ticket toggle are both abov
   await page.setViewportSize(PHONE);
   await page.goto("/");
   const cta = page.getByTestId("hero-copy");
-  await expect(cta).toHaveText(/Copy Contrarian with \$100: no wallet, 10 seconds/);
+  await expect(cta).toHaveText(/^Copy .+ with \$100: no wallet, 10 seconds$/);
   for (const el of [cta, page.getByTestId("ticket-sealed")]) {
     const b = await el.boundingBox();
     expect(b, "visible").not.toBeNull();
@@ -23,17 +23,91 @@ test("V1: one tap starts a $100 simulated copy and lands on Your silent copy", a
   const card = page.getByTestId("silent-copy");
   await expect(card).toBeVisible({ timeout: 30_000 });
   await expect(card).toContainText("Your silent copy");
-  await expect(card).toContainText("Contrarian");
   await expect(page.getByTestId("copy-value")).toHaveText(/^\$\d+\.\d\d$/);
   await expect(page.getByTestId("copy-change")).toContainText("since you joined");
   await expect(card).toContainText("(sealed)");
-  await expect(page).toHaveURL(/\/copy\/\?id=sp-contra-8952\.testnet$/);
+  await expect(page).toHaveURL(/\/copy\/\?id=[^&]+\.testnet$/);
+  const id = new URL(page.url()).searchParams.get("id")!;
   // kept across reloads, not restarted
-  const entry = await page.evaluate(() => localStorage.getItem("sp.paper.sp-contra-8952.testnet"));
+  const entry = await page.evaluate((k) => localStorage.getItem(k), `sp.paper.${id}`);
   expect(JSON.parse(entry!).usd).toBe(100);
   await page.reload();
   await expect(page.getByTestId("copy-value")).toBeVisible({ timeout: 30_000 });
-  expect(await page.evaluate(() => localStorage.getItem("sp.paper.sp-contra-8952.testnet"))).toBe(entry);
+  expect(await page.evaluate((k) => localStorage.getItem(k), `sp.paper.${id}`)).toBe(entry);
+});
+
+test("U1: the hero has two actions: the $100 copy and Watch", async ({ page }) => {
+  await page.goto("/");
+  const actions = page.locator(".hero-copy").locator("a.btn, button.btn, a.quiet");
+  await expect(actions).toHaveCount(2);
+  await expect(page.getByTestId("hero-copy")).toBeVisible();
+  await expect(page.getByTestId("watch")).toBeVisible();
+  await expect(page.getByTestId("tour-button")).toHaveCount(0);
+});
+
+test("U11: the hero copies the leader with the best 7-day vs-NEAR among verified leaders (Contrarian if none)", async ({ page }) => {
+  await page.goto("/");
+  const cta = page.getByTestId("hero-copy");
+  await expect(cta).toHaveAttribute("data-pick", /\.testnet$/);
+  await page.waitForLoadState("networkidle");
+  const pick = (await cta.getAttribute("data-pick"))!;
+  await expect(cta).toHaveAttribute("href", `/copy/?id=${encodeURIComponent(pick)}&start=1`);
+});
+
+test("U2: the copy card's first minute shows the leader's verified record, the next update and Notify me", async ({ page }) => {
+  await page.goto("/copy/?id=sp-contra-8952.testnet&start=1");
+  const rec = page.getByTestId("copy-record");
+  await expect(rec).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("record-line")).toHaveText(/^[+−]\d+\.\d\d% since start( \([+−±]\d+\.\d\d pts vs NEAR\))? · worst dip (0%|−\d+\.\d%) · \d+% own money in$/);
+  await expect(page.getByTestId("record-last")).toHaveText(/Last price update (just now|\d+ (min|h|days) ago) ✓ signature checked/);
+  await expect(rec.getByTestId("sparkline")).toBeVisible();
+  await expect(page.getByTestId("copy-next")).toContainText(/next (in ~\d+ (min|h)|any minute now)/);
+  await expect(page.getByTestId("copy-notify")).toHaveText("Notify me");
+  await expect(page.getByTestId("silent-copy")).not.toContainText(/would have/i);
+});
+
+test("U4: on desktop (no Web Share) Share copies the link and says so for 2 s", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));
+  await page.goto("/copy/?id=sp-contra-8952.testnet&start=1");
+  const share = page.getByTestId("copy-share");
+  await expect(share).toBeVisible({ timeout: 30_000 });
+  await share.click();
+  await expect(share).toHaveText("Link copied ✓");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("https://amityadav0.github.io/silent-partner/v/sp-contra-8952.testnet/?ref=copy&copy=1");
+  await expect(share).toHaveText("Share my silent copy", { timeout: 4000 });
+  await page.goto("/leader/?id=sp-contra-8952.testnet");
+  await page.getByTestId("share-kit-link").click();
+  await expect(page.getByTestId("share-kit-link")).toHaveText("Link copied ✓");
+  await expect(page.getByTestId("share-kit-link")).toHaveText("Copy invite link", { timeout: 4000 });
+});
+
+test("U6: the leader console without a wallet says it's a demo desk", async ({ page }) => {
+  await page.goto("/leader/");
+  await expect(page.getByTestId("desk-demo")).toContainText(/Demo: .+'s desk \(connect the leader wallet to see yours\)/, { timeout: 30_000 });
+});
+
+test("U7: how-it-works pictures keep their words in captions, and stack above the text at 390 px", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/how/");
+  const figs = page.getByTestId("how-fig");
+  await expect(figs).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    const f = figs.nth(i);
+    await expect(f.locator("figcaption")).not.toBeEmpty();
+    // every label inside the drawing stays inside the drawing
+    const clipped = await f.locator("svg").evaluate((svg: SVGSVGElement) => [...svg.querySelectorAll("text")].filter((t) => { const b = t.getBBox(), v = svg.viewBox.baseVal; return b.x < v.x || b.y < v.y || b.x + b.width > v.x + v.width || b.y + b.height > v.y + v.height; }).length);
+    expect(clipped).toBe(0);
+    const fb = (await f.boundingBox())!, hb = (await f.locator("xpath=following-sibling::div//h2").boundingBox())!;
+    expect(fb.y + fb.height).toBeLessThanOrEqual(hb.y);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test("U12: the 60-second tour uses Open buttons, not raw URLs", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tour-open")).toHaveCount(3);
+  expect(await page.getByTestId("tour").innerText()).not.toMatch(/https?:\/\//);
 });
 
 test("V2: the share carries only the copy's real change and a link that opens into a copy", async ({ page }) => {
@@ -42,11 +116,12 @@ test("V2: the share carries only the copy's real change and a link that opens in
   await expect(share).toBeVisible({ timeout: 30_000 });
   const text = (await share.getAttribute("data-text"))!;
   const url = (await share.getAttribute("data-url"))!;
-  expect(text).toMatch(/^silently copying Contrarian on @NEARProtocol: [+−]\d+\.\d\d% in \d+ (min|hours?|days)\. i can't see their trades\. neither can bots\.$/);
-  const shown = (await page.getByTestId("copy-change").textContent())!.split(" ")[0];
-  expect(text).toContain(shown);
+  // a fresh copy (under 3 price updates) shares the leader's verified record, not "+0.00% in 1 min" (U3)
+  expect(text).toMatch(/^just started silently copying Contrarian on @NEARProtocol\. verified record: [+−]\d+\.\d\d%( \(\+\d+\.\d\d pts vs NEAR\))?, worst dip (0%|−\d+\.\d%)\. i can't see their trades\. neither can bots\.$/);
+  const shown = (await page.getByTestId("record-line").textContent())!.split(" ")[0];
+  expect(text).toContain(`verified record: ${shown}`);
   expect(url).toBe("https://amityadav0.github.io/silent-partner/v/sp-contra-8952.testnet/?ref=copy&copy=1");
-  await expect(page.getByTestId("copy-x")).toHaveAttribute("href", /x\.com\/intent\/post\?text=silently/);
+  await expect(page.getByTestId("copy-x")).toHaveAttribute("href", /x\.com\/intent\/post\?text=just%20started%20silently/);
   // the next person: the pre-rendered vault link carries the vault's card and opens into a copy
   const next = await page.context().newPage();
   await next.goto("/v/sp-contra-8952.testnet/?ref=copy&copy=1");
@@ -102,4 +177,30 @@ test("V8: the funnel never counts automated or local visits, and sets no cookies
   await page.getByTestId("copy-share").click();
   expect(hits).toEqual([]);
   expect((await context.cookies()).length).toBe(0);
+});
+
+test("U9: vs holding NEAR on the leaderboard, the vault stats and the copy card, with raw return kept", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  const row = page.getByTestId("row-sp-contra-8952.testnet");
+  await expect(row.getByTestId("ret")).toHaveText(/^[+−]\d+\.\d\d%$/, { timeout: 30_000 });
+  await expect(row.getByTestId("vs-near")).toHaveText(/^[+−±]\d+\.\d\d pts$/);
+  await expect(page.locator("th", { hasText: "vs holding NEAR" })).toHaveCount(1);
+  await page.getByTestId("sort-vs").click();
+  const pts = await page.locator("[data-testid^=row-] [data-testid=vs-near][data-pts]").evaluateAll((els) => els.map((e) => Number(e.getAttribute("data-pts"))));
+  const seasonPts = pts.slice(0, 3);
+  expect([...seasonPts].sort((a, b) => b - a)).toEqual(seasonPts);
+  await page.goto("/vault/?id=sp-contra-8952.testnet");
+  await expect(page.getByTestId("stat-vs-near")).toContainText(/[+−±]\d+\.\d\d pts vs NEAR/, { timeout: 30_000 });
+  await expect(page.getByTestId("stat-vs-near")).toContainText(/NEAR [+−]\d+\.\d\d% over the same updates/);
+  await expect(page.getByTestId("stat-return")).toContainText(/[+−]\d+\.\d\d%/);
+});
+
+test("U13: TEE ✓ chips on AI rows link to the vault's AI panel", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("row-sp-contra-8952.testnet")).toBeVisible({ timeout: 30_000 });
+  await page.waitForLoadState("networkidle");
+  const chips = page.getByTestId("tee-chip");
+  const n = await chips.count();
+  for (let i = 0; i < n; i++) await expect(chips.nth(i)).toHaveAttribute("href", /\/vault\/\?id=.+#ai$/);
+  console.log(`TEE chips: ${n}`);
 });

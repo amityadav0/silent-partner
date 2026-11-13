@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { ASSETS } from "@/lib/config";
 import { seasonUrl } from "@/lib/vault";
-import { aumBucket, cardUrl, drawdownWindow, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
+import { aumBucket, cardUrl, drawdownWindow, leaderStake, maxDrawdown, priceOf, returns, sharpeLike, status, verifyNavs } from "@/lib/vault";
 import { useState } from "react";
 import { PageSkeleton, Redact, Ret, ReturnsChart, ModeChip, StatusChip, short, useQueryParam, useVault } from "../ui";
 import { metaOf } from "@/lib/vaults";
@@ -59,7 +59,7 @@ export default function Share() {
         <p className="muted mt-1 text-xs">Positions are private. The vault trades privately; only its share price is published.</p>
       </div>
       <ShareImage id={data.id} name={metaOf(data.id).name} ret={m.ret} />
-      <Badge id={data.id} dd={m.dd} epochs={data.navs.length} />
+      <Badge id={data.id} stake={leaderStake(data.vault)} epochs={data.navs.length} />
       <p className="mt-3 text-center text-sm"><Link href={`/vault/?id=${data.id}`}>Open the vault</Link></p>
     </section>
   );
@@ -84,10 +84,10 @@ function ShareImage({ id, name, ret }: { id: string; name: string; ret: number }
 }
 
 /** An embeddable badge (rendered by the season each tick) and a line for an X bio. */
-function Badge({ id, dd, epochs }: { id: string; dd: number; epochs: number }) {
+function Badge({ id, stake, epochs }: { id: string; stake: number; epochs: number }) {
   const link = `https://amityadav0.github.io/silent-partner/v/${id}/`;
   const img = seasonUrl(`badges/${id}.png`);
-  const bio = `Leading on Silent Partner ✓ ${dd === 0 ? "0%" : `−${(dd * 100).toFixed(1)}%`} worst drop · ${epochs} price updates · positions sealed`;
+  const bio = `Leading on Silent Partner ✓ verified on chain · ${epochs} price updates · ${Math.round(stake * 100)}% own money in · positions sealed`;
   const md = `[![Silent Partner](${img})](${link})`;
   const [ok, setOk] = useState(true);
   return (
