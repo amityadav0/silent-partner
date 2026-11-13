@@ -5,6 +5,7 @@ import "./globals.css";
 import { WalletProvider } from "@/lib/wallet";
 import { Footer, Nav } from "./ui";
 import { Onboard } from "./onboard";
+import { FunnelViews } from "./funnel";
 import { Welcome } from "./welcome";
 
 const SITE = "https://amityadav0.github.io/silent-partner";
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <WalletProvider>
           <Nav />
           <Onboard />
+          <FunnelViews />
           <main className="pb-16 pt-2">{children}</main>
           <Footer />
           <Welcome />

@@ -92,3 +92,14 @@ test("V5: the leader console has a share kit: post, badge and an invite link tha
   expect(url).toMatch(/^https:\/\/amityadav0\.github\.io\/silent-partner\/v\/sp-contra-8952\.testnet\/\?ref=.+/);
   await expect(page.getByTestId("share-kit-x")).toHaveAttribute("href", /x\.com\/intent\/post\?text=my%20trades%20are%20sealed/);
 });
+
+test("V8: the funnel never counts automated or local visits, and sets no cookies", async ({ page, context }) => {
+  const hits: string[] = [];
+  page.on("request", (r) => { if (r.url().includes("abacus")) hits.push(r.url()); });
+  await page.goto("/?ref=someone");
+  await page.goto("/copy/?id=sp-contra-8952.testnet&start=1");
+  await expect(page.getByTestId("silent-copy")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("copy-share").click();
+  expect(hits).toEqual([]);
+  expect((await context.cookies()).length).toBe(0);
+});

@@ -352,4 +352,15 @@ try {
 }
 for (const a of attestations.values()) attDoc[createHash("sha256").update(Buffer.from(a.intel_quote.replace(/^0x/, ""), "hex")).digest("hex")] = { ...a, seen: ranAt };
 writeFileSync(attFile, JSON.stringify(Object.fromEntries(Object.entries(attDoc).slice(-50)), null, 1) + "\n");
+// Funnel totals (V8): four aggregate counters the site bumps (no cookies, nothing per person).
+try {
+  const funnel: Record<string, number> = {};
+  for (const k of ["view", "copy_start", "share_click", "ref_landing"]) {
+    const r = await fetch(`https://abacus.jasoncameron.dev/get/silent-partner-funnel/${k}`).then((x) => (x.ok ? x.json() : { value: 0 }), () => ({ value: null }));
+    funnel[k] = (r as { value: number }).value ?? 0;
+  }
+  writeFileSync(join(sealed, "funnel.json"), JSON.stringify({ ranAt, ...funnel }, null, 1) + "\n");
+} catch {
+  /* counters unreachable: keep the last file */
+}
 if (results.some((r) => r.error)) process.exitCode = 1;

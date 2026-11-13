@@ -297,3 +297,8 @@ Each decision is dated, with its reason.
   - **Stale-log check.** `KEEPER_FILL_LOG` is a static secret, so before posting the keeper checks three things: its log contains the head of the last accepted post, every fill a recorded leader signal points to, and payouts adding up to the claims' `paid`. If not, it fails the run (`::error::`, GitHub emails the owner) instead of posting a NAV that misses a manual trade or payout. A manual shield that nothing else records would show up as a NAV outside the quote band, which the contract rejects.
   - **Auto-sync.** `op.ts` runs `keeper-sync.sh` after every mainnet shield, signal, epoch or pay, including failed ones.
   - **Tests.** `test/keeper.test.ts`, plus a live dry run with a truncated log, which failed as intended.
+- **D-V-8 (2026-11-13) Funnel counts come from four public aggregate counters, with no cookies.** The site bumps `view`, `copy_start`, `share_click` and `ref_landing` with a fire-and-forget, no-CORS hit to Abacus (a free counter API, no account) under the namespace `silent-partner-funnel`. It only does so on amityadav0.github.io, never under Do Not Track or Global Privacy Control, and never in automated browsers.
+  - **Nothing personal is stored.** There are no cookies, no ids and no referrer, so totals are all anyone can see.
+  - **Publishing.** Each season tick writes the totals to `season-state/funnel.json`, and STATUS.md keeps snapshots.
+  - **Rejected.** GoatCounter (needs an account in Amit's name). Plausible (paid). A self-hosted endpoint (we have no server). Counting through GitHub dispatch (would need a token in the browser).
+  - **Risk.** The counter is a third party with a 30-requests-per-10-s limit. Losing it loses counts, never the site.

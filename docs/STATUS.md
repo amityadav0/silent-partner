@@ -116,3 +116,12 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - **Mainnet live (2026-11-12):** the §1 round trip is done. §3: vault `1f80f62c…a36e` deployed (the hash matches) and activated. 7 USDC deposited (leader 28.6%) and shielded, epoch 1 posted, one leader trade USDC→wNEAR executed, plain-nonce check passed, and the follower was **paid out at epoch 3** (1.99498 USDC via MPC-signed PublicPayout, claim settled). Details in docs/mainnet.md. The site shows the vault read-only with a MAINNET chip.
 - **Mainnet keeper (D-P5-12):** GitHub job `keeper.yml` every 3 h, with a `post_nav`-only key. Epoch 4 was posted by hand at 02:48 UTC. **Epoch 5 was the first keeper post, from GitHub at 03:50 UTC Nov 13** (tx 5GGdk9B8…), and it was accepted. After any manual mainnet step, run `operator/scripts/keeper-sync.sh`.
 - Waiting on Amit: §4–6 (video, X post, application).
+
+## Funnel (V8, privacy-respecting)
+
+The site counts four aggregate events: page view → simulated copy started → share clicked → landing from a `?ref=` link. It uses no cookies and no identifiers, and skips Do Not Track, automated browsers and anything but the live site. Every season tick refreshes the live totals in [`season-state/funnel.json`](https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/funnel.json).
+
+| Snapshot (UTC) | Views | Copies started | Share clicks | Ref landings |
+|---|---|---|---|---|
+| 2026-11-13 05:30 (just shipped) | 0 | 0 | 0 | 0 |
+

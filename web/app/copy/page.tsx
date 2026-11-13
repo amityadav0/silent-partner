@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { loadPaper, paperPosition, savePaper, startPaper, type PaperFollow } from "@/lib/paper";
 import { pctWords, shareText, shareUrl, sinceWords, COPY_DEFAULT } from "@/lib/copy";
 import { metaOf } from "@/lib/vaults";
+import { track } from "@/lib/funnel";
 import { LeaderChips, Redact, useQueryParam, useVault } from "../ui";
 
 const usd = (x: number) => `${x < 0 ? "−" : ""}$${Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -31,6 +32,7 @@ export default function SilentCopy() {
     const p = startPaper(id, 100, latest);
     savePaper(p, id);
     setF(p);
+    if (p) track("copy_start");
     router.replace(`/copy/?id=${encodeURIComponent(id)}`);
   }, [id, f, start, latest, router]);
 
@@ -66,6 +68,7 @@ export default function SilentCopy() {
               const p = startPaper(id, 100, latest);
               savePaper(p, id);
               setF(p);
+              if (p) track("copy_start");
             }}
             data-testid="copy-start"
           >
@@ -80,6 +83,7 @@ export default function SilentCopy() {
   const text = shareText(meta.name, pos.pct, since);
   const url = shareUrl(id);
   async function share() {
+    track("share_click");
     try {
       if (navigator.share) return await navigator.share({ text, url });
     } catch {
@@ -115,7 +119,7 @@ export default function SilentCopy() {
         <p className="muted text-sm">Simulated with $100 at the leader&apos;s signed share price, kept only in this browser. You get the same trade at the same price as the leader, and nobody sees it coming.</p>
         <div className="flex flex-wrap gap-2">
           <button className="btn btn-primary" onClick={share} data-testid="copy-share" data-text={text} data-url={url}>{copied ? "Copied: paste it anywhere" : "Share my silent copy"}</button>
-          <a className="btn" href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" data-testid="copy-x">Post on X</a>
+          <a className="btn" href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" onClick={() => track("share_click")} data-testid="copy-x">Post on X</a>
           <Link className="btn" href={`/vault/?id=${encodeURIComponent(id)}`} data-testid="copy-real">Follow privately with a wallet</Link>
         </div>
         <button
