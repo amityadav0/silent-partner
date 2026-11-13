@@ -64,3 +64,14 @@ Balances: before, the confidential balance was empty. After the shield it showed
 ## Next
 
 Leftover funds go back to `amityadav.near` after the demo window ends (Nov 25). That includes deleting the vault account with `amityadav.near` as the beneficiary, which returns its storage NEAR.
+
+## Keeper (D-P5-12, 2026-11-13)
+
+| Step | Tx | Result |
+|---|---|---|
+| Epoch 4, by hand | `CRprZtR6Lw7wC6bUFKj342dyRU1HYedM9qipihytehrN` | NAV 5,017,539 at 02:48:30 UTC |
+| `add_key` on the operator: function-call key `ed25519:AqDGG1ec9uyt95GPwCoQwRwA3mSC5358ApVekBXLkVQs`, receiver = vault, methods = [`post_nav`], allowance 0.5 NEAR | `ETSsDQfrZi3o1T69oVeTVh4XeEhgi96rgxqRRioGKhBk` | ok. A first key with a 0.75 NEAR allowance (`Hraxwyi2…`) was deleted (`CdkYVZcx…`) |
+
+- **Secrets** (set with `gh secret set` from local files, never printed or committed): `KEEPER_POST_NAV_KEY`, `MAINNET_ATTESTATION_KEY`, `KEEPER_FILL_LOG`.
+- **Schedule.** The job `.github/workflows/keeper.yml` runs every 3 h. It posts when the last post is ≥2.5 h old and never within the contract's 1 h minimum.
+- **If the secrets leak.** Prices can move only inside the 1Click-quote band, and the vault's positions are exposed. No funds can move: the key can't shield, trade, pay or transfer.

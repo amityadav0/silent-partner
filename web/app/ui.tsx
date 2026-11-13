@@ -3,7 +3,7 @@ import { badgeOf, metaOf, modeLabel, type VaultMeta } from "@/lib/vaults";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { NETWORK } from "@/lib/config";
+import { NETWORK, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { loadVault, pct, type VaultData } from "@/lib/vault";
 
@@ -44,6 +44,12 @@ function ThemeToggle() {
 export function Nav() {
   const { accountId, ready, signIn, signOut } = useWallet();
   const path = usePathname();
+  // The chip names the network this page reads: the mainnet vault shows MAINNET even on the testnet site.
+  const [net, setNet] = useState<"testnet" | "mainnet">(NETWORK);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id") ?? path?.match(/^\/v\/([^/]+)/)?.[1];
+    setNet(id ? networkOf(id) : NETWORK);
+  }, [path]);
   const link = (match: string, label: string, href = match) => (
     <Link href={href} aria-current={path?.startsWith(match) ? "page" : undefined}>{label}</Link>
   );
@@ -56,7 +62,7 @@ export function Nav() {
         {link("/create/", "Lead a vault", "/create/ai/")}
       </nav>
       <div className="site-tools">
-        {NETWORK === "testnet" && <span className="chip">testnet</span>}
+        <span className={`chip ${net === "mainnet" ? "chip-ok" : ""}`} data-testid="net-chip">{net === "mainnet" ? "MAINNET" : "testnet"}</span>
         <ThemeToggle />
         {accountId ? (
           <details className="wallet-menu">

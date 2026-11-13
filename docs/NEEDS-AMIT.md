@@ -209,11 +209,11 @@ This is `POST https://nearhackathon.com/api/applications` with `Content-Type: ap
 - Submit once. Fixes go through https://nearhackathon.com/request-changes.
 - The deadline is 2026-11-14 23:59 UTC, and the repo must be public by then (it is).
 
-Fill in the three remaining `<…>` fields (nearAddress is `amityadav.near`), then set `requestId` once with `uuidgen | tr A-Z a-z` and reuse it on any retry.
+Only `email` is left to fill in. `requestId` is set (`a66e91ad-7e64-43fb-9fca-2938cd6ee7b7`): reuse it unchanged on any retry. `demoUrl` is the X post, and `nearAddress` is `amityadav.near`.
 
 ```json
 {
-  "requestId": "<uuid>",
+  "requestId": "a66e91ad-7e64-43fb-9fca-2938cd6ee7b7",
   "projectName": "Silent Partner",
   "leadName": "Amit Yadav",
   "email": "<your email>",
@@ -221,7 +221,7 @@ Fill in the three remaining `<…>` fields (nearAddress is `amityadav.near`), th
   "tracks": ["privacy", "defi", "agents"],
   "nearAddress": "amityadav.near",
   "projectUrl": "https://github.com/amityadav0/silent-partner",
-  "demoUrl": "<URL of your X post>",
+  "demoUrl": "https://x.com/amit29199/status/2121077443583000923",
   "idea": "Silent Partner is private copy trading on NEAR Confidential Intents. A leader and followers share one vault whose funds sit in a confidential intents account, so the market never sees the book. Each leader signal executes once for the whole pool through one 1Click confidential quote, at one price, so there is no follower order for anyone to trade ahead of. The vault's intents key is an MPC key derived for the contract (Chain Signatures): it signs only quote-bound transfers back into the vault or a holder's own payout, settled against the verifier's nonce record. Every NAV post must fit NEAR's price move (on mainnet, proven by two 1Click-signed quotes the contract verifies; the testnet season uses a mock price feed), so an operator can't inflate returns beyond that band. If the operator stops for 24 hours, holders exit pro rata without it. Leaders can be human, rule-based, or AI agents on NEAR AI Cloud whose reasoning stays private and is committed on-chain by hash, with a NEAR AI TEE receipt. Live on NEAR mainnet with real USDC: the vault (code hash matching the reviewed reproducible build) ran a deposit, an MPC-signed shield, a confidential leader trade and a follower payout, all listed in docs/mainnet.md. Testnet season with 8 leaders: https://amityadav0.github.io/silent-partner/",
   "consent": true
 }
@@ -292,7 +292,7 @@ Alerts already work without it, through browser notifications and ntfy.sh push t
 
 ## 12. Mainnet keeper: pick A, B or C (2026-11-12)
 
-**Status: A built 2026-11-13 at your request** (D-P5-12). The GitHub job `keeper.yml` runs every 4 h. Its key `ed25519:FeH3R9ZN…` can call only `post_nav` on the vault, with a 0.75 NEAR allowance (add_key tx `Hraxwyi2QjPDjnYpiZYGnwipxgxrkavzLzmBgSudU2D`). The full operator key stays on the Mac. Nothing else is needed from you. To revoke: `near account delete-keys c24664ec…6bff public-keys ed25519:FeH3R9ZN8G2Gt7NAubN7AEDu5eQAmxmSP4djULMJhUoF network-config mainnet sign-with-legacy-keychain send`. The text below is kept for reference.
+**Status: A built 2026-11-13 at your request** (D-P5-12). The GitHub job `keeper.yml` runs every 3 h. Its key `ed25519:AqDGG1ec…` can call only `post_nav` on the vault, with a 0.5 NEAR allowance (add_key tx `ETSsDQfrZi3o1T69oVeTVh4XeEhgi96rgxqRRioGKhBk`). The full operator key stays on the Mac. Nothing else is needed from you. To revoke: `near account delete-keys c24664ec…6bff public-keys ed25519:AqDGG1ec9uyt95GPwCoQwRwA3mSC5358ApVekBXLkVQs network-config mainnet sign-with-legacy-keychain send`. The text below is kept for reference.
 
 **Why it matters.** The mainnet vault must get an accepted price post at least every 24 h. Otherwise anyone can switch it into emergency mode: deposits stop for good, and holders exit at the last price. Judges look Nov 16–18, and the demo has to stay up through Nov 25. Until you pick, I post by hand from this Mac, at least twice a day. The time of the last accepted post is in STATUS.md.
 

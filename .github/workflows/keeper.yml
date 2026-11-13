@@ -1,16 +1,16 @@
-# Mainnet NAV keeper (NEEDS-AMIT §12 option A, D-P5-12). Every 4 h it posts the mainnet vault's NAV
-# if the last accepted post is 3.5 h old or more, so the vault never reaches the 24 h emergency.
-# Its key can call only post_nav on the vault (function-call key, 0.75 NEAR allowance); it never
+# Mainnet NAV keeper (NEEDS-AMIT §12 option A, D-P5-12). Every 3 h it posts the mainnet vault's NAV
+# if the last accepted post is 2.5 h old or more, so the vault never reaches the 24 h emergency.
+# Its key can call only post_nav on the vault (function-call key, 0.5 NEAR allowance); it never
 # shields, trades or pays. A failed run means a post didn't land: GitHub emails the repo owner.
 name: keeper
 on:
   schedule:
-    - cron: "23 */4 * * *"
+    - cron: "23 */3 * * *"
   workflow_dispatch:
     inputs:
       min_age_minutes:
         description: "Post if the last post is at least this old (the contract still needs 60)"
-        default: "210"
+        default: "150"
 concurrency:
   group: mainnet-keeper
   cancel-in-progress: false
@@ -36,7 +36,7 @@ jobs:
           VAULT_CONTRACT_ID: 1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e
           OPERATOR_ACCOUNT_ID: c24664ec4591796ae1672b277dec9f211fb7e5bf63277598f07038b971f66bff
           DATA_DIR: ${{ runner.temp }}/keeper
-          MIN_AGE_MINUTES: ${{ github.event.inputs.min_age_minutes || '210' }}
+          MIN_AGE_MINUTES: ${{ github.event.inputs.min_age_minutes || '150' }}
           KEEPER_POST_NAV_KEY: ${{ secrets.KEEPER_POST_NAV_KEY }}
           ATTESTATION_PRIVATE_KEY: ${{ secrets.MAINNET_ATTESTATION_KEY }}
           KEEPER_FILL_LOG: ${{ secrets.KEEPER_FILL_LOG }}

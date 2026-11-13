@@ -438,6 +438,7 @@ test("mainnet vault: read live from mainnet, MAINNET chip, read-only, kept off t
   const id = "1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e";
   await page.goto(`/vault/?id=${id}`);
   await expect(page.getByTestId("mode")).toHaveText("MAINNET · real funds", { timeout: 30_000 });
+  await expect(page.getByTestId("net-chip")).toHaveText("MAINNET");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Genesis (mainnet)");
   await expect(page.getByTestId("stat-attested")).toContainText("verified in your browser");
   await expect(page.getByTestId("mainnet-readonly")).toBeVisible();
@@ -448,4 +449,5 @@ test("mainnet vault: read live from mainnet, MAINNET chip, read-only, kept off t
   await expect(page.getByTestId("event-mainnet").first()).toBeVisible();
   await page.goto("/leaderboard/");
   await expect(page.locator(`[data-testid="row-${id}"]`)).toHaveCount(0);
+  await expect(page.getByTestId("net-chip")).toHaveText("testnet");
 });

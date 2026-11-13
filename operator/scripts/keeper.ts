@@ -1,6 +1,6 @@
-// Mainnet NAV keeper (NEEDS-AMIT §12 option A, D-P5-12). Runs from GitHub Actions every 4 h.
+// Mainnet NAV keeper (NEEDS-AMIT §12 option A, D-P5-12). Runs from GitHub Actions every 3 h.
 // Secrets: KEEPER_POST_NAV_KEY (function-call key on the operator account, post_nav only,
-// 0.75 NEAR allowance), ATTESTATION_PRIVATE_KEY, KEEPER_FILL_LOG (base64 of the fill log).
+// 0.5 NEAR allowance), ATTESTATION_PRIVATE_KEY, KEEPER_FILL_LOG (base64 of the fill log).
 // It only posts NAV: shields, trades and payouts stay with the full operator key, by hand.
 //   NEAR_NETWORK=mainnet VAULT_CONTRACT_ID=… OPERATOR_ACCOUNT_ID=… npx tsx scripts/keeper.ts
 import { mkdirSync, writeFileSync } from "node:fs";

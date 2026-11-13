@@ -17,7 +17,7 @@
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
+**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4) (also [on X](https://x.com/amit29199/status/2121077443583000923)). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
 ![Silent Partner landing page: a trade ticket stamped SEALED, with every field redacted](docs/screens/landing.png)
 
