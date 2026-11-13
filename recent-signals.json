@@ -143,17 +143,17 @@
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
-    }
-  ],
-  "sp-meanrev-92991.testnet": [
+    },
     {
-      "ranAt": "2026-11-10T12:18:06.498Z",
-      "epoch": 133,
-      "signal_hash": "8b66fef966be846b2d24574230374270d5631ffcc8dae21ca368d5b930b994b0",
+      "ranAt": "2026-11-13T15:34:38.303Z",
+      "epoch": 441,
+      "signal_hash": "0d06a934f3654790b2aa5e057c6925f8bd27c0d7ed532334076a1074c11b6e86",
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
-    },
+    }
+  ],
+  "sp-meanrev-92991.testnet": [
     {
       "ranAt": "2026-11-10T14:16:52.234Z",
       "epoch": 141,
@@ -302,6 +302,14 @@
       "ranAt": "2026-11-13T15:16:33.839Z",
       "epoch": 438,
       "signal_hash": "08ef9591f826961a9c6a922f03a949c61fda4fdd6d6d4bfb2d1297672b07fb78",
+      "signal_status": "executed",
+      "ai_target_band": null,
+      "ai_rationale_hash": null
+    },
+    {
+      "ranAt": "2026-11-13T15:34:38.303Z",
+      "epoch": 440,
+      "signal_hash": "bbbd36280b690318a454f761f0ede97e71b65997797f02f7b1f8ce67dd51a8a5",
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
@@ -1069,25 +1077,6 @@
   ],
   "sp-convict-8952.testnet": [
     {
-      "ranAt": "2026-11-12T23:37:01.412Z",
-      "epoch": 342,
-      "signal_hash": "6ef5031084e7fc349b139c8e36be4f4ecb6cbc51293422bfcacc0c2438ae1e4a",
-      "signal_status": "executed",
-      "ai_target_band": "40–60%",
-      "ai_rationale_hash": "395ee7500201002389c6787500eb2e2b89c5cd84ba91acda5780049dabc28a73",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:1487bace9ecb19fd60e54d37bf0f947cfe74d8e069351a88b006f59c5826b461:3b63d9304afc4f2c045dd687fae1687b0ca932961708fc207db5ac64d0351f23",
-        "signature": "0x72c602bfd5e455a041493d17b509c788b626a18c36d10fd78cb2537efce1930e5506c2a0645daf522c780fde87766aa1f460a34beba8ce9b24e380e3b25733d31c",
-        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "signature_kind": "provider_tee",
-        "quote_sha256": "e7bcd35b675010facfc64f9d47c197f9453715011cb24eaf7c35ff2e30723fe4",
-        "nonce": "e4640b27e648cd0f311e6fa553d585511ed027a081a58c701520ecc315589a9d",
-        "bound": true,
-        "gpu_evidence": true
-      }
-    },
-    {
       "ranAt": "2026-11-13T00:54:23.480Z",
       "epoch": 347,
       "signal_hash": "3bec7d693c12f5a22773d7b3ce5e8d49c8b2e264c0dfa209d7ec7e6ceb4c23fe",
@@ -1444,6 +1433,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "78e19e9a315c16013faefcd62d6a1220ab0d694a402541d44047566b976c5c08",
         "nonce": "e7e03725537a96692d55d234bc881bcbafb8234b3a167c1194f6e1ba67f46631",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-13T15:34:38.303Z",
+      "epoch": 408,
+      "signal_hash": "167b5aa9b798bab71df1afd394018937c89e7d58a9a02b5519eafdd23504b587",
+      "signal_status": "executed",
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "10636370e6868b7c991f2a326004f2ccc6d8dfe047170a346fa5d15ae7974c1b",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:89b96d3c94b02f1b6f8103b3b5192f0e44e921f70a006f0afc5dede6109f22ce:7d84619afbdb94f3bcfef8632842f4591091a2399c33ce77100c239179198f84",
+        "signature": "0x9c451d65a36895d2b9f4150bc49cd85cf37121d54c48606a00c887c602f34fa1637bd58060ccbe12ca76c54999313b398e7f844b7b310bf989c770c0ba4810231b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "0eba96fd8f53dd11e62947dd27ed9efa6250dceecd5cf812c15c5b8f73f72612",
+        "nonce": "8f1815bbb16d92ea506af0c78757729ac551610f74551991e98a3aa21ce49016",
         "bound": true,
         "gpu_evidence": true
       }
@@ -1833,25 +1841,6 @@
   ],
   "sp-ai-92991.testnet": [
     {
-      "ranAt": "2026-11-13T07:24:47.435Z",
-      "epoch": 403,
-      "signal_hash": "ed30a823945dac6fd5796fdc2d75bb32b0738ef2943c7b2dcdbfe4d385084cfa",
-      "signal_status": "executed",
-      "ai_target_band": "60–80%",
-      "ai_rationale_hash": "ef58d78eee9e62ece1e20ac933800f15e3dd374dc2246c5486fdb62d94925d3d",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:05defe79b24c23055085e5139ea5476c66d89e250687f813dd958ed3cc0bda95:a6f5bd9ae014cb65b8ac824ca0b6d3d24444b787ec359a4619f6d3b1eea4f3ca",
-        "signature": "0x8e263b09178c19673bac41357a60ea8d2455c579f618b5755d245ca6669eaef1383301970e797805a09ec9197c6c06170f979cbd9515a8f93d7d2c5ce74c45381b",
-        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "signature_kind": "provider_tee",
-        "quote_sha256": "9dfa9abdbf49da8345be0ca37175df160a28c32d8257fc31e9db41377de37e60",
-        "nonce": "33749f13ecf6dda106aaed5d201b1ea6192246923be97ca5649e26ac4604513f",
-        "bound": true,
-        "gpu_evidence": true
-      }
-    },
-    {
       "ranAt": "2026-11-13T08:26:29.142Z",
       "epoch": 407,
       "signal_hash": "decb69c9b0d5c45c9a05381b800612ad24cb4982572d7d25d3e148ccaae01cce",
@@ -2208,6 +2197,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "78e19e9a315c16013faefcd62d6a1220ab0d694a402541d44047566b976c5c08",
         "nonce": "e7e03725537a96692d55d234bc881bcbafb8234b3a167c1194f6e1ba67f46631",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-13T15:34:38.303Z",
+      "epoch": 437,
+      "signal_hash": "d86fff323196b85d7917106909d5756a3b327ea462f71bb4745f386f2c7b0bba",
+      "signal_status": "executed",
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "553a82d35109fba730d5e2056b8f5730ec2ae67d7e2cfc15fca1e94e762a9f10",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:c2367ab86ca44e486444807553d0067211809e66bb918a3b8254fb9292d13887:1fc5d8f77a5a79212570c017f3de143546181056220ab98054fe1d438dbad6df",
+        "signature": "0xe98772b7510bf3b3de68e9c1796a77e243425518e6bf2f9a60ce02e0a184749d553e07a446e53602065523f2deea735290791221e2c3747ecd1163a96920754a1b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "0eba96fd8f53dd11e62947dd27ed9efa6250dceecd5cf812c15c5b8f73f72612",
+        "nonce": "8f1815bbb16d92ea506af0c78757729ac551610f74551991e98a3aa21ce49016",
         "bound": true,
         "gpu_evidence": true
       }
