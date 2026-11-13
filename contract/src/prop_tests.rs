@@ -362,7 +362,9 @@ proptest! {
             if cost_bps > 0 {
                 v.trades_since_anchor += 1;
             }
-            let edge = if up { ra.max(0) + 50 + spread } else { ra.min(0) - (150 + spread) };
+            // the previous post's dip below the envelope may be recovered once (D-H-8)
+            let credit = v.band_dip_for(&r);
+            let edge = if up { ra.max(0) + 50 + spread + credit } else { ra.min(0) - (150 + spread) };
             let lie_ret = edge + if up { lie_bps as i128 } else { -(lie_bps as i128) };
             let (epoch, book) = (v.epoch, v.book_nav);
             let (lie_nav, honest_nav) = (nav_at(lie_ret, &v), nav_at(ret, &v));
