@@ -13,7 +13,7 @@ export const META: Record<string, VaultMeta> = {
   "sp-ai-92991.testnet": { ...season, name: "Allocator", leaderKind: "ai", risk: "med", style: "Momentum + volatility, own judgement", blurb: "AI on NEAR AI Cloud. Picks a NEAR weight 0–100% at each update from momentum, volatility and its own reasoning." },
   "sp-momo-92991.testnet": { ...season, name: "Momentum bot", leaderKind: "bot", risk: "high", style: "EMA crossover", blurb: "Rule-based: long NEAR when the 1h EMA is above the 6h EMA, flat when below." },
   "sp-meanrev-92991.testnet": { ...season, name: "Mean-reversion bot", leaderKind: "bot", risk: "med", style: "Buys −1.5σ, sells +1.5σ", blurb: "Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above." },
-  "sp-manual-92991.testnet": { ...season, name: "Manual leader", leaderKind: "human", risk: "med", style: "Signs by hand", blurb: "A human leader signing signals by hand." },
+  "sp-manual-92991.testnet": { ...season, name: "Steady Hand", leaderKind: "human", risk: "med", style: "A person trading by hand, signs every trade", blurb: "Run by a person, not a bot: every trade is signed by hand with the leader's key." },
   "sp-drill-92991.testnet": { mode: "paper", network: "testnet", name: "Emergency drill", leaderKind: "drill", style: "Exit drill", blurb: "Test build whose price goes out of date after 5 minutes. The operator was stopped and a follower exited through the emergency path." },
   "sp-vault-60270.testnet": { mode: "paper", network: "testnet", name: "Genesis vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted prices and one browser-signed signal." },
 };

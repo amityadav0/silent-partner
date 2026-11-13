@@ -125,7 +125,7 @@ Four demo vaults plus a drill vault, deployed by `operator/scripts/season-setup.
 | [`sp-momo-92991.testnet`](https://testnet.nearblocks.io/address/sp-momo-92991.testnet) | `sp-lmomo-92991.testnet` | Momentum bot: Rule-based: long NEAR when the 1h EMA is above the 6h EMA, flat when below. |
 | [`sp-meanrev-92991.testnet`](https://testnet.nearblocks.io/address/sp-meanrev-92991.testnet) | `sp-lmeanrev-92991.testnet` | Mean-reversion bot: Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above. |
 | [`sp-ai-92991.testnet`](https://testnet.nearblocks.io/address/sp-ai-92991.testnet) | `sp-lai-92991.testnet` | AI leader: An LLM on NEAR AI Cloud decides each epoch from public market data; it commits to its rationale by hash only. |
-| [`sp-manual-92991.testnet`](https://testnet.nearblocks.io/address/sp-manual-92991.testnet) | `sp-lmanual-92991.testnet` | Manual leader: A human leader signing signals by hand. |
+| [`sp-manual-92991.testnet`](https://testnet.nearblocks.io/address/sp-manual-92991.testnet) | `sp-lmanual-92991.testnet` | Steady Hand: a person trading by hand, signing every trade. |
 | [`sp-drill-92991.testnet`](https://testnet.nearblocks.io/address/sp-drill-92991.testnet) | `sp-leader-60270.testnet` | Emergency drill: Test build with a 5-minute NAV timeout, for the emergency-exit drill. |
 
 Followers: `sp-follower-60270.testnet`, `sp-fund-61557.testnet`. Fill logs and bot notebooks are sealed (AES-256-GCM) in the `season-state` branch; `last-run.json` there shows the last tick, redacted to what the chain shows.

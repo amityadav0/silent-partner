@@ -231,7 +231,7 @@ if (e.TELEGRAM_BOT_TOKEN) {
 
 // Track-record cards (public PNGs, only on-chain data): season-state/cards/<vault>.png.
 const STYLE: Record<string, [string, string]> = {
-  momentum: ["Bot", "EMA crossover"], "mean-reversion": ["Bot", "Buys −1.5σ, sells +1.5σ"], manual: ["Human", "Signs by hand"],
+  momentum: ["Bot", "EMA crossover"], "mean-reversion": ["Bot", "Buys −1.5σ, sells +1.5σ"], manual: ["Human", "A person trading by hand, signs every trade"],
   ai: ["AI", "Momentum + volatility, own judgement"], "ai-trend": ["AI", "Rides momentum"], "ai-contrarian": ["AI", "Fades extremes"],
   "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
 };

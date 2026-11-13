@@ -204,3 +204,19 @@ test("U13: TEE ✓ chips on AI rows link to the vault's AI panel", async ({ page
   for (let i = 0; i < n; i++) await expect(chips.nth(i)).toHaveAttribute("href", /\/vault\/\?id=.+#ai$/);
   console.log(`TEE chips: ${n}`);
 });
+
+test("W1: the hand-run vault is Steady Hand, still labelled Human and run by hand, in the hero pick and the share text", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByTestId("hero-copy")).not.toContainText("Manual leader");
+  await page.goto("/leaderboard/");
+  const row = page.getByTestId("row-sp-manual-92991.testnet");
+  await expect(row).toContainText("Steady Hand", { timeout: 30_000 });
+  await expect(row).toContainText("A person trading by hand, signs every trade");
+  await expect(row.getByTestId("badge")).toHaveText(/human/i);
+  await page.goto("/copy/?id=sp-manual-92991.testnet&start=1");
+  const share = page.getByTestId("copy-share");
+  await expect(share).toBeVisible({ timeout: 30_000 });
+  expect(await share.getAttribute("data-text")).toMatch(/silently copying Steady Hand on @NEARProtocol/);
+  expect(await (await page.request.get("/v/sp-manual-92991.testnet/")).text()).toContain("Steady Hand");
+});

@@ -34,7 +34,7 @@ const VAULTS = [
   { id: A.contra, leader: A.lcontra, strategy: "ai-contrarian", name: "Contrarian", blurb: "AI: fades extremes: buys sharp drops, trims spikes, drifts back to 40% mid-range.", seed: [100, 200, 300], wasm: "near" },
   { id: A.voltgt, leader: A.lvoltgt, strategy: "ai-voltarget", name: "Vol Target", blurb: "AI: sizes NEAR to a 40% annualised volatility target, 20–100% invested.", seed: [120, 300, 250], wasm: "near" },
   { id: A.convict, leader: A.lconvict, strategy: "ai-conviction", name: "Conviction", blurb: "AI: 50% NEAR baseline, tilting 20–80% by conviction.", seed: [100, 250, 250], wasm: "near" },
-  { id: A.manual, leader: A.lmanual, strategy: "manual", name: "Manual leader", blurb: "A human leader signing signals by hand.", seed: [150, 300, 200], wasm: "near" },
+  { id: A.manual, leader: A.lmanual, strategy: "manual", name: "Steady Hand", blurb: "Run by a person, not a bot: every trade is signed by hand with the leader's key.", seed: [150, 300, 200], wasm: "near" },
   { id: A.drill, leader: A.ldrill, strategy: "drill", name: "Emergency drill", blurb: "Test build with a 5-minute NAV timeout, for the emergency-exit drill.", seed: [20, 80, 0], wasm: "drill" },
 ];
 for (const v of VAULTS) gen(`signal:${v.id}`);

@@ -88,7 +88,7 @@ export function cardSvg(o: { name: string; badge: string; style: string; vault: 
   <path d="${line}" fill="none" stroke="${C.accent}" stroke-width="5" stroke-linejoin="round"/>
   <text x="${X0}" y="598" font-family="${MONO}" font-size="19" fill="${C.muted}">Holdings</text>
   <rect x="${X0 + 112}" y="583" width="86" height="18" rx="2" fill="${C.ink}"/><rect x="${X0 + 205}" y="583" width="46" height="18" rx="2" fill="${C.ink}"/>
-  <text x="${X1}" y="598" text-anchor="end" font-family="${MONO}" font-size="19" fill="${C.muted}">${t.epochs} signed price updates · ${esc(o.vault)} · ${o.asOf.toISOString().slice(0, 16).replace("T", " ")} UTC</text>
+  <text x="${X1}" y="598" text-anchor="end" font-family="${MONO}" font-size="19" fill="${C.muted}">${t.epochs} price updates · ${esc(o.vault)} · ${o.asOf.toISOString().slice(0, 16).replace("T", " ")} UTC</text>
 </svg>`;
 }
 

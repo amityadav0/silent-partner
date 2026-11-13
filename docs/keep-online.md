@@ -29,7 +29,7 @@ Spend rates are the ones `season.ts` budgets with. "Warn below" is 10 days of sp
 | `sp-momo-92991.testnet` | vault: Momentum bot | 0.29 | 2.9 | 6.03 | Nov 30 |
 | `sp-meanrev-92991.testnet` | vault: Mean-reversion bot | 0.29 | 2.9 | 6.01 | Nov 30 |
 | `sp-ai-92991.testnet` | vault: Allocator (AI) | 0.29 | 2.9 | 5.97 | Nov 30 |
-| `sp-manual-92991.testnet` | vault: Manual leader | 0.29 | 2.9 | 6.04 | Nov 30 |
+| `sp-manual-92991.testnet` | vault: Steady Hand (manual) | 0.29 | 2.9 | 6.04 | Nov 30 |
 | `sp-trend-8952.testnet` | vault: Trend Rider (AI) | 0.29 | 2.9 | 6.08 | Nov 30 |
 | `sp-contra-8952.testnet` | vault: Contrarian (AI) | 0.29 | 2.9 | 5.52 | Nov 29 |
 | `sp-voltgt-8952.testnet` | vault: Vol Target (AI) | 0.29 | 2.9 | 5.59 | Nov 29 |
