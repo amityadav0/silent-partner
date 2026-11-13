@@ -7,7 +7,10 @@ import { useRouter } from "next/navigation";
 export function Open({ id, name }: { id: string; name: string }) {
   const router = useRouter();
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref");
+    const q = new URLSearchParams(window.location.search);
+    const ref = q.get("ref");
+    // a follower's shared copy opens straight into a $100 copy for the next person (V2)
+    if (q.get("copy") === "1") return router.replace(`/copy/?id=${encodeURIComponent(id)}&start=1${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`);
     router.replace(`/vault/?id=${encodeURIComponent(id)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`);
   }, [id, router]);
   return (

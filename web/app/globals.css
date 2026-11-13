@@ -289,3 +289,17 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .welcome { width: min(520px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 30px 60px -30px var(--shadow); }
 .welcome-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--line-strong); }
 .welcome-dot[data-on="true"] { background: var(--ink); }
+
+/* "Your silent copy" (V1/V2) */
+.copy-wrap { display: flex; justify-content: center; padding-block: 24px 48px; }
+.copy-card { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
+.copy-value { display: flex; flex-direction: column; gap: 4px; }
+.copy-value > :first-child { font-size: 44px; line-height: 1.05; font-weight: 600; }
+.skeleton { border-radius: 6px; background: var(--row); }
+
+/* V1: on a phone the no-wallet CTA and the ticket toggle share the first screen */
+@media (max-width: 640px) {
+  .hero { padding-block: 20px 40px; gap: 28px; }
+  .hero-copy { gap: 18px; }
+  .hero .lede { font-size: 17px; }
+}

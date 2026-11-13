@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { VAULTS } from "@/lib/config";
 import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
 import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
+import { COPY_DEFAULT } from "@/lib/copy";
 import { Redact } from "./ui";
 
 type LiveEvent = { t: number; what: string; vault: string; id: string; ok: boolean; mainnet?: boolean };
@@ -159,8 +160,9 @@ export default function Landing() {
           <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
           <p className="lede">On other platforms your copy is a public trade: bots see it first, you fill last. Here you share one sealed vault with the trader. Same trade, same price, nothing to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/leaderboard/" className="btn btn-primary btn-lg">Follow a leader privately</Link>
-            <a href="#tour" className="btn btn-lg" data-testid="tour-button">Try it in 60 s</a>
+            <Link href={`/copy/?id=${COPY_DEFAULT}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy">Copy Contrarian with $100: no wallet, 10 seconds</Link>
+            <Link href="/leaderboard/" className="btn btn-lg">Follow privately</Link>
+            <a href="#tour" className="quiet" data-testid="tour-button">Try it in 60 s</a>
           </div>
         </div>
         <Ticket />
