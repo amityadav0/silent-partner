@@ -106,7 +106,7 @@ export default function Leaderboard() {
                     <span className="stake-bar"><i style={{ width: `${Math.min(100, r.stake * 100)}%` }} /></span>
                   </td>
                   <td data-label="Holdings"><Redact widths={[52, 28]} h={13} label="Holdings sealed" /></td>
-                  <td className="num text-sm" data-label="Verified" title="NAV signatures verified in your browser against the operator's attestation key" style={{ color: "var(--ink-2)" }}>
+                  <td className="num text-sm" data-label="Verified" title="Every price update's signature, checked in your browser" style={{ color: "var(--ink-2)" }}>
                     {r.bad > 0 ? <span className="neg">✗ {r.ok}/{r.d.navs.length}</span> : <>✓ {r.ok}/{r.d.navs.length}</>}
                   </td>
                   <td className="lb-view"><Link href={`/vault/?id=${r.d.id}`} className="view-link" aria-label={`View ${m.name}`}>View →</Link></td>
@@ -117,7 +117,7 @@ export default function Leaderboard() {
         </table>
       </div>
       <p className="muted -mt-5 text-xs" data-testid="honesty">
-        Numbers marked <b>paper · testnet</b> are paper trades: fills are priced by real 1Click dry quotes, but no real funds move and the vaults hold testnet tokens. NAVs and signals are real testnet transactions.
+        Numbers marked <b>paper · testnet</b> are paper trades: fills are priced by real 1Click dry quotes, but no real funds move and the vaults hold testnet tokens. Price updates and trade signals are real testnet transactions.
       </p>
       {errors.map((e) => <p key={e} className="neg text-sm">{e}</p>)}
 

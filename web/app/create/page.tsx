@@ -71,7 +71,7 @@ export default function CreateVault() {
             {f.operatorMode === "own" && (
               <>
                 <Field label="Operator account"><input className="w-full" value={f.operator} onChange={set("operator")} /></Field>
-                <Field label="Attestation public key" hint="The key your operator signs NAV with (ed25519:…). Followers' browsers verify every NAV against it.">
+                <Field label="Attestation public key" hint="The key your operator signs each share price with (ed25519:…). Followers' browsers verify every price against it.">
                   <input className="w-full" value={f.attestationKey} onChange={set("attestationKey")} />
                 </Field>
               </>
@@ -80,7 +80,7 @@ export default function CreateVault() {
         )}
         {step === 1 && (
           <>
-            <Field label="Performance fee (%)" hint="Charged only on gains above the high-water mark, as new leader shares. Contract limit: 50%.">
+            <Field label="Performance fee (%)" hint="Charged only when the share price beats its best ever, as new leader shares. Contract limit: 50%.">
               <input className="w-24" inputMode="decimal" value={f.feePct} onChange={set("feePct")} data-testid="f-fee" />
             </Field>
             <Field label="Minimum leader stake (%)" hint="Follower deposits that would push you under this are refunded, and you can't withdraw below it.">
@@ -94,7 +94,7 @@ export default function CreateVault() {
         )}
         {step === 2 && (
           <>
-            <p className="text-sm">Base asset: <b>USDC</b> <code className="text-xs">{p.base_asset_id.slice(0, 24)}…</code>. NAV, deposits and payouts are in USDC.</p>
+            <p className="text-sm">Base asset: <b>USDC</b> <code className="text-xs">{p.base_asset_id.slice(0, 24)}…</code>. Share prices, deposits and payouts are in USDC.</p>
             <Field label="Also tradable" hint="The vault refuses to sign trades into anything else, so this is your followers' mandate.">
               {Object.entries(p.assets).map(([id, sym]) => (
                 <label key={id} className="mr-4 text-sm">

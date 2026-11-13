@@ -7,7 +7,7 @@ import { useWallet } from "@/lib/wallet";
 import { claimState, fmtUnits, pnl, view, W_STEPS, type Claim, type Config, type Maturing, type Position, type VaultView, type WithdrawRequest, type WState } from "@/lib/vault";
 import { EmergencyPayout } from "./emergency";
 
-const LABEL: Record<WState, string> = { requested: "Requested", priced: "Priced at NAV", burned: "Burned (claim)", paying: "Paying out", paid: "Paid" };
+const LABEL: Record<WState, string> = { requested: "Requested", priced: "Priced", burned: "Burned (claim)", paying: "Paying out", paid: "Paid" };
 
 function Track({ at, testid }: { at: WState; testid?: string }) {
   const i = W_STEPS.indexOf(at);
@@ -49,7 +49,7 @@ function StopLoss({ id, viewer, vault, cfg, refresh, onDone }: { id: string; vie
           <button className="btn ml-auto text-xs" disabled={!mine} onClick={() => call({ receiverId: id, method: "set_stop_loss", args: { drawdown_bps: Math.round(Number(pct) * 100), exit_account: viewer }, gas: 30n * TGAS }).then(onDone)}>Set stop-loss</button>
         </div>
       )}
-      <p className="muted text-xs">The contract checks it at every NAV post. When the price reaches it, all your free shares are queued, priced at that post, and paid at the next at the lower of the two prices.</p>
+      <p className="muted text-xs">The contract checks it at every price update. When the price reaches it, all your free shares are queued, priced at that post, and paid at the next at the lower of the two prices.</p>
     </div>
   );
 }
@@ -94,10 +94,10 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
         {maturing.map((m) => (
           <li key={`m${m.request.id}`} data-testid={`maturing-${m.request.id}`}>
             <div className="tabular-nums">
-              {BigInt(m.request.shares).toLocaleString()} shares priced at epoch {m.priced_epoch}: at most {fmtUnits((BigInt(m.request.shares) * BigInt(m.priced_at)) / 10n ** 18n, dec)} {sym}
+              {BigInt(m.request.shares).toLocaleString()} shares priced at update #{m.priced_epoch}: at most {fmtUnits((BigInt(m.request.shares) * BigInt(m.priced_at)) / 10n ** 18n, dec)} {sym}
             </div>
             <Track at="priced" testid="track" />
-            <p className="muted">Burns at the next NAV at min(this price, that price), so nobody leaves on a NAV the next one shows was too high.</p>
+            <p className="muted">Paid at the next price update, at the lower of the two prices, so nobody leaves on a price the next one shows was too high.</p>
           </li>
         ))}
         {claims.map((c) => {
@@ -109,7 +109,7 @@ export function PositionDetails({ id, viewer, vault, cfg, dec, sym, claims, refr
                 {st !== "paid" && BigInt(c.paid) > 0n && <>, {fmtUnits(c.paid, dec)} paid</>}
               </div>
               <Track at={st} testid="track" />
-              {st === "burned" && !c.emergency && <p className="muted">The operator pays open claims right after each NAV post.</p>}
+              {st === "burned" && !c.emergency && <p className="muted">The operator pays open claims right after each price update.</p>}
               {st !== "paid" && !vault.emergency && c.opened_ms && Date.now() > c.opened_ms + 24 * 3600_000 && (
                 <button className="btn mt-1 text-xs" data-testid={`overdue-${c.id}`} disabled={!accountId} onClick={() => call({ receiverId: id, method: "trigger_emergency", args: { overdue_claim: c.id }, gas: 50n * TGAS }).then(onDone)}>
                   Unpaid for 24h: trigger emergency

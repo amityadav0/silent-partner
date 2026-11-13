@@ -48,15 +48,15 @@ export default function Share() {
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm tabular-nums sm:grid-cols-4" data-testid="track-record">
           <div><div className="muted text-xs">Worst drawdown</div>{m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`}</div>
           <div><div className="muted text-xs">Sharpe-like</div>{m.sharpe === null ? <span className="muted">after 24h</span> : m.sharpe.toFixed(2)}</div>
-          <div><div className="muted text-xs">Epochs live</div>{data.navs.length}</div>
+          <div><div className="muted text-xs">Price updates</div>{data.navs.length}</div>
           <div><div className="muted text-xs">Leader holds</div>{(m.leaderPct * 100).toFixed(1)}%</div>
         </div>
         <div className="mt-4"><ReturnsChart points={returns(data.navs)} height={170} drawdown={drawdownWindow(data.navs)} /></div>
         <p className={`mt-3 text-sm ${allOk ? "pos" : "neg"}`} data-testid="share-proof">
-          {allOk ? "✓" : "✗"} {m.v.ok} of {data.navs.length} NAV posts verified in your browser against the operator&apos;s key {short(data.cfg.attestation_key, 6)}
+          {allOk ? "✓" : "✗"} {m.v.ok} of {data.navs.length} price updates verified in your browser against the operator&apos;s key {short(data.cfg.attestation_key, 6)}
         </p>
         <div className="row-kv mt-2"><span>Holdings</span><span><Redact widths={[72, 40]} label="Holdings sealed" /></span></div>
-        <p className="muted mt-1 text-xs">Positions are private. The vault trades through NEAR Confidential Intents, and only NAV is published.</p>
+        <p className="muted mt-1 text-xs">Positions are private. The vault trades privately; only its share price is published.</p>
       </div>
       <ShareImage id={data.id} name={metaOf(data.id).name} ret={m.ret} />
       <Badge id={data.id} dd={m.dd} epochs={data.navs.length} />
@@ -70,7 +70,7 @@ function ShareImage({ id, name, ret }: { id: string; name: string; ret: number }
   const [ok, setOk] = useState(true);
   if (!ok) return null;
   const url = cardUrl(id);
-  const text = `${name} on Silent Partner: ${ret >= 0 ? "+" : "−"}${Math.abs(ret * 100).toFixed(2)}% after fees, every NAV verified in your browser, positions never public. Built at #NEARHackathon`;
+  const text = `${name} on Silent Partner: ${ret >= 0 ? "+" : "−"}${Math.abs(ret * 100).toFixed(2)}% after fees, every price update verified in your browser, positions never public. Built at #NEARHackathon`;
   return (
     <div className="panel mt-3" data-testid="share-image">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -87,7 +87,7 @@ function ShareImage({ id, name, ret }: { id: string; name: string; ret: number }
 function Badge({ id, dd, epochs }: { id: string; dd: number; epochs: number }) {
   const link = `https://amityadav0.github.io/silent-partner/v/${id}/`;
   const img = seasonUrl(`badges/${id}.png`);
-  const bio = `Leading on Silent Partner ✓ ${dd === 0 ? "0%" : `−${(dd * 100).toFixed(1)}%`} worst DD · ${epochs} epochs · positions sealed`;
+  const bio = `Leading on Silent Partner ✓ ${dd === 0 ? "0%" : `−${(dd * 100).toFixed(1)}%`} worst drop · ${epochs} price updates · positions sealed`;
   const md = `[![Silent Partner](${img})](${link})`;
   const [ok, setOk] = useState(true);
   return (

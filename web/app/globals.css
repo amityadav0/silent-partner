@@ -303,3 +303,12 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
   .hero-copy { gap: 18px; }
   .hero .lede { font-size: 17px; }
 }
+
+/* V3: /how and "?" notes */
+.how-step { display: grid; grid-template-columns: minmax(0, 220px) 1fr; gap: 24px; align-items: center; }
+.how-art { width: 100%; height: auto; }
+@media (max-width: 640px) { .how-step { grid-template-columns: 1fr; } .how-art { max-width: 320px; } }
+.term { position: relative; display: inline; }
+.term-q { font: inherit; color: var(--ink-2); text-decoration: underline dotted; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: help; }
+.term-mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 11px; line-height: 1; vertical-align: 1px; }
+.term-tip { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: var(--row); color: var(--ink-2); font-size: 13px; line-height: 1.5; }

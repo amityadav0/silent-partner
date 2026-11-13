@@ -130,16 +130,16 @@ const DRILL_TX = "https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj
 const TOUR: [string, string, string, string][] = [
   ["Flip the ticket", "The same trade on a public platform and on Silent Partner: exposed, then sealed.", "#ticket", `${SITE}/#ticket`],
   ["Check an AI trade", "Contrarian's latest trade on chain, matched in your browser to the hash of its sealed reasoning.", `${SITE}/vault/?id=sp-contra-8952.testnet#ai`, `${SITE}/vault/?id=sp-contra-8952.testnet#ai`],
-  ["See an exit without us", "The drill: a follower's payout executed on the intents verifier with the operator stopped.", DRILL_TX, DRILL_TX],
+  ["See an exit without us", "The drill: with the operator switched off, a follower still paid themselves out.", DRILL_TX, DRILL_TX],
 ];
 
 const CARDS: [string, string, string][] = [
   ["Same fill as the leader", "0.00% copy slippage vs the leader", "There's no copy order to arrive late. The vault trades once, and your share is inside that trade."],
-  ["Positions sealed", "Nothing to front-run", "The vault trades through NEAR Confidential Intents. Wallet trackers and bots can't read what it holds or when it moves."],
+  ["Positions sealed", "Nothing to front-run", "The vault trades privately. Wallet trackers and bots can't read what it holds or when it moves."],
   ["The leader's money is in it", "≥ 10%, enforced by the contract", "At least 10% of the vault is the leader's own money, so every loss hits them too."],
   ["An exit that doesn't need us", "24 h without the operator", "If no price is posted for 24 hours, anyone can switch the vault to emergency and each holder can exit pro rata."],
   ["Verified, not screenshotted", "Signed and re-checked", "Every share price is signed and bounded by public prices, checked on chain. Your browser re-checks the signature."],
-  ["Paid only for new highs", "Fee above high-water mark", "Performance fees apply only above the high-water mark. Climbing back from a loss earns the leader nothing."],
+  ["Paid only for new highs", "Fee only on new highs", "The leader is paid only when the share price beats its best ever. Climbing back from a loss earns the leader nothing."],
 ];
 
 const COMPARE: [string, string, string, string, string][] = [
@@ -156,7 +156,7 @@ export default function Landing() {
     <div className="bleed" data-testid="landing">
       <section className="wrap hero">
         <div className="hero-copy">
-          <span className="hero-tag">Confidential copy trading · NEAR Intents</span>
+          <span className="hero-tag">Private copy trading on NEAR</span>
           <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
           <p className="lede">On other platforms your copy is a public trade: bots see it first, you fill last. Here you share one sealed vault with the trader. Same trade, same price, nothing to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
@@ -180,7 +180,7 @@ export default function Landing() {
       <section className="wrap pt-6" data-testid="mainnet-line">
         <p className="text-sm">
           <span className="chip chip-ok mr-2">MAINNET</span>
-          Live on NEAR mainnet with real USDC: <Link href={`/vault/?id=${MAINNET_VAULT}`}>Genesis vault</Link>. Its MPC key signed the shield, a confidential leader trade and a follower payout.{live?.main ? ` ${live.main.epoch} price posts, ${live.main.ok ? "all verified in your browser" : "a signature check failed"}.` : ""}
+          Live on NEAR mainnet with real USDC: <Link href={`/vault/?id=${MAINNET_VAULT}`}>Genesis vault</Link>. Real money went in, the leader traded privately, and a follower was paid out.{live?.main ? ` ${live.main.epoch} price posts, ${live.main.ok ? "all verified in your browser" : "a signature check failed"}.` : ""}
         </p>
       </section>
 
@@ -255,7 +255,7 @@ export default function Landing() {
           <p className="max-w-2xl text-[17px] leading-relaxed" style={{ color: "var(--ink-2)" }}>Every leader opens with worst drawdown and how much of their own money is in, then returns. Pick someone you&apos;d trust with money, not someone who&apos;s trending.</p>
           {live && (
             <p className="muted text-sm tabular-nums" data-testid="live-stats">
-              Live on testnet: {live.navs} NAV posts, {live.verified} signatures checked in your browser just now, {live.signals} leader signals recorded. Paper trades at real 1Click prices.
+              Live on testnet: {live.navs} price updates, {live.verified} signatures checked in your browser just now, {live.signals} leader signals recorded. Paper trades at real 1Click prices.
             </p>
           )}
         </div>

@@ -54,3 +54,17 @@ test("V2: the share carries only the copy's real change and a link that opens in
   const res = await page.request.get("/v/sp-contra-8952.testnet/");
   expect(await res.text()).toMatch(/og:image" content="https:\/\/raw\.githubusercontent\.com\/[^"]+cards\/sp-contra-8952\.testnet\.png/);
 });
+
+test("V3: /how explains it in three pictures and plain words, technical names behind a ?", async ({ page }) => {
+  await page.goto("/how/");
+  await expect(page.getByTestId("how").locator("svg[role=img]")).toHaveCount(3);
+  await expect(page.getByTestId("how")).toContainText("One vault, shared with the trader");
+  await expect(page.getByTestId("how")).toContainText("An exit that doesn't need us");
+  const visible = await page.getByTestId("how").innerText();
+  expect(visible).not.toMatch(/\b(NAV|epoch|HWM|MPC)\b/);
+  await page.getByTestId("term").first().click();
+  await expect(page.getByRole("note").first()).toContainText("NAV post");
+  await page.goto("/");
+  await page.getByRole("link", { name: "How it works" }).first().click();
+  await expect(page).toHaveURL(/\/how\/$/);
+});

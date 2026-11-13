@@ -13,6 +13,7 @@ import { usePaper } from "./paper";
 import { FollowPanel } from "./follow";
 import { WhoSeesWhat } from "./whosees";
 import { AiDecisions } from "./ai";
+import { Term } from "../term";
 import { Alerts } from "./alerts";
 import { Letters } from "./letters";
 import { LinkedTrackRecord } from "./linked";
@@ -83,7 +84,7 @@ export default function VaultPage() {
     if (!s || s <= 0n) return setMsg("Enter a number of shares.");
     try {
       const tx = await call({ receiverId: data!.id, method: "request_withdraw", args: { shares: s.toString(), exit_account: accountId }, gas: 30n * TGAS });
-      setMsg(tx ? `Withdrawal requested (tx ${tx}). Your shares burn at the next NAV, then the payout goes to your intents account.` : "Sent to your wallet.");
+      setMsg(tx ? `Withdrawal requested (tx ${tx}). Your shares are paid out at the price update after next, to your NEAR Intents account.` : "Sent to your wallet.");
       reload();
     } catch (e) {
       setMsg(String((e as Error).message ?? e));
@@ -116,7 +117,7 @@ export default function VaultPage() {
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
             <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
-            <Stat label="Verified price posts" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: epochs ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
+            <Stat label="Verified price updates" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: updates ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>
 
           <ReturnsChart
@@ -179,11 +180,11 @@ export default function VaultPage() {
         {!foreign && <FollowPanel name={meta.name} data={data} price={m.price} dec={m.dec} sym={m.sym} active={st === "active"} shares={mine && accountId ? mine.shares : 0n} paper={paper} onDone={reload} />}
       </div>
 
-      <h2>NAV posts</h2>
+      <h2>Price updates</h2>
       <p className="muted mt-1 text-xs">Each post is signed by the operator&apos;s attestation key <code>{short(cfg.attestation_key, 8)}</code> and pins the head of its hash-chained fill log.</p>
       <div className="panel scroll-x mt-3 p-0">
         <table className="t" data-testid="nav-table">
-          <thead><tr><th>Epoch</th><th>Time</th><th>Share price</th><th>Positions</th><th>Fee shares</th><th>Withdrawn</th><th>Fill log head</th><th>Sig</th></tr></thead>
+          <thead><tr><th>#</th><th>Time</th><th>Share price</th><th>Positions</th><th>Fee shares</th><th>Withdrawn</th><th>Fill log head</th><th>Sig</th></tr></thead>
           <tbody>
             {[...navs].reverse().slice(0, allNavs ? undefined : 20).map((n) => (
               <tr key={n.epoch}>
@@ -204,7 +205,7 @@ export default function VaultPage() {
         <button className="quiet mt-2" onClick={() => setAllNavs(!allNavs)} data-testid="nav-all">{allNavs ? "Show the latest 20" : `Show all ${navs.length} posts`}</button>
       )}
       <p className="muted mt-3 break-words text-xs">
-        Contract <a href={`${explorerFor(data.id)}/address/${data.id}`}>{data.id}</a> · confidential account (MPC-derived) <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
+        Contract <a href={`${explorerFor(data.id)}/address/${data.id}`}>{data.id}</a> · <Term tip="A NEAR Confidential Intents account whose key is an MPC key derived for this contract (NEAR Chain Signatures). No person holds it; the contract signs only transfers back into the vault or to a holder's own payout.">private trading account</Term> <code>{vault.vault_account ? short(vault.vault_account, 8) : "–"}</code> · {vault.signals} leader signals recorded
       </p>
     </section>
   );

@@ -58,7 +58,7 @@ export function Nav() {
       <Link href="/" className="brand"><Logo />Silent Partner</Link>
       <nav className="site-links" aria-label="Main">
         {link("/leaderboard/", "Leaders")}
-        <Link href="/#why">How it works</Link>
+        {link("/how/", "How it works")}
         {link("/create/", "Lead a vault", "/create/ai/")}
       </nav>
       <div className="site-tools">
@@ -208,7 +208,7 @@ export function ReturnsChart({ points, height = 220, copy, drawdown, title, note
     <figure className="panel" data-testid="returns-chart">
       {title}
       <div ref={box}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={`Return since inception: ${pct(last.r)} over ${points.length} epochs${drawdown ? `, ${label}` : ""}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={`Return since inception: ${pct(last.r)} over ${points.length} price updates${drawdown ? `, ${label}` : ""}`}>
         {drawdown && (
           <g data-testid="dd-window">
             <rect x={x(drawdown.peak)} y={0} width={Math.max(2, x(drawdown.trough) - x(drawdown.peak))} height={H - B} className="dd-window" />
@@ -238,7 +238,7 @@ export function ReturnsChart({ points, height = 220, copy, drawdown, title, note
         <text x={W - R} y={H - 6} textAnchor="end" className="axis">{fmtDate(last.t)}</text>
       </svg>
       </div>
-      <figcaption className="muted mt-2 text-xs">Return since inception, from the post-fee share price in each signed NAV post.{copy ? " Dashed: your simulated copy since you joined." : ""}{note}</figcaption>
+      <figcaption className="muted mt-2 text-xs">Return since the start, from the share price after fees at each signed price update.{copy ? " Dashed: your simulated copy since you joined." : ""}{note}</figcaption>
     </figure>
   );
 }

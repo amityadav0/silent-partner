@@ -116,7 +116,7 @@ export default function LeadAVault() {
             <div className="row-kv"><span>Leader</span><span className="break-all">{accountId ?? "connect a wallet"}</span></div>
             <div className="row-kv"><span>Deposit</span><span><span className="num">{LAUNCH_DEPOSIT_NEAR}</span> testnet NEAR</span></div>
             <div className="row-kv"><span>Your stake</span><span>at least 10%, from faucet USDC</span></div>
-            <div className="row-kv"><span>Fee</span><span><span className="num">20%</span> above HWM</span></div>
+            <div className="row-kv"><span>Fee</span><span><span className="num">20%</span>, only on new highs</span></div>
             <div className="row-kv"><span>Limit</span><span><span className="num">2</span> vaults per account</span></div>
           </div>
           {kind === "ai" && (

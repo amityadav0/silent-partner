@@ -79,7 +79,7 @@ export default function LeaderConsole() {
       if (!(bps >= 0 && bps <= 10_000)) return "Target weight must be 0–100%.";
       return { v: 1, vault: id!, from: form.from, to: form.to, size_bps: 10_000, type: "target", target_bps: bps, nonce: randomNonce(), created_ms: Date.now() };
     }
-    if (!(bps >= 1 && bps <= 10_000)) return "Size must be between 0.01% and 100% of NAV.";
+    if (!(bps >= 1 && bps <= 10_000)) return "Size must be between 0.01% and 100% of the vault.";
     if (form.type === "limit" && !/^\d+(\.\d+)?$/.test(form.limit)) return "Enter a limit price.";
     return { v: 1, vault: id!, from: form.from, to: form.to, size_bps: bps, type: form.type, ...(form.type === "limit" ? { limit_price: form.limit, expires_ms: Date.now() + 24 * 3600_000 } : {}), nonce: randomNonce(), created_ms: Date.now() };
   }
@@ -121,7 +121,7 @@ export default function LeaderConsole() {
           <div className="tile-h">{keyMatches ? "Signing in this browser" : onchainKey ? "Registered on the vault, not in this browser" : "Register one to sign"}</div>
         </div>
         <div className="tile" data-testid="desk-fee">
-          <div className="tile-l">Fee earned above high-water mark</div>
+          <div className="tile-l">Fee earned on new highs</div>
           <div className="tile-v">{fmtUnits(feeEarned(data.navs), baseDec)} {baseSym}</div>
           <div className="tile-h">paid in vault shares · mark {priceOf(data.vault.hwm).toFixed(4)}</div>
         </div>
@@ -157,8 +157,8 @@ export default function LeaderConsole() {
           <label className="flex flex-col gap-1">Buy
             <select value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })}>{data.cfg.allowed_assets.map((a) => <option key={a} value={a}>{sym(a)}</option>)}</select>
           </label>
-          <label className="flex flex-col gap-1">{form.type === "target" ? `Target weight of ${sym(form.to)}, %` : "Size, % of NAV"}
-            <input aria-label="Size percent of NAV" value={form.pct} onChange={(e) => setForm({ ...form, pct: e.target.value })} inputMode="decimal" />
+          <label className="flex flex-col gap-1">{form.type === "target" ? `Target weight of ${sym(form.to)}, %` : "Size, % of the vault"}
+            <input aria-label="Size percent of the vault" value={form.pct} onChange={(e) => setForm({ ...form, pct: e.target.value })} inputMode="decimal" />
           </label>
           <label className="flex flex-col gap-1">Order
             <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "market" | "limit" | "target" })} data-testid="order-type"><option value="market">Market</option><option value="limit">Limit</option><option value="target">Target weight</option></select>
@@ -179,7 +179,7 @@ export default function LeaderConsole() {
       <p className="muted text-xs">Hashes only, recorded after execution. The trades themselves stay private.</p>
       <div className="panel scroll-x mt-2 p-0">
         <table className="t" data-testid="signals-table">
-          <thead><tr><th>#</th><th>Trade</th><th>Signal hash</th><th>Fill record</th><th>Executed</th><th>Epoch</th></tr></thead>
+          <thead><tr><th>#</th><th>Trade</th><th>Signal hash</th><th>Fill record</th><th>Executed</th><th>Price update</th></tr></thead>
           <tbody>
             {signals.length === 0 && <tr><td colSpan={6} className="muted">No trades yet. When you trade, its hash lands here, and only its hash.</td></tr>}
             {[...signals].reverse().map((s) => (

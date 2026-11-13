@@ -33,21 +33,21 @@ export function EmergencyBanner({ id, vault, cfg, shares, dec, sym, onDone }: { 
         <>
           <h2 className="font-semibold">Emergency mode</h2>
           <p className="mt-1 text-sm">
-            No NAV was posted within the timeout, so this vault is in emergency mode for good. Deposits are refunded. Every holder can exit at the last NAV,
-            pro rata, and pay themselves out from the vault&apos;s public intents balance. Neither the operator nor 1Click is needed.
+            No price update was posted in time, so this vault is in emergency mode for good. Deposits are refunded. Every holder can exit at the last share price,
+            pro rata, and pay themselves out from the vault&apos;s public balance. Neither the operator nor 1Click is needed.
           </p>
           {shares > 0n && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <span className="text-sm tabular-nums">Your {shares.toLocaleString()} shares → claim of about <b>{fmtUnits(value, dec)} {sym}</b></span>
-              <button className="btn btn-primary ml-auto" data-testid="emergency-exit" disabled={!accountId} onClick={() => run(() => call({ receiverId: id, method: "emergency_exit", args: { exit_account: accountId }, gas: 50n * TGAS }), "Exited: your claim is open below.")}>Exit at last NAV</button>
+              <button className="btn btn-primary ml-auto" data-testid="emergency-exit" disabled={!accountId} onClick={() => run(() => call({ receiverId: id, method: "emergency_exit", args: { exit_account: accountId }, gas: 50n * TGAS }), "Exited: your claim is open below.")}>Exit at the last price</button>
             </div>
           )}
           {!accountId && <p className="muted mt-2 text-sm">Connect a wallet to exit.</p>}
         </>
       ) : (
         <>
-          <h2 className="font-semibold">NAV is stale</h2>
-          <p className="mt-1 text-sm">The operator hasn&apos;t posted a NAV within the timeout. Deposits are paused. Anyone can now switch the vault to emergency mode, which lets holders exit without the operator.</p>
+          <h2 className="font-semibold">The share price is out of date</h2>
+          <p className="mt-1 text-sm">The operator hasn&apos;t posted a price update in time. Deposits are paused. Anyone can now switch the vault to emergency mode, which lets holders exit without the operator.</p>
           <button className="btn mt-3" data-testid="trigger-emergency" disabled={!accountId} onClick={() => run(() => call({ receiverId: id, method: "trigger_emergency", args: {}, gas: 50n * TGAS }), "Emergency mode on.")}>Trigger emergency</button>
         </>
       )}

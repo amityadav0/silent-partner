@@ -33,6 +33,6 @@ export function versionedNonce(saltHex: string, deadlineMs: number, nowMs = Date
 export async function viewCall<T>(rpc: string, contract: string, method: string, args: unknown, fetchImpl: typeof fetch = fetch, finality: "final" | "optimistic" = "final"): Promise<T> {
   const r = await fetchImpl(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") } }) });
   const j = await r.json();
-  if (j.error || j.result?.error) throw new Error(`view ${contract}.${method}: ${JSON.stringify(j.error?.data ?? j.result?.error).slice(0, 300)}`);
+  if (j.error || j.result?.error) throw new Error(`view ${contract}.${method}: ${String(JSON.stringify(j.error?.data ?? j.error?.message ?? j.error ?? j.result?.error)).slice(0, 300)}`);
   return JSON.parse(Buffer.from(j.result.result).toString()) as T;
 }

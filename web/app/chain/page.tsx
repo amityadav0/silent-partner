@@ -74,10 +74,10 @@ export default function ChainPage() {
           <p className="muted text-xs">Anyone with an RPC endpoint.</p>
           <div className="mt-2">
             <Row k="Share price" v={price.toFixed(6)} />
-            <Row k="Book NAV" v={`${fmtUnits(vault.book_nav, d)} ${sym(b)}`} hint="Exact, on-chain. The leaderboard shows only a bucket." />
+            <Row k="Vault value" v={`${fmtUnits(vault.book_nav, d)} ${sym(b)}`} hint="Exact, on-chain. The leaderboard shows only a bucket." />
             <Row k="Total shares" v={BigInt(vault.total_shares).toLocaleString()} />
             <Row k="Leader shares" v={`${((Number(vault.leader_shares) / Math.max(1, Number(vault.total_shares))) * 100).toFixed(1)}%`} />
-            <Row k="NAV posts (signed)" v={navs.length} />
+            <Row k="Price updates (signed)" v={navs.length} />
             <Row k="Signals (hash only)" v={extra?.signals.length ?? "…"} />
             <Row k="Claims" v={extra ? `${extra.claims.length} (amounts and exit accounts public)` : "…"} />
             <Row k="Holdings" v={<Redact widths={[60, 32]} h={13} label="Holdings sealed" />} />
@@ -86,7 +86,7 @@ export default function ChainPage() {
             <Row k="Public intents balance" v={extra?.publicBal == null ? "–" : `${fmtUnits(extra.publicBal, d)} ${sym(b)}`} hint="mt_balance_of on the verifier for the vault's MPC account" />
           </div>
           <p className="mt-3 text-xs">
-            <b>Sees:</b> who deposited and how much (NEP-141 transfers), share balances, every NAV with its fill-log head, signal hashes after execution, withdrawal claims.
+            <b>Sees:</b> who deposited and how much (NEP-141 transfers), share balances, every share price with its fill-log head, signal hashes after execution, withdrawal claims.
           </p>
           <p className="mt-1 text-xs">
             <b>Doesn&apos;t see:</b> what the vault holds, its trades, signal contents, or any signal before it executes.
@@ -120,13 +120,13 @@ export default function ChainPage() {
             <b>Sees:</b> the same public data as the observer, plus the meaning of their own numbers. Note that their share balance is public too.
           </p>
           <p className="mt-1 text-xs">
-            <b>Doesn&apos;t see:</b> holdings or trades. They gave the leader a mandate (allowed assets, 1% max slippage, 20% fee above the high-water mark), and the contract enforces it.
+            <b>Doesn&apos;t see:</b> holdings or trades. They gave the leader a mandate (allowed assets, 1% max slippage, 20% fee, only on new highs), and the contract enforces it.
           </p>
         </div>
 
         <div className="panel" data-testid="leader">
           <h2>Leader &amp; operator</h2>
-          <p className="muted text-xs">Private. Published here up to epoch {disc && disc !== "none" ? disc.upto_epoch : "–"} for the demo.</p>
+          <p className="muted text-xs">Private. Published here up to price update # {disc && disc !== "none" ? disc.upto_epoch : "–"} for the demo.</p>
           {disc === null && <p className="muted mt-2 text-sm">Loading disclosure…</p>}
           {disc === "none" && <p className="muted mt-2 text-sm">No disclosure published for this vault: only the operator has this view.</p>}
           {disc && disc !== "none" && held && (

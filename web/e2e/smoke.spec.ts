@@ -21,7 +21,7 @@ test("landing page: public-vs-sealed ticket, proof strip, six cards, exit band, 
   await expect(page.getByTestId("compare")).toContainText("Same trade, same price");
   await expect(page.getByRole("link", { name: "Meet the leaders" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Docs" })).toHaveAttribute("href", /github\.com\/amityadav0\/silent-partner/);
-  await expect(page.getByTestId("live-stats")).toContainText(/\d+ NAV posts/);
+  await expect(page.getByTestId("live-stats")).toContainText(/\d+ price updates/);
 });
 
 test("theme: light by default, the toggle switches and is remembered", async ({ page }) => {
@@ -87,7 +87,7 @@ test("leader console signs a signal in the browser; the operator executes and re
   await page.goto(`/leader/?id=${VAULT}`);
   await expect(page.getByTestId("signal-key")).toContainText("ready");
   const before = await page.getByTestId("signals-table").locator("tbody tr").count();
-  await page.getByLabel("Size percent of NAV").fill("5");
+  await page.getByLabel("Size percent of the vault").fill("5");
   await page.getByRole("button", { name: "Sign and send" }).click();
   await expect(page.getByRole("status")).toContainText("Executed for the whole vault", { timeout: 90_000 });
   await page.reload();
@@ -108,7 +108,7 @@ test("drill vault: emergency state, pro-rata exit button, the follower's paid em
 
 test("what the chain sees: three views of one vault; the disclosed log matches every on-chain commitment", async ({ page }) => {
   await page.goto("/chain/");
-  await expect(page.getByTestId("observer")).toContainText("Book NAV");
+  await expect(page.getByTestId("observer")).toContainText("Vault value");
   await expect(page.getByTestId("follower")).toContainText("P&L");
   await expect(page.getByTestId("leader")).toContainText("Holds wNEAR");
   await expect(page.getByTestId("disclosure-verdict")).toContainText("Matches the chain");
@@ -249,7 +249,7 @@ test("share loops: a vault link with its own preview, invite credit, badge and b
   expect(html).toContain('property="og:image" content="https://raw.githubusercontent.com/amityadav0/silent-partner/season-state/cards/sp-momo-92991.testnet.png"');
   expect(html).toContain('name="twitter:card" content="summary_large_image"');
   await page.goto("/s/?id=sp-momo-92991.testnet");
-  await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst DD · \d+ epochs · positions sealed$/);
+  await expect(page.getByTestId("bio")).toHaveValue(/^Leading on Silent Partner ✓ −\d+\.\d% worst drop · \d+ price updates · positions sealed$/);
 });
 
 test("first visit: three steps on the landing page only, skippable, remembered", async ({ browser }) => {
@@ -370,7 +370,7 @@ test("copy stop-loss control on an upgraded vault, as a follower", async ({ page
 test("track record card: drawdown, Sharpe-like, epochs, leader share", async ({ page }) => {
   await page.goto("/s/?id=sp-momo-92991.testnet");
   await expect(page.getByTestId("track-record")).toContainText("Leader holds");
-  await expect(page.getByTestId("track-record")).toContainText("Epochs live");
+  await expect(page.getByTestId("track-record")).toContainText("Price updates");
 });
 
 test("bring your track record: a pasted EIP-191 proof verifies in the browser", async ({ page }) => {

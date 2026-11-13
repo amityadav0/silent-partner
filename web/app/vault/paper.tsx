@@ -40,10 +40,10 @@ export function PaperFollowPanel({ navs, paper }: { navs: NavPost[]; paper: Retu
     <div className="muted w-full text-[13px]" data-testid="paper-follow">
       <div className="row-kv"><span>Simulated copy, {usd(f.usd)} in</span><span data-testid="paper-value">{usd(pos.value)}</span></div>
       <div className="row-kv">
-        <span>Since joining, {since} NAV{since === 1 ? "" : "s"}</span>
+        <span>Since joining, {since} price update{since === 1 ? "" : "s"}</span>
         <span data-testid="paper-pnl">{pos.pct >= 0 ? "+" : "−"}{Math.abs(pos.pct * 100).toFixed(2)}%</span>
       </div>
-      <p className="mt-1">Entered at {(Number(BigInt(f.entry_price)) / 1e18).toFixed(6)}, the signed share price at epoch {f.entry_epoch}. Kept only in this browser. <button className="quiet" onClick={paper.stop}>Stop following</button></p>
+      <p className="mt-1">Entered at {(Number(BigInt(f.entry_price)) / 1e18).toFixed(6)}, the signed share price at price update #{f.entry_epoch}. Kept only in this browser. <button className="quiet" onClick={paper.stop}>Stop following</button></p>
     </div>
   );
 }

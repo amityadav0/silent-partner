@@ -87,7 +87,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
     try {
       setBusy(true);
       const tx = await call({ receiverId: cfg.base_token, method: "ft_transfer_call", args: { receiver_id: id, amount: units.toString(), msg: "" }, deposit: 1n, gas: 100n * TGAS });
-      setMsg({ bad: false, text: tx ? `Deposited. Tx ${tx}. If the leader stake or the NAV age rules refuse it, the deposit is refunded in the same transaction.` : "Sent to your wallet." });
+      setMsg({ bad: false, text: tx ? `Deposited. Tx ${tx}. If the leader-stake or price-freshness rules refuse it, the deposit is refunded in the same transaction.` : "Sent to your wallet." });
       onDone();
     } catch (e) {
       writePending(id, false);
@@ -162,8 +162,8 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
       <div data-testid="follow-facts">
         <div className="row-kv"><span>You enter at</span><span className="num">{price.toFixed(4)} / share</span></div>
         <div className="row-kv"><span>Copy slippage vs leader</span><span className="num pos">0.00%</span></div>
-        <div className="row-kv"><span>Performance fee</span><span><span className="num">{cfg.perf_fee_bps / 100}%</span> above HWM</span></div>
-        <div className="row-kv"><span>Withdrawal</span><span>2 epochs, fair price</span></div>
+        <div className="row-kv"><span>Performance fee</span><span><span className="num">{cfg.perf_fee_bps / 100}%</span>, only on new highs</span></div>
+        <div className="row-kv"><span>Withdrawal</span><span>2 price updates, fair price</span></div>
         <div className="row-kv"><span>If we disappear</span><span>exit in 24 h</span></div>
       </div>
 
