@@ -254,6 +254,20 @@ export class Operator {
 
   // ---------------- epochs ----------------
 
+  /** Keeper post (D-P5-12): NAV only, signed over the fill log's current head. It never shields,
+   *  trades or pays, and it doesn't append to the log, so the operator's own copy stays the one
+   *  linear record. Needs only a `post_nav` function-call key and the attestation key. */
+  async keeperPost(): Promise<{ epoch: number; nav: string; head: string; tx: string; liabilities: string }> {
+    const v = await this.chain.getVault();
+    const n = await this.nav();
+    const epoch = v.epoch + 1;
+    const ts = Math.max(this.now() - 1000, v.last_nav_ms + 1);
+    const head = this.log.head();
+    const signature = "ed25519:" + base58.encode(this.attestation.sign(new TextEncoder().encode(navMessage(this.chain.contractId, epoch, n.nav.toString(), ts, head))).signature);
+    const tx = await this.chain.postNav(epoch, n.nav.toString(), ts, head, signature, await this.priceQuotes());
+    return { epoch, nav: n.nav.toString(), head, tx, liabilities: n.liabilities.toString() };
+  }
+
   async epoch(): Promise<{ epoch: number; nav: string; head: string; tx: string | null; signature: string }> {
     await this.shieldPending();
     const v = await this.chain.getVault();

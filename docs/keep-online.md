@@ -16,6 +16,8 @@ The hosted demo is the Pages site plus the testnet paper season (`.github/workfl
 
 Try the check locally without side effects: `GH_REPO=amityadav0/silent-partner DRY=1 bash .github/health.sh`.
 
+**Mainnet vault keeper (D-P5-12).** The GitHub job `keeper.yml` runs every 4 h and posts the mainnet vault's NAV when the last post is ≥3.5 h old. Its key can call only `post_nav`, with a 0.75 NEAR allowance on the operator account, which holds ~0.99 NEAR. A red keeper run means a post didn't land. Rerun it from the Actions tab, or post by hand with `cd operator && echo yes | npx tsx --env-file=../.env.mainnet scripts/op.ts epoch`. Act within 24 h of the last post, or anyone can put the vault into emergency mode. After a manual shield, trade or payout, run `operator/scripts/keeper-sync.sh`.
+
 ## Top-up thresholds (testnet NEAR)
 
 Spend rates are the ones `season.ts` budgets with. "Warn below" is 10 days of spend. Balances were read on 2026-11-10 at 01:55 UTC, right after this round of top-ups.

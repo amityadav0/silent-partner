@@ -114,4 +114,5 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 
 ## Blockers
 - **Mainnet live (2026-11-12):** the §1 round trip is done. §3: vault `1f80f62c…a36e` deployed (the hash matches) and activated. 7 USDC deposited (leader 28.6%) and shielded, epoch 1 posted, one leader trade USDC→wNEAR executed, plain-nonce check passed, and the follower was **paid out at epoch 3** (1.99498 USDC via MPC-signed PublicPayout, claim settled). Details in docs/mainnet.md. The site shows the vault read-only with a MAINNET chip.
-- **Mainnet keeper (M1):** posted by hand until Amit picks an option (NEEDS-AMIT §12). **Last accepted mainnet post: epoch 3, 2026-11-12 16:35:36 UTC.** The next one is due before 2026-11-13 16:35 UTC. §4–6 (video, X post, application) are his.
+- **Mainnet keeper (D-P5-12):** GitHub job `keeper.yml` every 4 h, with a `post_nav`-only key. Epoch 4 was posted by hand at 2026-11-13 02:48:30 UTC. After any manual mainnet step, run `operator/scripts/keeper-sync.sh`.
+- Waiting on Amit: §4–6 (video, X post, application).

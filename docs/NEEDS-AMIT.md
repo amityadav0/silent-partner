@@ -292,6 +292,8 @@ Alerts already work without it, through browser notifications and ntfy.sh push t
 
 ## 12. Mainnet keeper: pick A, B or C (2026-11-12)
 
+**Status: A built 2026-11-13 at your request** (D-P5-12). The GitHub job `keeper.yml` runs every 4 h. Its key `ed25519:FeH3R9ZN…` can call only `post_nav` on the vault, with a 0.75 NEAR allowance (add_key tx `Hraxwyi2QjPDjnYpiZYGnwipxgxrkavzLzmBgSudU2D`). The full operator key stays on the Mac. Nothing else is needed from you. To revoke: `near account delete-keys c24664ec…6bff public-keys ed25519:FeH3R9ZN8G2Gt7NAubN7AEDu5eQAmxmSP4djULMJhUoF network-config mainnet sign-with-legacy-keychain send`. The text below is kept for reference.
+
 **Why it matters.** The mainnet vault must get an accepted price post at least every 24 h. Otherwise anyone can switch it into emergency mode: deposits stop for good, and holders exit at the last price. Judges look Nov 16–18, and the demo has to stay up through Nov 25. Until you pick, I post by hand from this Mac, at least twice a day. The time of the last accepted post is in STATUS.md.
 
 **What a keeper needs.** Three things, and none of them is the vault key:

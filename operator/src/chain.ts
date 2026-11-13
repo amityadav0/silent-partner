@@ -85,7 +85,7 @@ export class NearVault implements VaultChain {
   }
   async postNav(epoch: number, nav: string, timestamp_ms: number, fills_head: string, signature: string, priceQuotes?: SignedQuote[]) {
     // A post burns up to 100 queued withdrawals and may wait for the oracle: give it room.
-    const o = await (await this.acct()).functionCall({ contractId: this.contractId, methodName: "post_nav", args: { epoch, nav, timestamp_ms, fills_head, signature, ...(priceQuotes ? { price_quotes: priceQuotes.map((q) => ({ message: q.message, signature: q.signature })) } : {}) }, gas: 300n * TGAS, attachedDeposit: 0n });
+    const o = await (await this.acct()).functionCall({ contractId: this.contractId, methodName: "post_nav", args: { epoch, nav, timestamp_ms, fills_head, signature, ...(priceQuotes ? { price_quotes: priceQuotes.map((q) => ({ message: q.message, signature: q.signature })) } : {}) }, gas: BigInt(process.env.NAV_GAS_TGAS ?? "300") * TGAS, attachedDeposit: 0n });
     const failure = (o.receipts_outcome as any[]).map((r) => r.outcome.status?.Failure).find(Boolean);
     if (failure) throw new Error(`post_nav: ${JSON.stringify(failure).slice(0, 300)}`);
     // With a NAV oracle the post resolves in a callback that returns null on rejection.
