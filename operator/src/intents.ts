@@ -34,9 +34,36 @@ export function versionedNonce(saltHex: string, deadlineMs: number, nowMs = Date
   return Buffer.concat([Buffer.from([0x56, 0x28, 0xf6, 0xc6, 0]), salt, dl, ts, randomBytes(7)]);
 }
 
-export async function viewCall<T>(rpc: string, contract: string, method: string, args: unknown, fetchImpl: typeof fetch = fetch, finality: "final" | "optimistic" = "final"): Promise<T> {
-  const r = await fetchImpl(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") } }) });
-  const j = await r.json();
-  if (j.error || j.result?.error) throw new Error(`view ${contract}.${method}: ${String(JSON.stringify(j.error?.data ?? j.error?.message ?? j.error ?? j.result?.error)).slice(0, 300)}`);
-  return JSON.parse(Buffer.from(j.result.result).toString()) as T;
+/** Testnet/mainnet fallbacks used when the configured RPC rate-limits a view (fastnear's free tier does in CI). */
+const FALLBACK_RPC: Record<string, string[]> = {
+  testnet: ["https://rpc.testnet.near.org", "https://near-testnet.drpc.org"],
+  mainnet: ["https://rpc.mainnet.near.org", "https://near.drpc.org"],
+};
+const rateLimited = (status: number, body: string) => status === 429 || /rate limit|too many requests|-429/i.test(body);
+
+export async function viewCall<T>(rpc: string, contract: string, method: string, args: unknown, fetchImpl: typeof fetch = fetch, finality: "final" | "optimistic" = "final", waitMs = 1_500): Promise<T> {
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality, account_id: contract, method_name: method, args_base64: Buffer.from(JSON.stringify(args)).toString("base64") } });
+  const net = /testnet/.test(rpc) ? "testnet" : "mainnet";
+  const urls = [rpc, rpc, ...FALLBACK_RPC[net].filter((u) => u !== rpc)];
+  let last = "";
+  for (let i = 0; i < urls.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, waitMs * i));
+    let status = 0, text = "";
+    try {
+      const r = await fetchImpl(urls[i], { method: "POST", headers: { "content-type": "application/json" }, body });
+      status = r.status;
+      text = await r.text();
+    } catch (e) {
+      last = String(e);
+      continue;
+    }
+    if (rateLimited(status, text)) {
+      last = text.slice(0, 200);
+      continue;
+    }
+    const j = JSON.parse(text);
+    if (j.error || j.result?.error) throw new Error(`view ${contract}.${method}: ${String(JSON.stringify(j.error?.data ?? j.error?.message ?? j.error ?? j.result?.error)).slice(0, 300)}`);
+    return JSON.parse(Buffer.from(j.result.result).toString()) as T;
+  }
+  throw new Error(`view ${contract}.${method}: every RPC rate-limited or unreachable (${last})`);
 }

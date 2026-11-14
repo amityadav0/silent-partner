@@ -118,3 +118,24 @@ describe("Majors bot and the basket turnover rule (T6)", () => {
     expect(blockedBasket({ current: cur, targets: { c: 0.2 }, lastTradeMs: NOW - 4 * H, nowMs: NOW })).toBeNull();
   });
 });
+
+import { viewCall } from "../src/intents.js";
+
+describe("view calls survive RPC rate limits", () => {
+  it("retries, then falls back to another endpoint", async () => {
+    const hits: string[] = [];
+    const ok = { jsonrpc: "2.0", result: { result: [...Buffer.from(JSON.stringify("7"))] } };
+    const f = (async (u: RequestInfo | URL) => {
+      hits.push(String(u));
+      return hits.length < 3 ? new Response('{"error":"Rate limits exceeded"}', { status: 200 }) : new Response(JSON.stringify(ok));
+    }) as typeof fetch;
+    expect(await viewCall<string>("https://rpc.testnet.fastnear.com", "a.testnet", "m", {}, f, "optimistic", 0)).toBe("7");
+    expect(hits).toEqual(["https://rpc.testnet.fastnear.com", "https://rpc.testnet.fastnear.com", "https://rpc.testnet.near.org"]);
+  });
+  it("a contract error is not retried", async () => {
+    let n = 0;
+    const f = (async () => (n++, new Response(JSON.stringify({ result: { error: "MethodNotFound" } })))) as unknown as typeof fetch;
+    await expect(viewCall("https://rpc.testnet.fastnear.com", "a.testnet", "m", {}, f, "final", 0)).rejects.toThrow(/MethodNotFound/);
+    expect(n).toBe(1);
+  });
+});
