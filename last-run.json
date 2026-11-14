@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-14T05:02:25.606Z",
+  "ranAt": "2026-11-14T05:17:44.799Z",
   "marketData": true,
   "oracle": {
-    "tx": "BRzoPtNgDvkWuyCE6rvmBqtCvrqg2J2R1LjCsBPA9yUq"
+    "tx": "HDux9TGajVXBFyaA7ZJpQsbHuH1TRVtaMEpndfwS1Wre"
   },
   "warnings": [],
   "topups": [],
@@ -10,164 +10,166 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 496,
+      "epoch": 497,
       "nav": "765515712",
-      "tx": "FD7NtyacZVCqd7Y4rJrdMAPPAyNa5wp6a8qFzDrN7rsd"
+      "tx": "91PQFP73d7SsZN9NWn5JRtkFXRxhmNCBr9jtaDaCkuWQ"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 495,
-      "nav": "769316385",
-      "tx": "Ed4XfopcLNZzYkJ3EcNRFK2Eer6tGmgEn5q4K3hk3VZt"
+      "epoch": 496,
+      "nav": "770762356",
+      "tx": "GMdy2tsG4xrnMG7bXneQU1LJo8zMnme2RSwfm5JsDR16"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 492,
+      "epoch": 493,
       "nav": "633474870",
-      "tx": "BULkDfU86dyj4DFkT1Ya3mJ68wAB5oNAa34SvCff9ofw",
+      "tx": "2BaJJFrT97sAyH2Wnv5kGEJJ3kTuENDCK1GxvBkGS6h5",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 358,
-        "completion_tokens": 454
+        "prompt_tokens": 357,
+        "completion_tokens": 416
       },
       "ai_target_band": "0–20%",
-      "ai_rationale_hash": "452fa6ff1b4df5895e4719e9efe46103495be85b3d8560427bb1c9d1e9fe41c6",
+      "ai_rationale_hash": "ca8dbaa5864c7588f06ecc3147a3707baf50d7e65cc17035a3cc0da8f423a58b",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:1be1d6f21e7b48027e9c21e1698fd48dc71f52e5f295b93f7d198f5fdf37c6f6:02637a9d7de746808a8bb15ccb8e66ffa8cc268a71821509db984583ba25390b",
-        "signature": "0xf87452f0cfdfb18c68cf84e14f9585fb095c2d71b0d2427ae04baf3f9faac48a5f04d0b5f8421dce6e5c15d8d8dc958da5abedcc3b054c8ee7d9c157144e18501b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:9de8222019e5947acff3f64941868682e5bcdfd24d9b3db8ea8ea406237c9a95:888b314159f34a6bb318fb1dd149879d395830d8817c63d4a1e05e732620dd05",
+        "signature": "0x1b7ef69ad5220e20dd77f129ffb67b8829b88dd08772e4cf2f78a0fc3f6e706d1feb544b93bdb1bef6b9e50f8d8a5670ee2f00963cc444bf598255add4f38aaf1c",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 420,
-      "nav": "512007323",
-      "tx": "CtSPyGsyH5qQ8LoiBsPhzECTX4BQ7kiCKg7SZDLjfqA2",
+      "epoch": 421,
+      "nav": "509153386",
+      "tx": "D1yigAdNJu84JTCXybCoedUrBnAgSKkJKMGRZwb3iNtk",
+      "signal_hash": "167d78711fbc132f9fc3c48f171654e56c6e23c90cc770c1e0ba0ef5d3a87011",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 384,
-        "completion_tokens": 1346
+        "prompt_tokens": 383,
+        "completion_tokens": 773
       },
-      "ai_target_band": "0–20%",
-      "ai_rationale_hash": "491b4c642c655e11213226426eb32fd82fa957184daef76e023429a60779ea18",
+      "ai_target_band": "80–100%",
+      "ai_rationale_hash": "b34bb70f4403becd4b22d415b04015f59d78963327f645638242de6f31e854d6",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:dc34415893cb1611f6c922426885038c6de9f9f5f5274033b6b330c1c5a43159:6b0c0996e1a07d84dbbcd6a0b168b91d0872f981d76b3848844d5d19645ad861",
-        "signature": "0x13cf4017b667ef1f90a1beffe6abda440a89f3c40e215fc1268bf07880dce5bf2f2a4e86f3c87288272e9f035e16748da65ddea2952d55012c13d64270be4ea81c",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:b8be78096aa4657e7944d3260e9e0a751d3fdf5bc601ca9917f70b2df4c617c9:c2cdc2d42157fa7d1a9621496bbec27a6ecd007b16dd74291c2f21bbbdb0e74d",
+        "signature": "0x2cda56ad502510da9d6f2ebb8d48deeaf4b794c6503ab58de21be92344a97c230b259ddbf56a4c35ff41dec1ee09b504a322260b0cce004d634431e6492015001c",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 471,
-      "nav": "595292699",
-      "tx": "7E78rJ4UHeGG6RJdGDPWyc1iWkdf361NGpKLeBW7HraH",
+      "epoch": 472,
+      "nav": "597090005",
+      "tx": "Cf1ALk41KRdSaPLybj8myRt2tgxb4jB5J1Vbex4iBZaT",
+      "signal_hash": "9a93f2efa37bfe881cb1019cdf1739bac3a3cc0e924fe888e84a9bd1b0a6dd6f",
+      "signal_status": "executed",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 370,
-        "completion_tokens": 871
+        "prompt_tokens": 369,
+        "completion_tokens": 1057
       },
-      "ai_target_band": "60–80%",
-      "ai_rationale_hash": "7bbfccdc22829c692fec37bf34fdc632e597c3ffc9aff8e3677059e009cf2330",
+      "ai_target_band": "80–100%",
+      "ai_rationale_hash": "d633a7114422b02116109e17b2f7b5304475472243afde61504c353fcc7a3fcf",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:1a8c2e917fac1d3f94c6447f6dc0d2689e63c22337d78d24921b8b9b0eaaa338:afd1735313024dab057b3ca5a14e24699f8fab71ccf30cce7e3cb4e1af581d8c",
-        "signature": "0x21a37c11ce46c45fead8eff80e214324cb8af59914e718b264d2fdda52680d7a0986e884e13385e2d7b525d55eff764ca35b355df9ccbbcd3d705c8c893a069c1b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:a9fbaa0f9ad013b6f8bc109aa2b74571741a77b92cec8577c034780b31fec953:5eff1ead37c82769c84f96ba3978a629eecdf2a6553cc659390a14a5ff5667ff",
+        "signature": "0x7d498df7a03965c6883e221a3d932928ce9819364106c56384399fef6440b1e65a0e0f5f9ba91d5ef12b41add3e75556989e167aca618eb7bf5389c42f3aadd11c",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 467,
-      "nav": "615518537",
-      "tx": "kVKnyCkqPQDtNgezouhd1qRW41ytXJZH7Kakiac32wF",
-      "signal_hash": "cf49d913fc730b75c9ffe58a31bb4ca7b62643e376921f803c7b177b7f7baa5a",
-      "signal_status": "executed",
+      "epoch": 468,
+      "nav": "616189380",
+      "tx": "3V1PJf7KzCMxovWCogGCEdwrpERFUaf8JPatBLctv2Sg",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 381,
-        "completion_tokens": 354
+        "prompt_tokens": 380,
+        "completion_tokens": 757
       },
       "ai_target_band": "20–40%",
-      "ai_rationale_hash": "ba4fef9fbd5f895f740c09576bc7f0a5712a1e2a73483bb7dd38d50ad07f7872",
+      "ai_rationale_hash": "b566d4d05843364fb14ef63315acdedee23836e27aae3612c82ff01a7e71eb58",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:c39f842834fa6e48358eab1447034f409781784499a8092f27466f7cc6d51305:3cee3bf82a58ea1b45cc646eff6b8111ddc4780d510be4127dc241571327e7c8",
-        "signature": "0x83edde5ac24762bcf680c7482b7ef9cb7159f91dd8149ac0d0ce5e64c7be11b452400f6633b483a8d913c1643c523b822bf3741d53a1e280e1e469218ebe1e9a1b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:67ed4e2be5347a37c77fb04e5b2b5107dbff6b9b4ff839ec13884b271d5e2c74:c8a3115e5d550f8a59658fccb6bdfe02c6030e23a1d8931c9d2370222a2e8400",
+        "signature": "0x939590750887726159b97edb083b098f950d2f7ddcc3b2b65eedb64cbead0f466a6fec24030f31b0e376b348f6728fef9ff2d11b1ee072c27215513ab7e9b16d1b",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 455,
-      "nav": "318381847",
-      "tx": "EaGswYZZnR88cAYQSL9zyZ3PTnMkrjom4bc4gErPERFB",
+      "epoch": 456,
+      "nav": "318647757",
+      "tx": "5hkaz2QVwJ3M9WSwJQCMZ3dQgKM6JPZbbQcqZTv72RdV",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 368,
-        "completion_tokens": 686
+        "prompt_tokens": 367,
+        "completion_tokens": 844
       },
       "ai_target_band": "20–40%",
-      "ai_rationale_hash": "f0d645e703c24e562fe0256631bb088fe4e7a15632cd42dfa782b0da1cd7e5b0",
+      "ai_rationale_hash": "e232b437dd39241ac6f51a7219c49ae00f24b9fdde3a8e2f765c8327fa139edf",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:8d50356b5673f177ec5a4f3a7e014008caf242df05d7f7e3b356fe159244bfdd:f4a76a5884edc66feaa78a93f4f1ef8f31a19a785c9761e78d8d491c1e9aaed7",
-        "signature": "0x205984e62ef0d2537a1f3d5cff7234a94bd8fb8036d864e309248964e4151b1e171475d6f3b3277f59b591ed28ee76dc760dd5cf7ccb278dcf9ea544bbfb62bb1b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:5f2b10301143e21bcb570b07b56e890766d80599bdda85e7292b2ea812b8630b:2dc6acee68a727bdb05a7b628ef716036a6a63a035250a51b3d84d230a96bcf2",
+        "signature": "0x0468c8fff65b83cb2903a68098a6e1b8e4318997eda979eff24c9dbc779cc234602515a0570e52ad172706ac557123cca929c82863d17990450f7ea5deedc2231c",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 472,
-      "nav": "632709553",
-      "tx": "ABJboTebDNR1Xm6j5Ar7FTTvG43z8EpCv372xmqNdK2H"
+      "epoch": 473,
+      "nav": "633953483",
+      "tx": "BivJ28w1g16Y3N23AqacAoTdsPqGSujWobE6wLpUn1ej"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 265,
+      "epoch": 266,
       "nav": "92181257",
-      "tx": "6yXdLoBYrykkmPFh951fRGMDvVN6ZjQgdhpoitA5L79b",
+      "tx": "QptucgYi2H33gfSEne9AVVTVMeKc9dcPjovuREsu1vu",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 412,
-        "completion_tokens": 339
+        "prompt_tokens": 411,
+        "completion_tokens": 472
       },
       "ai_target_band": "0–20%",
-      "ai_rationale_hash": "e46f73ba13162044f0a02541e4f22786bd9ccabe9af0fe35476e0a9d2fb5ebd1",
+      "ai_rationale_hash": "fb741e7dc97ec47b054325b686d73b345ec5ec1582a8e174091f72a6934e0edf",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:a6694e7d8363b6ae76776352dc8cf9e9051b98df3bdf09a6c54edb7a85f4c112:03aa52dc89725f302f5cc937eaed6ad7cb50f764449c3e28558f6244fcec6905",
-        "signature": "0x3f3246208f02a4e351f6b9f55c0894485e56384e8bca0a128c429bf38323b903434d4943b197c357f3f463b98fa5082558a654e64b41e61552de9b2b60b4d9981b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:118e4145d728faafeab24bac80f9d93dc93510cae09daee63d9d74e263b864f9:27c5c06f4c64ee158ad1fdbd3de6dcc344ade197c034b57964e1549fc6ed9eec",
+        "signature": "0x64a5c9465fa1a7003aa139c6b9ec95dac3dc488851fc7e7df29bb6b4dd236e85737900126ddc7398e02b3717d888818398a10792086d696b5398ac3d82f65e661b",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "946f54affe660351eb5746e3c827b26c2a09a7bc77f556994212a05ce2084770",
-        "nonce": "6b37b0f1c612420dddb1b5c4fcdaebfc6cd6a542cea862c8ce34f4f4712775eb",
+        "quote_sha256": "4ef897b8d8aee6c78a4c40e77337fd875fbd57f206376cf186f2a71be31a7ecd",
+        "nonce": "a64fb6031ca0448d9b1d81b74af655507530fe5b194f8ea3cb5cf85bd2414c44",
         "bound": true,
         "gpu_evidence": true
       }
