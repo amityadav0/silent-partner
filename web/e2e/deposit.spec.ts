@@ -187,3 +187,12 @@ test("Y10: the landing says how it differs from signal-selling apps, without nam
   await expect(line).toContainText("you're inside the trade, one fill, one price");
   for (const name of ["NOVA", "Privue", "Clavis"]) await expect(page.locator("body")).not.toContainText(name);
 });
+
+test("Z5: leaderboard rows paint from the season's board first, then flip to ✓ once this browser has checked the chain", async ({ page }) => {
+  const t0 = Date.now();
+  await page.goto("/leaderboard/");
+  await expect(page.locator("[data-testid^=row-]").first()).toBeVisible({ timeout: 8_000 });
+  expect(Date.now() - t0).toBeLessThan(8_000);
+  await expect(page.getByTestId("verifying")).toHaveCount(0, { timeout: 60_000 });
+  await expect(page.getByTestId("row-sp-momo-92991.testnet")).toContainText(/✓ \d+\/\d+/);
+});

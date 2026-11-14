@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { VAULTS } from "@/lib/config";
 import { calmScore, leaderStake, loadVault, maxDrawdown, priceOf, status, verifyNavs, windowStats, type VaultData } from "@/lib/vault";
 import { metaOf as houseMeta, type VaultMeta } from "@/lib/vaults";
@@ -11,8 +11,10 @@ import { loadTee } from "@/lib/tee";
 import { useRouter } from "next/navigation";
 import { badgeOf } from "@/lib/vaults";
 import { loadCosts, tradesDay, type CostDoc } from "@/lib/costs";
+import { loadBoard } from "@/lib/board";
 
-type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number; vs?: VsNear | null };
+/** `pending`: drawn from the season's board.json, signatures not yet re-checked in this browser (Z5). */
+type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number; vs?: VsNear | null; pending?: boolean };
 const WEEK = 7 * 24 * 3600_000;
 type Key = "dd" | "stake" | "ret" | "vs";
 const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
@@ -48,12 +50,22 @@ export default function Leaderboard() {
   useEffect(() => {
     loadCosts().then(setCosts);
   }, []);
+  const verified = useRef(false);
   useEffect(() => {
     (async () => {
       // House leaders plus every live community vault from the open season registry.
       const community = await loadLaunches().then((ls) => ls.filter((l) => l.status === "live" && l.vault), () => []);
       const ids = [...VAULTS, ...community.map((l) => l.vault!)];
       const metas = new Map<string, VaultMeta>(community.map((l) => [l.vault!, communityMeta(l)]));
+      // first paint from the season's published board; replaced below once this browser has checked the chain
+      loadBoard().then((b) => {
+        if (!b || verified.current) return;
+        const pre = b.filter((d) => ids.includes(d.id)).map((d): Row => {
+          const last = d.navs.at(-1);
+          return { d, m: metas.get(d.id) ?? houseMeta(d.id), ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), stake: leaderStake(d.vault), ok: d.navs.length, bad: 0, pending: true };
+        });
+        if (pre.length) setRows(pre);
+      });
       const rs = await Promise.allSettled(ids.map((v) => loadVault(v)));
       const ok: Row[] = [];
       const errs: string[] = [];
@@ -64,6 +76,7 @@ export default function Leaderboard() {
         const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
         ok.push({ d, m: metas.get(d.id) ?? houseMeta(d.id), ret: last ? priceOf(last.price) - 1 : 0, dd: maxDrawdown(d.navs), stake: leaderStake(d.vault), ok: v.ok, bad: v.bad.length });
       });
+      verified.current = true;
       setRows(ok);
       loadTee(ok.filter((r) => r.m.leaderKind === "ai").map((r) => r.d.id)).then(setTee, () => {});
       setErrors(errs);
@@ -122,7 +135,7 @@ export default function Leaderboard() {
                   </td>
                   <td data-label="Holdings"><Redact widths={[52, 28]} h={13} label="Holdings sealed" /></td>
                   <td className="num text-sm" data-label="Verified" title="Every price update's signature, checked in your browser" style={{ color: "var(--ink-2)" }}>
-                    {r.bad > 0 ? <span className="neg">✗ {r.ok}/{r.d.navs.length}</span> : <>✓ {r.ok}/{r.d.navs.length}</>}
+                    {r.pending ? <span className="muted" data-testid="verifying">checking {r.d.navs.length}…</span> : r.bad > 0 ? <span className="neg">✗ {r.ok}/{r.d.navs.length}</span> : <>✓ {r.ok}/{r.d.navs.length}</>}
                   </td>
                   <td className="lb-view"><Link href={`/vault/?id=${r.d.id}`} className="view-link" aria-label={`View ${m.name}`}>View →</Link></td>
                 </tr>
