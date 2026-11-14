@@ -414,6 +414,7 @@ test("landing: recent verified events show times and checks only", async ({ page
 test("leaderboard: only vaults with 12 verified price posts are ranked", async ({ page }) => {
   await page.goto("/leaderboard/");
   await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible();
+  await expect(page.getByTestId("verifying")).toHaveCount(0, { timeout: 60_000 }); // Z5: first paint, then verified
   for (const cell of await page.locator("[data-testid^=row-sp-]:not([data-testid*=drill]):not([data-testid*=vault-60270]) td[data-label=Verified]").allTextContents()) {
     expect(Number(cell.match(/(\d+)\//)![1])).toBeGreaterThanOrEqual(12);
   }

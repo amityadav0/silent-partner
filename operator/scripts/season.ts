@@ -440,14 +440,27 @@ if (nearSeries) {
     console.log(JSON.stringify({ costs_error: String((x as Error).message).slice(0, 120) }));
   }
 }
-// Funnel totals (V8): four aggregate counters the site bumps (no cookies, nothing per person).
+// Funnel totals (V8, A2): aggregate counters the site bumps (no cookies, nothing per person):
+// totals, the last 7 UTC days per event, and page views per path. Read hourly.
 try {
-  const funnel: Record<string, number> = {};
-  for (const k of ["view", "copy_start", "share_click", "ref_landing"]) {
-    const r = await fetch(`https://abacus.jasoncameron.dev/get/silent-partner-funnel/${k}`).then((x) => (x.ok ? x.json() : { value: 0 }), () => ({ value: null }));
-    funnel[k] = (r as { value: number }).value ?? 0;
+  const ff = join(sealed, "funnel.json");
+  const prevF = existsSync(ff) ? JSON.parse(readFileSync(ff, "utf8")) : null;
+  if (!prevF?.days || Date.now() - Date.parse(prevF.ranAt) > 55 * 60_000) {
+    const get = (k: string) => fetch(`https://abacus.jasoncameron.dev/get/silent-partner-funnel/${k}`).then((x) => (x.ok ? x.json() : { value: 0 }), () => ({ value: 0 })).then((r) => (r as { value?: number }).value ?? 0);
+    const events = ["view", "copy_start", "share_click", "ref_landing", "landing", "create_open", "wallet_connect"];
+    const paths = ["home", "leaderboard", "vault", "copy", "create-ai", "how", "trust", "faq", "chain", "partners", "other"];
+    const funnel: Record<string, number> = {};
+    for (const k of events) funnel[k] = await get(k);
+    const days: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10).replace(/-/g, "");
+      days[d] = {};
+      for (const k of events) days[d][k] = await get(`${k}-d${d}`);
+    }
+    const byPath: Record<string, number> = {};
+    for (const p of paths) byPath[p] = await get(`view-p-${p}`);
+    writeFileSync(ff, JSON.stringify({ ranAt, ...funnel, days, paths: byPath }, null, 1) + "\n");
   }
-  writeFileSync(join(sealed, "funnel.json"), JSON.stringify({ ranAt, ...funnel }, null, 1) + "\n");
 } catch {
   /* counters unreachable: keep the last file */
 }

@@ -2,6 +2,7 @@
 // Wallet selector: exactly MyNearWallet and Meteor (carried over from ~/scope/web).
 // No access key is requested at sign-in, so this site never holds a key that
 // could move funds: every deposit and withdrawal is confirmed in the wallet.
+import { track } from "./funnel";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { WalletSelector } from "@near-wallet-selector/core";
 import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
@@ -48,7 +49,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setSelector(s);
       setModal(setupModal(s, { theme: document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light", description: "Silent Partner signs nothing for you. Your wallet confirms every deposit and withdrawal." }));
       const sub = s.store.observable.subscribe((st) => setAccountId(st.accounts.find((a) => a.active)?.accountId ?? null));
-      unsub = () => sub.unsubscribe();
+      // A2: one aggregate count per new sign-in (not per restored session); nothing about the account.
+      const onIn = () => track("wallet_connect");
+      s.on("signedIn", onIn);
+      unsub = () => {
+        sub.unsubscribe();
+        s.off("signedIn", onIn);
+      };
     })().catch((e) => console.error("wallet selector", e));
     return () => unsub?.();
   }, []);

@@ -122,3 +122,28 @@ describe("hero proof line (Z6)", () => {
     expect(proofLine("Majors", { ret: 0.021, near: 0.01, pts: 1.1 })).toBe("Majors: +2.1% while NEAR rose +1.0% this week");
   });
 });
+
+import { dayKey, keysFor, pathKey } from "../lib/funnel";
+describe("page counts (A2): totals per event, per day and per path, nothing else", () => {
+  const t = Date.parse("2026-11-14T15:00:00Z");
+  it("keys", () => {
+    expect(dayKey(t)).toBe("20261114");
+    expect(pathKey("/")).toBe("home");
+    expect(pathKey("/create/ai/")).toBe("create-ai");
+    expect(pathKey("/vault")).toBe("vault");
+    expect(pathKey("/v/abc/")).toBe("other");
+    expect(keysFor("view", "/leaderboard/", t)).toEqual(["view", "view-d20261114", "view-p-leaderboard"]);
+    expect(keysFor("wallet_connect", undefined, t)).toEqual(["wallet_connect", "wallet_connect-d20261114"]);
+  });
+});
+
+import { lastDays } from "../lib/funnel";
+describe("stats (A3)", () => {
+  it("sums the last n UTC days", () => {
+    const now = Date.parse("2026-11-14T10:00:00Z");
+    const days = { "20261114": { view: 5 }, "20261113": { view: 3 }, "20261101": { view: 100 } };
+    expect(lastDays(days, "view", 1, now)).toBe(5);
+    expect(lastDays(days, "view", 7, now)).toBe(8);
+    expect(lastDays(undefined, "view", 7, now)).toBe(0);
+  });
+});

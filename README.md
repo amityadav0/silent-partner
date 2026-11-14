@@ -71,11 +71,11 @@ Each step says what to do, what you should see, and where it lives.
 Needs Node 22, Rust (the version in `contract/rust-toolchain.toml` installs itself), `cargo-near` 0.22 for `make build`, and Python 3 for the static server. npm dependencies install on first use.
 
 ```sh
-make test                                   # contract (80, incl. property tests) + registry (6) + operator (107) + web (67) unit tests
+make test                                   # contract (80, incl. property tests) + registry (6) + operator (109) + web (73) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
 cd web && npm run build && npm run serve    # http://localhost:3000, reads testnet live
-make e2e                                    # Playwright against live testnet (97 tests, desktop + mobile)
+make e2e                                    # Playwright against live testnet (98 tests, desktop + mobile)
 ```
 
 The operator step needs the testnet operator's keys, which aren't in git. Without them everything else runs, and `make e2e` skips only the leader-signing test (22 pass, 1 skipped on a fresh clone). The fresh-clone run, and where every claim here is backed by code, a test or a transaction, are in [docs/reproducibility.md](docs/reproducibility.md).

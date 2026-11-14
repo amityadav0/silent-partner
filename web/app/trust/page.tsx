@@ -62,6 +62,7 @@ export default function Trust() {
         <h2>What&apos;s public, and what isn&apos;t</h2>
         <p className="leading-relaxed"><b>Public:</b> deposits and withdrawals (they&apos;re ordinary NEAR token transfers, so amounts and accounts show on NearBlocks), share balances, the share price, the leader&apos;s stake and the vault&apos;s size, rounded.</p>
         <p className="leading-relaxed"><b>Sealed:</b> what the vault holds, every trade and fill, and when the leader trades. Not even followers see them. <Link href="/chain/">See exactly what the chain shows →</Link></p>
+        <p className="leading-relaxed" data-testid="trust-counting">We count page views, with no cookies and nothing about you. <span className="muted">Totals per page and per day only, skipped under Do Not Track; the counts are published in the season log.</span></p>
       </div>
 
       <div className="panel flex flex-col gap-2">

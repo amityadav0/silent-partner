@@ -204,3 +204,14 @@ test("Z6: under the hero button, one proof line with the picked leader's week an
   const name = (await page.getByTestId("hero-copy").innerText()).match(/^Copy (.+) with \$100/)![1];
   await expect(line).toContainText(`${name}:`);
 });
+
+test("A2/A3: /trust says how we count; /stats shows site counts and on-chain usage, unlinked and not indexed", async ({ page }) => {
+  await page.goto("/trust/");
+  await expect(page.getByTestId("trust-counting")).toContainText("We count page views, with no cookies and nothing about you.");
+  await page.goto("/stats/");
+  await expect(page.getByTestId("st-copy")).toContainText("$100 copies started");
+  await expect(page.getByTestId("st-depositors")).toHaveText(/^\d+$/, { timeout: 30_000 });
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await page.goto("/");
+  await expect(page.locator('a[href*="/stats"]')).toHaveCount(0);
+});

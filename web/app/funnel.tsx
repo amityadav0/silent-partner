@@ -7,7 +7,9 @@ import { track } from "@/lib/funnel";
 export function FunnelViews() {
   const path = usePathname();
   useEffect(() => {
-    track("view");
+    track("view", path ?? "/");
+    if (path === "/") track("landing");
+    if (path?.startsWith("/create/ai")) track("create_open");
     if (new URLSearchParams(location.search).get("ref")) track("ref_landing");
   }, [path]);
   return null;
