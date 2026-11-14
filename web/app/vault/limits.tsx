@@ -46,7 +46,7 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
         {cost && (
           <div className="row-kv" data-testid="limits-cost">
             <span>Trading cost so far</span>
-            <span><span className="num">{costWords(cost)}</span> <span className="muted">· ≈{(cost.cost_bps / 100).toFixed(2)}% of each trade, measured across the season&apos;s fills · {cost.trades_24h} in the last 24 h</span></span>
+            <span><span className="num">{costWords(cost)}</span> <span className="muted">· ≈{(Math.round(cost.cost_bps) / 100).toFixed(2)}% of each trade, measured across the season&apos;s fills · {cost.trades_24h} in the last 24 h</span></span>
           </div>
         )}
         <div className="row-kv"><span>What it can hold</span><span>{assets} only <span className="muted">(enforced by the contract)</span></span></div>

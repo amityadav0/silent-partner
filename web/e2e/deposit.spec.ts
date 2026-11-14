@@ -23,7 +23,7 @@ test("D2: What you pay sits before the Follow button, with the real fee and a wo
   const box = panel.getByTestId("cost-box");
   await expect(box).toBeVisible({ timeout: 30_000 });
   await expect(box).toContainText("20% of new gains");
-  await expect(box).toContainText("≈0.20% per trade");
+  await expect(box).toContainText(/≈0\.\d\d% per trade/);
   await expect(box).toContainText(/fee\s*none/);
   await expect(box.getByTestId("fee-example")).toContainText("$1,000 for a month at +5% → fee $10");
   const text = await panel.innerText();
@@ -107,4 +107,33 @@ test("D9/D10: a system status line in the footer and on vault pages, and short t
   await expect(st.first()).toContainText("last mainnet price");
   const terms = page.getByTestId("terms");
   for (const t of ["paper season", "not investment advice", "no guarantees", "MIT license", "own risk"]) await expect(terms).toContainText(t);
+});
+
+test("T2: trading cost so far on the vault, trades/day on the leaderboard, measured cost in What you pay", async ({ page }) => {
+  await page.goto("/vault/?id=sp-trend-8952.testnet");
+  const lim = page.getByTestId("limits");
+  await expect(lim.getByTestId("limits-cost")).toContainText(/Trading cost so far\s*\d+\.\d\d% of the vault \(\d[\d,]* trades?\)/);
+  await expect(lim.getByTestId("limits-cost")).toContainText(/measured across the season/);
+  await expect(page.getByTestId("cost-per-trade").first()).toContainText(/≈0\.\d\d% per trade, shared \(measured\)/);
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText(/\d+ trades?\/day/);
+});
+
+test("T3/T4: benchmarks are labelled BENCHMARK; the drill and the first test vault sit in a collapsed Test vaults section", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible();
+  // a benchmark is ranked once it has 12 posts, and is in "New this week" before that
+  const hold = page.getByTestId("row-hold.sp-sop-92991.testnet").or(page.getByTestId("new-hold.sp-sop-92991.testnet"));
+  await expect(hold).toBeVisible();
+  const lb = page.getByTestId("leaderboard");
+  await expect(lb.getByTestId("row-sp-drill-92991.testnet")).toHaveCount(0);
+  await expect(lb.getByTestId("row-sp-vault-60270.testnet")).toHaveCount(0);
+  const tests = page.getByTestId("test-vaults");
+  await expect(tests).not.toHaveAttribute("open", "");
+  await tests.locator("summary").click();
+  await expect(tests.getByTestId("test-sp-vault-60270.testnet")).toContainText("First test vault");
+  await expect(tests.getByTestId("test-sp-drill-92991.testnet")).toContainText("Emergency drill");
+  await expect(page.getByText("Genesis vault")).toHaveCount(0);
+  await page.goto("/vault/?id=half.sp-sop-92991.testnet");
+  await expect(page.getByTestId("badge").first()).toHaveText("BENCHMARK");
 });

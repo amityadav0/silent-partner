@@ -43,7 +43,8 @@ test("theme: a first visit is light even when the system prefers dark", async ({
 
 test("leaderboard lists the vault with attested NAVs and no positions", async ({ page }) => {
   await page.goto("/leaderboard/");
-  const row = page.getByTestId(`row-${VAULT}`);
+  // a season vault: the first testnet vault is now under "Test vaults" (T4)
+  const row = page.getByTestId("row-sp-momo-92991.testnet");
   await expect(row).toBeVisible();
   await expect(row).toContainText(/✓ \d+\/\d+/);
   await expect(row).toContainText(/[+−]\d+\.\d{2}%/);

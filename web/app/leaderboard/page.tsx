@@ -141,7 +141,7 @@ export default function Leaderboard() {
           <p className="muted text-sm">Ranked after {MIN_POSTS} signed price posts, so a leader with no history can&apos;t top &ldquo;Calmest first&rdquo;.</p>
           <div className="flex flex-wrap gap-2">
             {fresh.map((r) => (
-              <Link key={r.d.id} href={`/vault/?id=${r.d.id}`} className="chip no-underline" style={{ color: "var(--ink)", padding: "6px 12px", fontSize: 13 }} data-testid={`new-${r.d.id}`}>
+              <Link key={r.d.id} href={`/vault/?id=${r.d.id}`} className="chip no-underline" style={{ color: "var(--ink)", padding: "6px 12px", fontSize: 13, whiteSpace: "normal", maxWidth: "100%" }} data-testid={`new-${r.d.id}`}>
                 {r.m.name} · ranking after {MIN_POSTS} price posts ({Math.min(r.ok, MIN_POSTS)}/{MIN_POSTS})
               </Link>
             ))}

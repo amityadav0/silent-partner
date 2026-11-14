@@ -1,7 +1,7 @@
+"use client";
 // "What you pay" (D2) and "What happens after I click Follow" (D3). Contract
 // parameters and the vault's own update cadence; nothing estimated that we can measure.
 import Link from "next/link";
-"use client";
 import { useEffect, useState } from "react";
 import { EMERGENCY_MS, SWAP_FEE_BPS, durationWords, feeExample, loadCosts, medianGapMs, withdrawEta } from "@/lib/costs";
 
@@ -15,7 +15,7 @@ export function CostBox({ feeBps, quoteFee }: { feeBps: number; quoteFee?: strin
     <div className="cost-box" data-testid="cost-box">
       <span className="text-[15px] font-medium">What you pay</span>
       <div className="row-kv"><span>Performance fee</span><span><span className="num">{feeBps / 100}%</span> of new gains</span></div>
-      <div className="row-kv"><span>Trading cost</span><span data-testid="cost-per-trade"><span className="num">≈{((bps ?? SWAP_FEE_BPS) / 100).toFixed(2)}%</span> per trade, shared{bps ? <span className="muted"> (measured)</span> : null}</span></div>
+      <div className="row-kv"><span>Trading cost</span><span data-testid="cost-per-trade"><span className="num">≈{(Math.round(bps ?? SWAP_FEE_BPS) / 100).toFixed(2)}%</span> per trade, shared{bps ? <span className="muted"> (measured)</span> : null}</span></div>
       <div className="row-kv"><span>From another chain</span><span>{quoteFee ? <span className="num">{quoteFee}</span> : "1Click fee, in your quote"}</span></div>
       <div className="row-kv"><span>Deposit or withdrawal fee</span><span className="num">none</span></div>
       <div className="row-kv"><span>Network gas</span><span>a few cents</span></div>
