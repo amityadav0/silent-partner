@@ -104,7 +104,7 @@ export default function Leaderboard() {
                       <span className="tile-initial" style={{ background: KIND_TINT[m.leaderKind] }} aria-hidden="true">{m.name.charAt(0)}</span>
                       <div className="flex min-w-0 flex-col gap-1">
                         <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
-                        <span className="muted text-sm">{m.style}{costs?.vaults[r.d.id] && <span data-testid="trades-day" title="Each trade costs the vault about the measured trading cost. The 4-hour rule (from Nov 14) allows 6 a day at most."> · {tradesDay(costs.vaults[r.d.id])}</span>}</span>
+                        <span className="muted text-sm">{m.style}{costs?.vaults[r.d.id] && <span data-testid="trades-day" title="Each trade costs the vault about the measured trading cost. The 4-hour rule allows at most one trade per 4 hours."> · {tradesDay(costs.vaults[r.d.id], costs.turnover_rule_since)}</span>}</span>
                         <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.benchmark ? "A house benchmark: a fixed rule, no leader decisions. Compare any leader with it, or copy it." : undefined}>{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
                       </div>
                     </div>

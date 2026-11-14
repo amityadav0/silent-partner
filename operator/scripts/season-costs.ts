@@ -18,7 +18,7 @@ for (const f of readdirSync(join(dir, "state")).filter((n) => n.startsWith("fill
   const entries = open(readFileSync(join(dir, "state", f), "utf8").trim(), key).toString().split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const nav = entries.filter((e: { kind: string }) => e.kind === "nav").at(-1);
   const navUsd = nav ? Number(nav.data.nav) / 1e6 : null;
-  raw.push([vault, costSummary(entries, { base: S.base, risk: S.risk, near, navUsd, now: Date.now() }), navUsd]);
+  raw.push([vault, costSummary(entries, { base: S.base, risk: S.risk, near, navUsd, now: Date.now(), sinceMs: Date.parse(TURNOVER.liveSince) }), navUsd]);
 }
 const bps = pooledBps(raw.map(([, c]) => c));
 const out = { ranAt: new Date().toISOString(), cost_bps: bps, turnover_rule_since: TURNOVER.liveSince, vaults: Object.fromEntries(raw.map(([id, c, nav]) => [id, publish(c, bps, nav)])) };

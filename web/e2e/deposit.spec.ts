@@ -127,12 +127,13 @@ test("T2: trading cost so far on the vault, trades/day on the leaderboard, measu
   await expect(lim.getByTestId("limits-cost")).toContainText(/measured across the season/);
   await expect(page.getByTestId("cost-per-trade").first()).toContainText(/≈0\.\d\d% per trade, shared \(measured\)/);
   // Y1: one trade-frequency figure, the same on the vault page and the leaderboard
-  await expect(lim.getByTestId("limits-rate")).toContainText(/\d+ trades? in the last 24 h/);
-  const onVault = (await lim.getByTestId("limits-rate").innerText()).match(/(\d+) trades? in the last 24 h/)![1];
+  const FIG = /(\d+) trades? (in the last 24 h|since the 4-hour rule went live \(\d\d:\d\d UTC\))/;
+  await expect(lim.getByTestId("limits-rate")).toContainText(FIG);
+  const [, onVault, phrase] = (await lim.getByTestId("limits-rate").innerText()).match(FIG)!;
   await expect(lim).not.toContainText(/trades? a day/);
   await page.goto("/leaderboard/");
   await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText(`${onVault} trade`);
-  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText("in the last 24 h");
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText(phrase);
 });
 
 test("T3/T4: benchmarks are labelled BENCHMARK; the drill and the first test vault sit in a collapsed Test vaults section", async ({ page }) => {

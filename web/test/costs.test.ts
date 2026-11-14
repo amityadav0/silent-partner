@@ -87,3 +87,15 @@ describe("benchmarks and test vaults (T3, T4)", () => {
     expect(Object.values(META).filter((m) => !m.test).every((m) => !/genesis/i.test(m.name))).toBe(true);
   });
 });
+
+import { tradesDay } from "../lib/costs";
+describe("trades figure (Y1/Z2)", () => {
+  const c = { trades: 136, trades_24h: 20, trades_since_rule: 0, moved_usd: 1, cost_pct: 1, cost_bps: 34 };
+  it("counts trades since the rule for its first 24 h, then the last 24 h", () => {
+    const since = "2026-11-14T07:32:00Z", t = Date.parse(since);
+    expect(tradesDay(c, since, t + 8 * 3_600_000)).toBe("0 trades since the 4-hour rule went live (07:32 UTC)");
+    expect(tradesDay({ ...c, trades_since_rule: 1 }, since, t + 3_600_000)).toBe("1 trade since the 4-hour rule went live (07:32 UTC)");
+    expect(tradesDay(c, since, t + 25 * 3_600_000)).toBe("20 trades in the last 24 h");
+    expect(tradesDay(c, null)).toBe("20 trades in the last 24 h");
+  });
+});

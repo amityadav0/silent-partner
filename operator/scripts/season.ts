@@ -412,7 +412,7 @@ if (nearSeries) {
       if (!existsSync(f)) continue;
       const entries = readFileSync(f, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
       const navUsd = r.nav ? Number(r.nav) / 1e6 : null;
-      raw.push([r.vault, costSummary(entries, { base: S.base, risk: S.risk, near: nearSeries, navUsd, now: Date.now() }), navUsd]);
+      raw.push([r.vault, costSummary(entries, { base: S.base, risk: S.risk, near: nearSeries, navUsd, now: Date.now(), sinceMs: Date.parse(TURNOVER.liveSince) }), navUsd]);
     }
     const bps = pooledBps(raw.map(([, c]) => c));
     const vaults = Object.fromEntries(raw.map(([id, c, nav]) => [id, publish(c, bps, nav)]));

@@ -55,7 +55,7 @@ export function feeExample(feeBps: number, amount = 1000, ret = 0.05): string {
 
 // Trading cost so far (T2), published per vault by the season job (season-state/costs.json):
 // totals only, from the operator's fills against the NEAR/USD mid, at the season's pooled rate.
-export type VaultCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_24h_pct?: number | null; cost_bps: number };
+export type VaultCost = { trades: number; trades_24h: number; trades_since_rule?: number; moved_usd: number; cost_pct: number | null; cost_24h_pct?: number | null; cost_bps: number };
 export type CostDoc = { ranAt: string; cost_bps: number; turnover_rule_since: string; vaults: Record<string, VaultCost> };
 let costCache: Promise<CostDoc | null> | null = null;
 export function loadCosts(): Promise<CostDoc | null> {
@@ -69,8 +69,18 @@ export function costWords(c: VaultCost): string {
   return `${pct}(${c.trades.toLocaleString("en-US")} trade${c.trades === 1 ? "" : "s"})`;
 }
 
-/** The one trade-frequency figure the site shows (leaderboard row and vault page alike). */
-export const tradesDay = (c: VaultCost) => `${c.trades_24h} trade${c.trades_24h === 1 ? "" : "s"} in the last 24 h`;
+/** The one trade-frequency figure the site shows (leaderboard row and vault page alike). For the
+ *  first 24 h after the 4-hour rule went live, a 24-hour count mixes in the old pace, so it counts
+ *  trades since the rule instead (Z2). */
+export function tradesDay(c: VaultCost, ruleSince?: string | null, now = Date.now()): string {
+  const s = ruleSince ? Date.parse(ruleSince) : NaN;
+  if (Number.isFinite(s) && now - s < 86_400_000 && c.trades_since_rule !== undefined) {
+    const n = c.trades_since_rule;
+    const at = new Date(s).toISOString().slice(11, 16);
+    return `${n} trade${n === 1 ? "" : "s"} since the 4-hour rule went live (${at} UTC)`;
+  }
+  return `${c.trades_24h} trade${c.trades_24h === 1 ? "" : "s"} in the last 24 h`;
+}
 
 /** "0.12% in the last 24 h" (null before the season publishes it). */
 export function cost24Words(c: VaultCost): string | null {

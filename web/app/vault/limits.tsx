@@ -24,9 +24,13 @@ const pctB = (bps: number) => `${(bps / 100).toFixed(1)}%`;
 export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: VaultMeta; cfg: Config; vault: VaultView; times: number[] }) {
   const [stake, setStake] = useState<StakeSeries | null | undefined>(undefined);
   const [cost, setCost] = useState<VaultCost | null>(null);
+  const [ruleSince, setRuleSince] = useState<string | null>(null);
   useEffect(() => {
     loadStake().then((d) => setStake(d?.[id] ?? null));
-    loadCosts().then((d) => setCost(d?.vaults[id] ?? null));
+    loadCosts().then((d) => {
+      setCost(d?.vaults[id] ?? null);
+      setRuleSince(d?.turnover_rule_since ?? null);
+    });
   }, [id]);
   const syms = [...new Set(cfg.allowed_assets.map((a) => ASSETS[a]?.symbol ?? a.replace(/^nep141:/, "")))];
   const assets = syms.length > 1 ? `${syms.slice(0, -1).join(", ")} and ${syms.at(-1)}` : syms.join("");
@@ -44,7 +48,7 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
       <div className="mt-2">
         <div className="row-kv"><span>Record</span><span data-testid="limits-record">{recordWords(times)}{isNewLeader(times) ? ": short, so judge it on more than its return" : ""}</span></div>
         <div className="row-kv"><span>{mix ? "What it holds" : "NEAR in the vault"}</span><span data-testid="limits-near">{mix ?? fixed ?? near}</span></div>
-        <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{cost ? <>{tradesDay(cost)} <span className="muted">· the 4-hour rule (from Nov 14) allows 6 at most</span></> : tradeRateWords(vault.signals, times)}</span></div>
+        <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{cost ? <>{tradesDay(cost, ruleSince)} <span className="muted">· the rule allows at most one trade per 4 h</span></> : tradeRateWords(vault.signals, times)}</span></div>
         {cost && (
           <div className="row-kv" data-testid="limits-cost">
             <span>Trading cost so far</span>

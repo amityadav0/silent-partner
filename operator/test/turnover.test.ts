@@ -90,7 +90,8 @@ describe("trading cost (T2)", () => {
     expect(c.cost_usd).toBe(1.5);
     expect(c.avg_cost_bps).toBe(75);
     const p = publish(c, pooledBps([c]), 1000);
-    expect(p).toEqual({ trades: 2, trades_24h: 2, moved_usd: 200, cost_pct: 0.15, cost_24h_pct: 0.15, cost_bps: 75 });
+    expect(p).toEqual({ trades: 2, trades_24h: 2, trades_since_rule: 0, moved_usd: 200, cost_pct: 0.15, cost_24h_pct: 0.15, cost_bps: 75 });
+    expect(costSummary(entries, { base: USDC, risk: WNEAR, near, navUsd: 1000, now: 20, sinceMs: 15 }).trades_since).toBe(1);
     expect(publish(costSummary(entries, { base: USDC, risk: WNEAR, near, navUsd: 1000, now: 20 + 86_400_000 }), 75, 1000).cost_24h_pct).toBe(0);
   });
   it("the pooled rate never goes below the 1Click fee", () => {
