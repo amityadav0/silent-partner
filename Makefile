@@ -6,7 +6,9 @@ web/node_modules: web/package-lock.json
 	cd web && npm ci
 setup: operator/node_modules web/node_modules
 	cd web && npx playwright install chromium
-test: test-contract test-operator test-web
+test: test-contract test-registry test-operator test-web
+test-registry:
+	cd registry && cargo test
 test-contract:
 	cd contract && cargo test && cargo clippy --all-targets -- -D warnings
 test-operator: operator/node_modules
@@ -21,6 +23,6 @@ build: wasm operator/node_modules web/node_modules
 # Playwright against the static export + live testnet (start the testnet operator first:
 #   cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts)
 e2e: setup
-	cd web && npm run build && npx playwright test e2e/smoke.spec.ts
+	cd web && npm run build && npx playwright test
 screens: setup
 	cd web && npm run build && npx playwright test e2e/screens.spec.ts

@@ -21,7 +21,7 @@
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4) (also [on X](https://x.com/amit29199/status/2121077443583000923)). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) trade at real 1Click prices, plus two benchmark vaults (Hold NEAR, Half & Half) and a multi-asset bot (Majors). Prices are posted every 15 minutes; since Nov 14 a turnover rule (≥ 20 pts, ≥ 4 h between trades, AI asked hourly) keeps trading costs from eating the returns. NAVs and signals are real testnet transactions; the funds are testnet tokens.
+**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4) (also [on X](https://x.com/amit29199/status/2121077443583000923)). Besides the mainnet vault, the site runs a testnet paper season: 9 ranked leaders (8 house leaders: 5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 person trading by hand; plus Calm Owl, launched by an outside leader) trade at real 1Click prices, and 3 new vaults (the Hold NEAR and Half & Half benchmarks, and the multi-asset Majors bot) sit under "New this week" until they have 12 price updates. Prices are posted every 15 minutes; since Nov 14 a turnover rule (≥ 20 pts, ≥ 4 h between trades, AI asked hourly) keeps trading costs from eating the returns. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
 ![Silent Partner landing page: a trade ticket stamped SEALED, with every field redacted](docs/screens/landing.png)
 
@@ -29,8 +29,8 @@ Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (prim
 
 Each step says what to do, what you should see, and where it lives.
 
-1. **Open the [leaderboard](https://amityadav0.github.io/silent-partner/leaderboard/).** You see 8 house leaders with AI / Bot / Human badges and risk levels, calmest first, with worst drawdown, return, the leader's own stake and redacted holdings, all labelled "paper · testnet". "✓ n/n" means your browser re-verified every NAV signature. Code: [`web/lib/vault.ts`](web/lib/vault.ts) `verifyNavs`.
-2. **Open [Conviction](https://amityadav0.github.io/silent-partner/vault/?id=sp-convict-8952.testnet) and click "Try it with $1,000 simulated, no wallet" under the Follow privately button.** You see your simulated copy's value and change since joining, and a dashed line on the chart. Code: [`web/app/vault/paper.tsx`](web/app/vault/paper.tsx); test: `web/e2e/smoke.spec.ts` "paper follow".
+1. **Open the [leaderboard](https://amityadav0.github.io/silent-partner/leaderboard/).** You see 9 ranked leaders (8 house leaders plus Calm Owl, a community vault) with AI / Bot / Human badges and risk levels, calmest first, and the 3 newest vaults under "New this week", with worst drawdown, return, the leader's own stake and redacted holdings, all labelled "paper · testnet". "✓ n/n" means your browser re-verified every NAV signature. Code: [`web/lib/vault.ts`](web/lib/vault.ts) `verifyNavs`.
+2. **On the [home page](https://amityadav0.github.io/silent-partner/), click "Copy … with $100: no wallet, 10 seconds"** (it names the leader that held up best this week), or open [a $100 copy of Contrarian](https://amityadav0.github.io/silent-partner/copy/?id=sp-contra-8952.testnet&start=1) directly. You get "Your silent copy": its value, the change since you joined, how NEAR did over the same time, and a link to share it. Nothing is stored about you; the copy lives in your browser. Code: [`web/app/copy/page.tsx`](web/app/copy/page.tsx); test: `web/e2e/mobile.spec.ts` "U8".
 3. **Open [What the chain sees](https://amityadav0.github.io/silent-partner/chain/).** The same vault through three viewers: observer, follower, leader. The leader view is a published fill log, and your browser checks it against every on-chain commitment ("✓ Matches the chain"). Code: [`web/lib/disclosure.ts`](web/lib/disclosure.ts).
 4. **See an operator lie refused.** The operator's own key signed a NAV 20% too high and the contract rejected it: tx [`9sSBzqNo…`](https://testnet.nearblocks.io/txns/9sSBzqNoE5HUqwGqnAxGHWL5iDFCAKzPeEcJXYK26nXn). Each post must carry two 1Click-signed quotes, and the NAV must fit NEAR's move. Code: [`contract/src/lib.rs`](contract/src/lib.rs) `check_band`; tests: `contract/src/prop_tests.rs` `quotes_bound_honest_pass_lies_fail`, and [docs/testnet.md](docs/testnet.md#nav-quote-band-after-the-review-fixes-d-h-6-2026-11-09).
 5. **See a follower leave without the operator.** In the [drill vault](https://amityadav0.github.io/silent-partner/vault/?id=sp-drill-92991.testnet&as=sp-leader-60270.testnet), the operator was stopped and a follower exited pro rata, paying themselves out through the real intents verifier. Every tx is in [docs/testnet.md](docs/testnet.md#emergency-exit-drill-item-3-2026-11-09).
@@ -42,7 +42,7 @@ Each step says what to do, what you should see, and where it lives.
 
 ## Built during NEAR HACKATHON
 
-- **Time.** The repository's first commit is 2026-11-07 and everything here was written in the hackathon window. There's one diff for the whole submission: `https://github.com/amityadav0/silent-partner/compare/fe316d6...hackathon-submission` (the tag is set at the final commit).
+- **Time.** The repository's first commit is 2026-11-07 and everything here was written in the hackathon window. There's one diff for the whole submission: `https://github.com/amityadav0/silent-partner/compare/fe316d6...hackathon-submission` (the tag marks the submitted commit, `87d1d35`; testnet work after it is listed in [After the submission tag](#after-the-submission-tag-nov-14-testnet)).
 - **AI-generated code.** Most of the code, tests and docs were written by Claude Code (Anthropic's Claude Opus), working from Amit Yadav's spec. Amit set the requirements, made the product calls and reviewed. Two fresh-context security reviews were also run by Claude agents; their findings and fixes are in [docs/threat-model.md](docs/threat-model.md) §7.
 - **Carried over** (copied, not imported) from Amit's earlier project Scope (`github.com/amityadav0/scope`, a private repository for now), written 2026-11-05 to 11-07, inside the window. Every carried file is in this repo: the 1Click client ([`operator/src/carry/oneclick.ts`](operator/src/carry/oneclick.ts)), canonical hashing and receipts ([`receipt.ts`](operator/src/carry/receipt.ts)), 1Click quote-signature verification ([`signedQuote.ts`](operator/src/carry/signedQuote.ts), ported to Rust in [`contract/src/quote.rs`](contract/src/quote.rs)), the copy-vault probes (`operator/scripts/copyvault-*.ts`, [docs/killtests-copyvault.md](docs/killtests-copyvault.md)) and the wallet-selector setup.
 - **Libraries.**
@@ -63,7 +63,7 @@ Each step says what to do, what you should see, and where it lives.
   - **The vault key.** It is an MPC key derived for the contract. It signs only quote-bound transfers back into the vault, or a claim's payout to the claimant, settled against the verifier's nonce record.
   - **Emergency.** With no NAV for 24h, or a claim unpaid for 24h, every holder can exit pro rata without the operator.
 - **[operator/](operator/)** (TypeScript): verifies leader-signed signals, sizes and executes one confidential quote per signal, keeps a hash-chained fill log, posts signed NAV with the price quotes, and pays withdrawals.
-- **Leaders** ([`operator/src/leaders/`](operator/src/leaders/)): AI personas on NEAR AI Cloud (NEAR AI serves the model from TEE infrastructure; this repo doesn't verify that attestation) with enforced weight bounds, rule-based bots, or a human signing in the [leader console](https://amityadav0.github.io/silent-partner/leader/).
+- **Leaders** ([`operator/src/leaders/`](operator/src/leaders/)): AI personas on NEAR AI Cloud with enforced weight bounds. Each decision carries a NEAR AI receipt that the vault page checks in your browser ("TEE ✓ signed in NEAR AI's TEE (CPU + GPU attested)"): the enclave key's signature over the exact request and response, that the published attestation quote binds that key and a fresh nonce, the model, and that the leader-signed signal commits to the receipt. It doesn't verify Intel's and NVIDIA's certificate chains for the quote; the quotes are published in the season log for anyone to run them. The other leaders are rule-based bots, or a person signing in the [leader console](https://amityadav0.github.io/silent-partner/leader/).
 - **[web/](web/)** (Next.js static export): landing page, leaderboard, vault pages (deposit, withdraw, P&L, paper follow, emergency exit), What the chain sees, leader console, create-vault wizard and share cards. Every number is read from NEAR RPC in your browser, which re-verifies each NAV signature.
 
 ## Run it
@@ -71,11 +71,11 @@ Each step says what to do, what you should see, and where it lives.
 Needs Node 22, Rust (the version in `contract/rust-toolchain.toml` installs itself), `cargo-near` 0.22 for `make build`, and Python 3 for the static server. npm dependencies install on first use.
 
 ```sh
-make test                                   # contract (66, incl. property tests) + operator (54) + web (29) unit tests
+make test                                   # contract (80, incl. property tests) + registry (6) + operator (107) + web (67) unit tests
 make build                                  # wasm, operator, static site in web/out
 cd operator && npx tsx --env-file-if-exists=../.env scripts/serve-testnet.ts   # operator on :8788 (testnet, dry 1Click)
 cd web && npm run build && npm run serve    # http://localhost:3000, reads testnet live
-make e2e                                    # Playwright against live testnet
+make e2e                                    # Playwright against live testnet (97 tests, desktop + mobile)
 ```
 
 The operator step needs the testnet operator's keys, which aren't in git. Without them everything else runs, and `make e2e` skips only the leader-signing test (22 pass, 1 skipped on a fresh clone). The fresh-clone run, and where every claim here is backed by code, a test or a transaction, are in [docs/reproducibility.md](docs/reproducibility.md).
