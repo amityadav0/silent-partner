@@ -242,3 +242,10 @@ test("B3: the hero paints its pick and proof line at once from the season's boar
   await expect(page.getByTestId("hero-proof-state")).toContainText("verified in your browser", { timeout: 60_000 });
   expect(await btn.innerText()).toBe(first);
 });
+
+test("B4: the NEAR Hunt upvote link is in the footer and on /about", async ({ page }) => {
+  const URL = "https://nearhunt.xyz/p/c329d4d7-174d-47e6-a718-0afdf538f0e2";
+  await page.goto("/about/");
+  await expect(page.getByTestId("nearhunt-about")).toHaveAttribute("href", URL);
+  await expect(page.getByTestId("nearhunt-foot")).toHaveAttribute("href", URL);
+});

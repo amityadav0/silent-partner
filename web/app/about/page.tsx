@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { X_HANDLE } from "../ui";
+import { NEAR_HUNT } from "@/lib/config";
 
 const REPO = "https://github.com/amityadav0/silent-partner";
 
@@ -42,6 +43,7 @@ export default function About() {
       <div className="panel flex flex-col gap-2" data-testid="about-contact">
         <h2>Contact</h2>
         <p className="leading-relaxed">DM <a href={`https://x.com/${X_HANDLE}`}>@{X_HANDLE}</a> on X. Bugs and security issues: open an issue on <a href={`${REPO}/issues`}>GitHub</a>, or DM first if it&apos;s sensitive.</p>
+        <p className="leading-relaxed">If you like it, <a href={NEAR_HUNT} data-testid="nearhunt-about">upvote Silent Partner on NEAR Hunt</a>.</p>
       </div>
     </section>
   );

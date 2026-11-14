@@ -32,3 +32,6 @@ export const ASSETS: Record<string, { symbol: string; decimals: number }> = {
 };
 /** Set when the site is served from a sub-path (GitHub Pages). */
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+/** Silent Partner on NEAR Hunt (B4). */
+export const NEAR_HUNT = "https://nearhunt.xyz/p/c329d4d7-174d-47e6-a718-0afdf538f0e2";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SystemStatus } from "./status";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { NETWORK, networkOf } from "@/lib/config";
+import { NEAR_HUNT, NETWORK, networkOf } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import { loadVault, pct, type VaultData } from "@/lib/vault";
 import { loadNear, ptsWords, type NearSeries, type VsNear } from "@/lib/bench";
@@ -88,7 +88,7 @@ export function Footer() {
   return (
     <footer className="site-foot">
       <div className="wrap">
-        <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI</span>
+        <span>Built at NEAR HACKATHON · NEAR Intents · Chain Signatures · NEAR AI · <a href={NEAR_HUNT} data-testid="nearhunt-foot">Upvote on NEAR Hunt</a></span>
         <span className="flex flex-wrap gap-4">
           <Link href="/partners/">My partners</Link>
           <Link href="/trust/">Risks &amp; trust</Link>
