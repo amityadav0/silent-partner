@@ -10,6 +10,8 @@ import type { Entry } from "../filllog.js";
 
 export const TURNOVER = {
   since: "2026-11-14",
+  /** first season tick that ran the rule (the loop kept its old checkout until its 07:31 UTC handover) */
+  liveSince: "2026-11-14T07:32:00Z",
   minStep: 0.2,
   minGapMs: 4 * 3_600_000,
   aiEveryMs: 3_600_000,

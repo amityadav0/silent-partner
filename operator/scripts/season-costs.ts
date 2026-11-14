@@ -21,7 +21,7 @@ for (const f of readdirSync(join(dir, "state")).filter((n) => n.startsWith("fill
   raw.push([vault, costSummary(entries, { base: S.base, risk: S.risk, near, navUsd, now: Date.now() }), navUsd]);
 }
 const bps = pooledBps(raw.map(([, c]) => c));
-const out = { ranAt: new Date().toISOString(), cost_bps: bps, turnover_rule_since: TURNOVER.since, vaults: Object.fromEntries(raw.map(([id, c, nav]) => [id, publish(c, bps, nav)])) };
+const out = { ranAt: new Date().toISOString(), cost_bps: bps, turnover_rule_since: TURNOVER.liveSince, vaults: Object.fromEntries(raw.map(([id, c, nav]) => [id, publish(c, bps, nav)])) };
 if (!existsSync(dir)) throw new Error(`no ${dir}`);
 writeFileSync(join(dir, "costs.json"), JSON.stringify(out, null, 1) + "\n");
 console.log(JSON.stringify(out, null, 1));

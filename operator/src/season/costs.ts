@@ -23,7 +23,7 @@ export function priceAt(s: Series, ts: number): number | null {
   return p[lo] + (p[hi] - p[lo]) * w;
 }
 
-export type CostSummary = { trades: number; trades_24h: number; moved_usd: number; cost_usd: number; avg_cost_bps: number | null; cost_pct: number | null };
+export type CostSummary = { trades: number; trades_24h: number; moved_usd: number; moved_24h_usd?: number; cost_usd: number; avg_cost_bps: number | null; cost_pct: number | null };
 
 /** 1Click's fee on every quote (D-P3-2): the floor of any trade's cost. */
 export const FEE_BPS = 20;
@@ -39,16 +39,16 @@ export function pooledBps(all: CostSummary[]): number {
   return moved > 0 ? Math.max(FEE_BPS, +((cost / moved) * 10_000).toFixed(1)) : FEE_BPS;
 }
 
-export type PublishedCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_bps: number };
+export type PublishedCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_24h_pct: number | null; cost_bps: number };
 export function publish(c: CostSummary, bps: number, navUsd: number | null): PublishedCost {
-  const cost = (c.moved_usd * bps) / 10_000;
-  return { trades: c.trades, trades_24h: c.trades_24h, moved_usd: c.moved_usd, cost_pct: navUsd && navUsd > 0 ? +((cost / navUsd) * 100).toFixed(2) : null, cost_bps: bps };
+  const pct = (moved: number) => (navUsd && navUsd > 0 ? +((((moved * bps) / 10_000) / navUsd) * 100).toFixed(2) : null);
+  return { trades: c.trades, trades_24h: c.trades_24h, moved_usd: c.moved_usd, cost_pct: pct(c.moved_usd), cost_24h_pct: pct(c.moved_24h_usd ?? 0), cost_bps: bps };
 }
 
 /** Every executed fill: value in minus value out at the mid, in USD. */
 export function costSummary(entries: Entry[], o: { base: string; risk: string; near: Series; navUsd: number | null; now: number; baseDec?: number; riskDec?: number }): CostSummary {
   const bd = 10 ** (o.baseDec ?? 6), rd = 10 ** (o.riskDec ?? 24);
-  let trades = 0, trades24 = 0, moved = 0, cost = 0;
+  let trades = 0, trades24 = 0, moved = 0, moved24 = 0, cost = 0;
   for (const e of entries) {
     if (e.kind !== "fill" || e.data.amount_in === "0") continue;
     // priced against NEAR/USD: fills in other assets (multi-asset vaults) aren't counted here
@@ -60,7 +60,10 @@ export function costSummary(entries: Entry[], o: { base: string; risk: string; n
     const inUsd = buy ? ain / bd : (ain / rd) * px;
     const outUsd = buy ? (aout / rd) * px : aout / bd;
     trades++;
-    if (o.now - e.ts < DAY) trades24++;
+    if (o.now - e.ts < DAY) {
+      trades24++;
+      moved24 += inUsd;
+    }
     moved += inUsd;
     cost += inUsd - outUsd;
   }
@@ -68,6 +71,7 @@ export function costSummary(entries: Entry[], o: { base: string; risk: string; n
     trades,
     trades_24h: trades24,
     moved_usd: +moved.toFixed(2),
+    moved_24h_usd: +moved24.toFixed(2),
     cost_usd: +cost.toFixed(2),
     avg_cost_bps: moved > 0 ? +((cost / moved) * 10_000).toFixed(1) : null,
     cost_pct: o.navUsd && o.navUsd > 0 ? +((cost / o.navUsd) * 100).toFixed(2) : null,

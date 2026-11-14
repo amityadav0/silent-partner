@@ -101,6 +101,10 @@ jobs:
           for i in $(seq 1 "$TICKS"); do
             start=$SECONDS
             git -C ../season-state pull -q --rebase
+            # pick up code pushed to master since the loop started (otherwise it waits for the ~5h30 handover)
+            before=$(git rev-parse HEAD:operator/package-lock.json)
+            git pull -q --ff-only origin master || echo "code refresh failed; ticking on $(git rev-parse --short HEAD)"
+            [ "$(git rev-parse HEAD:operator/package-lock.json)" = "$before" ] || npm ci --silent
             npx tsx scripts/season.ts > /tmp/season.log 2>&1; code=$?
             # one redacted line per vault (CI logs are public)
             grep -E '^\{|unavailable|Error' /tmp/season.log
