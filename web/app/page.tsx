@@ -7,7 +7,8 @@ import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/v
 import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { COPY_DEFAULT } from "@/lib/copy";
 import { loadNear } from "@/lib/bench";
-import { pickLeader } from "@/lib/pick";
+import { pickLeader, proofLine } from "@/lib/pick";
+import type { VsNear } from "@/lib/bench";
 import { WatchButton } from "./watch";
 import { Redact } from "./ui";
 
@@ -18,6 +19,7 @@ function useLive() {
   const [s, setS] = useState<{ navs: number; verified: number; signals: number; events: LiveEvent[] } | null>(null);
   const [main, setMain] = useState<{ epoch: number; ok: boolean; events: LiveEvent[] } | null>(null);
   const [pick, setPick] = useState<string>(COPY_DEFAULT);
+  const [proof, setProof] = useState<VsNear | null>(null);
   useEffect(() => {
     // The mainnet vault, kept apart from the testnet paper season's numbers.
     loadVault(MAINNET_VAULT).then((d) => {
@@ -29,7 +31,11 @@ function useLive() {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then(async (rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
-      loadNear().then((near) => setPick(pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near).id));
+      loadNear().then((near) => {
+        const p = pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near);
+        setPick(p.id);
+        setProof(p.v ?? null);
+      });
       // Recent verified events: times and ✓ only. No amounts, no holders.
       const posts: LiveEvent[] = checked
         .filter(({ d }) => d.id !== DRILL && d.navs.length)
@@ -56,7 +62,7 @@ function useLive() {
       });
     });
   }, []);
-  return { pick, live: s ? { ...s, main, events: [...(main?.events ?? []), ...s.events] } : null };
+  return { pick, proof, live: s ? { ...s, main, events: [...(main?.events ?? []), ...s.events] } : null };
 }
 
 const when = (t: number) => {
@@ -155,7 +161,7 @@ const COMPARE: [string, string, string, string, string][] = [
 ];
 
 export default function Landing() {
-  const { pick, live } = useLive();
+  const { pick, proof, live } = useLive();
   return (
     <div className="bleed" data-testid="landing">
       <section className="wrap hero">
@@ -167,6 +173,7 @@ export default function Landing() {
             <Link href={`/copy/?id=${encodeURIComponent(pick)}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy" data-pick={pick}>Copy {metaOf(pick).name} with $100: no wallet, 10 seconds</Link>
             <WatchButton />
           </div>
+          {proof && <p className="num text-[15px]" style={{ color: "var(--ink-2)" }} data-testid="hero-proof">{proofLine(metaOf(pick).name, proof)} <span className="muted">· paper · testnet, verified in your browser</span></p>}
           <p className="muted text-sm" data-testid="hero-faq">Before you put money in: <Link href="/faq/">questions</Link> · <Link href="/trust/">risks</Link> · <Link href="/about/">who built it</Link></p>
         </div>
         <Ticket />

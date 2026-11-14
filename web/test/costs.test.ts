@@ -114,3 +114,11 @@ describe("status line never hangs (Z4)", () => {
     expect(aiFromDecisions({}).ai).toBeNull();
   });
 });
+
+import { proofLine } from "../lib/pick";
+describe("hero proof line (Z6)", () => {
+  it("names the leader, its week and NEAR's", () => {
+    expect(proofLine("Steady Hand", { ret: -0.03, near: -0.086, pts: 5.6 })).toBe("Steady Hand: −3.0% while NEAR fell −8.6% this week");
+    expect(proofLine("Majors", { ret: 0.021, near: 0.01, pts: 1.1 })).toBe("Majors: +2.1% while NEAR rose +1.0% this week");
+  });
+});

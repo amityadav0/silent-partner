@@ -196,3 +196,11 @@ test("Z5: leaderboard rows paint from the season's board first, then flip to ✓
   await expect(page.getByTestId("verifying")).toHaveCount(0, { timeout: 60_000 });
   await expect(page.getByTestId("row-sp-momo-92991.testnet")).toContainText(/✓ \d+\/\d+/);
 });
+
+test("Z6: under the hero button, one proof line with the picked leader's week and NEAR's", async ({ page }) => {
+  await page.goto("/");
+  const line = page.getByTestId("hero-proof");
+  await expect(line).toContainText(/: [+−]\d+\.\d% while NEAR (fell|rose) [+−]\d+\.\d% this week/, { timeout: 60_000 });
+  const name = (await page.getByTestId("hero-copy").innerText()).match(/^Copy (.+) with \$100/)![1];
+  await expect(line).toContainText(`${name}:`);
+});
