@@ -77,7 +77,7 @@ export function Nav() {
             </div>
           </details>
         ) : (
-          <button className="btn" disabled={!ready} onClick={signIn}>Connect wallet</button>
+          <button className="btn" disabled={!ready} onClick={signIn} aria-label="Connect wallet"><span className="connect-long">Connect wallet</span><span className="connect-short">Connect</span></button>
         )}
       </div>
     </header>

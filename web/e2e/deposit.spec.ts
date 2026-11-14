@@ -162,3 +162,19 @@ test("T6: the multi-asset Majors vault shows what it may hold and its rule, posi
   await expect(lim.getByTestId("limits-near")).toContainText("No leverage, no shorting");
   await expect(page.getByText(/\d+(\.\d+)? BTC\b/)).toHaveCount(0);
 });
+
+test("Y7/Y8: a vault with only the leader's money says 'no followers yet'; /leaders/ opens the leaderboard; the 404 is themed", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  const rows = page.locator("[data-testid=stake]");
+  await expect(rows.first()).toBeVisible({ timeout: 30_000 });
+  for (const r of await rows.all()) {
+    const pct = parseFloat(await r.locator(".pos").innerText());
+    await expect(r.getByTestId("no-followers")).toHaveCount(pct >= 99.95 ? 1 : 0);
+  }
+  await page.goto("/leaders/");
+  await expect(page).toHaveURL(/\/leaderboard\/$/);
+  await page.goto("/404.html");
+  await expect(page.getByTestId("not-found")).toContainText("This page doesn't exist");
+  await expect(page.locator(".site-head")).toBeVisible();
+  await expect(page.getByTestId("not-found").getByRole("link", { name: "Home" })).toBeVisible();
+});

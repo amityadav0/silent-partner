@@ -59,3 +59,13 @@ test("U8: land → one tap → the card fits → share → the next person opens
   await expect(page.getByTestId("copy-value")).toBeVisible({ timeout: 30_000 });
   expect(await page.evaluate((k) => localStorage.getItem(k), `sp.paper.${id}`)).toBe(entry);
 });
+
+test("Y9: on a 390 px phone the header is one row (short Connect) with the nav below, under 100 px", async ({ page }) => {
+  await page.goto("/");
+  const head = page.locator(".site-head");
+  expect((await head.getByRole("button", { name: "Connect wallet" }).innerText()).trim()).toBe("Connect");
+  const [brand, tools] = await Promise.all([page.locator(".brand").boundingBox(), page.locator(".site-tools").boundingBox()]);
+  expect(Math.abs(brand!.y + brand!.height / 2 - (tools!.y + tools!.height / 2))).toBeLessThan(8);
+  expect((await head.boundingBox())!.height).toBeLessThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

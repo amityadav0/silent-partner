@@ -117,6 +117,7 @@ export default function Leaderboard() {
                   <td className="num whitespace-nowrap text-[15px]" data-label="vs holding NEAR"><VsNearTag compact v={near === undefined ? undefined : r.vs} /></td>
                   <td className="num" data-label="Own money in" data-testid="stake">
                     <span className="pos">{(r.stake * 100).toFixed(1)}%</span>
+                    {r.stake >= 0.9995 && <span className="muted text-xs" data-testid="no-followers"> no followers yet</span>}
                     <span className="stake-bar"><i style={{ width: `${Math.min(100, r.stake * 100)}%` }} /></span>
                   </td>
                   <td data-label="Holdings"><Redact widths={[52, 28]} h={13} label="Holdings sealed" /></td>

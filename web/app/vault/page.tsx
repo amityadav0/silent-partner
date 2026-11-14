@@ -133,7 +133,7 @@ export default function VaultPage() {
             <Stat risk label="Worst drawdown" value={m.dd === 0 ? "0%" : `−${(m.dd * 100).toFixed(2)}%`} testid="stat-drawdown" />
             <Stat label="Return since start" value={<Ret r={m.ret} />} hint="after fees" testid="stat-return" />
             <Stat label="vs holding NEAR" value={<VsNearTag compact v={near === undefined ? undefined : vs} />} hint={vs ? `NEAR ${vs.near >= 0 ? "+" : "−"}${Math.abs(vs.near * 100).toFixed(2)}% over the same updates` : "same window, same updates"} testid="stat-vs-near" />
-            <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={`at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
+            <Stat label="Leader's own money" value={<span className="pos">{(m.stake * 100).toFixed(1)}%</span>} hint={m.stake >= 0.9995 ? "no followers yet: it\u2019s all the leader\u2019s" : `at least ${cfg.min_leader_bps / 100}%, enforced`} testid="stat-stake" />
             <Stat label="Verified price updates" value={<span className="whitespace-nowrap">{m.v.ok} / {navs.length}</span>} hint={m.v.bad.length ? `bad: updates ${m.v.bad.join(", ")}` : "verified in your browser"} testid="stat-attested" />
           </div>
 

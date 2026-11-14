@@ -175,8 +175,20 @@ svg .dd-label { fill: var(--warn); font-size: 12px; font-family: var(--mono); }
 .site-foot { border-top: 1px solid var(--line); margin-top: 24px; }
 .site-foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding-block: 28px 40px; font-size: 14px; color: var(--muted); }
 .site-foot a { color: var(--muted); }
+.connect-short { display: none; }
 @media (max-width: 640px) {
-  .site-links { order: 3; width: 100%; }
+  /* Y9: one row of brand + tools, the nav as one scrollable line below, ~90 px in all at 390 px */
+  .site-head { flex-wrap: wrap; gap: 6px 6px; padding-block: 10px 6px; }
+  .brand { font-size: 19px; gap: 6px; white-space: nowrap; }
+  .brand .logo i:first-child { width: 14px; } .brand .logo i:last-child { width: 6px; }
+  .site-tools { gap: 6px; }
+  .site-tools .chip { padding: 4px 8px; font-size: 11px; }
+  .theme-btn { width: 36px; height: 36px; }
+  .site-head .site-tools .btn { padding: 6px 12px; min-height: 36px; font-size: 14px; }
+  .connect-long { display: none; }
+  .connect-short { display: inline; }
+  .site-links { order: 3; width: 100%; flex-wrap: nowrap; overflow-x: auto; gap: 18px; font-size: 14px; scrollbar-width: none; padding-bottom: 2px; }
+  .site-links a { white-space: nowrap; }
 }
 
 /* Landing */
