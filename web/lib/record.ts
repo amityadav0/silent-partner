@@ -17,6 +17,13 @@ export function recordWords(times: number[], now = Date.now()): string {
   return `${span} · ${times.length.toLocaleString("en-US")} price update${times.length === 1 ? "" : "s"}`;
 }
 
+/** A real record (B1): what the "held up best" card, the hero pick and the top of "Calmest first"
+ *  require. Younger vaults are ranked below, labelled new. */
+export const RECORD_MIN = { days: 3, posts: 200 } as const;
+export function hasRecord(navs: { timestamp_ms: number }[]): boolean {
+  return navs.length >= RECORD_MIN.posts && navs[navs.length - 1].timestamp_ms - navs[0].timestamp_ms >= RECORD_MIN.days * DAY;
+}
+
 export const isNewLeader = (times: number[], now = Date.now()) => recordAge(times, now) < NEW_LEADER_DAYS * DAY;
 
 /** "≈ 3 trades a day", "≈ 1 trade a week", "no trades yet". */

@@ -4,6 +4,7 @@
 import { vsNear, type NearSeries, type VsNear } from "./bench";
 import { COPY_DEFAULT } from "./copy";
 import type { NavPost } from "./vault";
+import { hasRecord } from "./record";
 
 export const PICK_MIN_VERIFIED = 12;
 const WEEK = 7 * 24 * 3600_000;
@@ -13,7 +14,7 @@ export type PickCandidate = { id: string; navs: Pick<NavPost, "price" | "timesta
 export function pickLeader(cs: PickCandidate[], near: NearSeries | null, now = Date.now()): { id: string; pts: number | null; v?: VsNear } {
   let best: { id: string; pts: number; v: VsNear } | null = null;
   for (const c of cs) {
-    if (!c.season || c.benchmark || c.verified < PICK_MIN_VERIFIED) continue;
+    if (!c.season || c.benchmark || c.verified < PICK_MIN_VERIFIED || !hasRecord(c.navs)) continue;
     const v = vsNear(c.navs, near, now - WEEK);
     if (v && (!best || v.pts > best.pts)) best = { id: c.id, pts: v.pts, v };
   }

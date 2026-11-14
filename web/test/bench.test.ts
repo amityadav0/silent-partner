@@ -40,8 +40,14 @@ describe("vs holding NEAR (U9)", () => {
   });
 });
 
-describe("hero pick (U11)", () => {
-  const navs = (end: number) => [nav(0, 1), nav(5 * H, 1), nav(10 * H, end)];
+describe("hero pick (U11, B1)", () => {
+  // a real record: 201 posts over 100 h (≥ 3 days and ≥ 200 posts)
+  const navs = (end: number) => Array.from({ length: 201 }, (_, i) => nav(i * 0.5 * H, i === 200 ? end : 1));
+  const near: NearSeries = { t: Array.from({ length: 101 }, (_, i) => i * H), p: Array.from({ length: 101 }, (_, i) => 5 - 0.005 * i) };
+  it("a vault without 3 days and 200 posts is never the pick", () => {
+    const young = Array.from({ length: 20 }, (_, i) => nav(90 * H + i * 0.5 * H, i === 19 ? 1.5 : 1));
+    expect(pickLeader([{ id: "a.testnet", navs: navs(0.99), verified: 201, season: true }, { id: "majors.testnet", navs: young, verified: 20, season: true }], near, 100 * H).id).toBe("a.testnet");
+  });
   it("best vs NEAR over 7 days among season leaders with ≥12 verified updates", () => {
     const p = pickLeader(
       [
@@ -52,7 +58,7 @@ describe("hero pick (U11)", () => {
         { id: "half.testnet", navs: navs(1.4), verified: 40, season: true, benchmark: true }, // benchmarks are never the pick (T3)
       ],
       near,
-      10 * H,
+      100 * H,
     );
     expect(p.id).toBe("b.testnet");
   });

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { badgeOf } from "@/lib/vaults";
 import { loadCosts, tradesDay, type CostDoc } from "@/lib/costs";
 import { loadBoard } from "@/lib/board";
+import { hasRecord, RECORD_MIN } from "@/lib/record";
 
 /** `pending`: drawn from the season's board.json, signatures not yet re-checked in this browser (Z5). */
 type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number; vs?: VsNear | null; pending?: boolean };
@@ -27,8 +28,10 @@ const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
 /** A vault is ranked once it has this many browser-verified price posts; newer ones wait in "New this week". */
 const MIN_POSTS = 12;
 // Old test vaults (the drill, the first test vault) are never ranked: they sit in "Test vaults" (T4).
-const ranked = (r: Row) => !r.m.test && (r.ok >= MIN_POSTS || !r.m.season);
-const rank = (r: Row) => (r.m.season ? 0 : 1);
+// Benchmarks are a fixed rule, not a trader to copy: they get their own strip (B2).
+const ranked = (r: Row) => !r.m.test && !r.m.benchmark && (r.ok >= MIN_POSTS || !r.m.season);
+// B1: vaults with a real record (3 days and 200 price posts) rank first; younger ones below, labelled new.
+const rank = (r: Row) => (hasRecord(r.d.navs) ? 0 : 2) + (r.m.season ? 0 : 1);
 
 // Avatar colour by who leads, so the kind reads at a glance.
 const KIND_TINT = { ai: "#2F3FD8", bot: "#2E7D6B", human: "#7A5C00", drill: "#655D50", benchmark: "#4A4A4A" } as const;
@@ -44,7 +47,8 @@ export default function Leaderboard() {
   const router = useRouter();
   const worst = useMemo(() => Math.max(0.0001, ...(rows ?? []).map((r) => r.dd)), [rows]);
   const sorted = useMemo(() => (rows ? rows.filter(ranked).sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
-  const fresh = useMemo(() => (rows ?? []).filter((r) => !ranked(r) && !r.m.test).sort((a, b) => b.ok - a.ok), [rows]);
+  const fresh = useMemo(() => (rows ?? []).filter((r) => !ranked(r) && !r.m.test && !r.m.benchmark).sort((a, b) => b.ok - a.ok), [rows]);
+  const benches = useMemo(() => (rows ?? []).filter((r) => r.m.benchmark), [rows]);
   const tests = useMemo(() => (rows ?? []).filter((r) => r.m.test), [rows]);
   const [costs, setCosts] = useState<CostDoc | null>(null);
   useEffect(() => {
@@ -100,6 +104,20 @@ export default function Leaderboard() {
 
       <Calmest rows={rows} near={near ?? null} />
 
+      {benches.length > 0 && (
+        <div className="panel flex flex-col gap-2" data-testid="benchmarks">
+          <span className="eyebrow">Benchmarks</span>
+          <p className="muted text-sm">Fixed rules, not traders: compare any leader with them. Same signed price updates, same costs.</p>
+          <ul className="flex flex-wrap gap-x-8 gap-y-2">
+            {benches.map((r) => (
+              <li key={r.d.id} data-testid={`bench-${r.d.id}`} className="text-[15px]">
+                <Link href={`/vault/?id=${r.d.id}`}>{r.m.name}</Link> <span className="muted text-sm">({r.m.style})</span>: <span className="num"><Ret r={r.ret} /></span> <span className="muted">· worst dip</span> <span className="num">{r.dd === 0 ? "0%" : `−${(r.dd * 100).toFixed(2)}%`}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="panel p-0">
         <table className="lb" data-testid="leaderboard">
           <thead>
@@ -118,7 +136,7 @@ export default function Leaderboard() {
                       <div className="flex min-w-0 flex-col gap-1">
                         <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
                         <span className="muted text-sm">{m.style}{costs?.vaults[r.d.id] && <span data-testid="trades-day" title="Each trade costs the vault about the measured trading cost. The 4-hour rule allows at most one trade per 4 hours."> · {tradesDay(costs.vaults[r.d.id], costs.turnover_rule_since)}</span>}</span>
-                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.benchmark ? "A house benchmark: a fixed rule, no leader decisions. Compare any leader with it, or copy it." : undefined}>{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
+                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.benchmark ? "A house benchmark: a fixed rule, no leader decisions. Compare any leader with it, or copy it." : undefined}>{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}{!hasRecord(r.d.navs) && <span className="chip chip-warn" data-testid="new-chip" title={`Under ${RECORD_MIN.days} days or ${RECORD_MIN.posts} price posts: ranked after the leaders with a real record.`}>New</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
                       </div>
                     </div>
                   </td>
@@ -199,7 +217,7 @@ function Calmest({ rows, near }: { rows: Row[] | null; near: NearSeries | null }
   const best = useMemo(() => {
     if (!rows) return null;
     const since = Date.now() - WEEK;
-    const scored = rows.filter((r) => r.m.season && !r.m.benchmark && ranked(r)).flatMap((r) => {
+    const scored = rows.filter((r) => r.m.season && !r.m.benchmark && ranked(r) && hasRecord(r.d.navs)).flatMap((r) => {
       const s = windowStats(r.d.navs, since);
       return s && s.posts >= 4 ? [{ r, s, v: vsNear(r.d.navs, near, since) }] : [];
     });

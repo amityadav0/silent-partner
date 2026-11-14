@@ -139,10 +139,12 @@ test("T2: trading cost so far on the vault, trades/day on the leaderboard, measu
 test("T3/T4: benchmarks are labelled BENCHMARK; the drill and the first test vault sit in a collapsed Test vaults section", async ({ page }) => {
   await page.goto("/leaderboard/");
   await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible();
-  // a benchmark is ranked once it has 12 posts, and is in "New this week" before that
-  const hold = page.getByTestId("row-hold.sp-sop-92991.testnet").or(page.getByTestId("new-hold.sp-sop-92991.testnet"));
-  await expect(hold).toBeVisible();
+  // B2: benchmarks sit in their own strip, never among the leaders
   const lb = page.getByTestId("leaderboard");
+  await expect(page.getByTestId("benchmarks").getByTestId("bench-hold.sp-sop-92991.testnet")).toContainText(/Hold NEAR.*worst dip/);
+  await expect(page.getByTestId("benchmarks").getByTestId("bench-half.sp-sop-92991.testnet")).toBeVisible();
+  await expect(lb.getByTestId("row-hold.sp-sop-92991.testnet")).toHaveCount(0);
+  await expect(page.getByTestId("new-hold.sp-sop-92991.testnet")).toHaveCount(0);
   await expect(lb.getByTestId("row-sp-drill-92991.testnet")).toHaveCount(0);
   await expect(lb.getByTestId("row-sp-vault-60270.testnet")).toHaveCount(0);
   const tests = page.getByTestId("test-vaults");
@@ -214,4 +216,18 @@ test("A2/A3: /trust says how we count; /stats shows site counts and on-chain usa
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await page.goto("/");
   await expect(page.locator('a[href*="/stats"]')).toHaveCount(0);
+});
+
+test("B1: the held-up-best card and the top of Calmest first need 3 days and 200 price posts; younger vaults rank below, labelled New", async ({ page }) => {
+  await page.goto("/leaderboard/");
+  await expect(page.getByTestId("row-sp-momo-92991.testnet")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("verifying")).toHaveCount(0, { timeout: 60_000 });
+  const rows = page.locator("[data-testid=leaderboard] tbody tr[data-testid^=row-]");
+  const isNew = await rows.evaluateAll((trs) => trs.map((tr) => !!tr.querySelector("[data-testid=new-chip]")));
+  // every New row comes after every row with a record
+  const firstNew = isNew.indexOf(true);
+  if (firstNew >= 0) expect(isNew.slice(firstNew).every(Boolean)).toBe(true);
+  expect(isNew[0]).toBe(false);
+  await expect(page.getByTestId("row-majors.sp-sop-92991.testnet").getByTestId("new-chip")).toBeVisible();
+  await expect(page.getByTestId("calmest")).not.toContainText("Majors");
 });
