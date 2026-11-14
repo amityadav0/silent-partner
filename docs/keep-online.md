@@ -64,3 +64,7 @@ If the spares run dry, create a fresh testnet account from the faucet (`near acc
 | Testnet keys | Don't expire. | None. |
 | GitHub Actions minutes | Public repository: free. | None. |
 | Market data (CoinGecko, testnet season only) | If it fails, every leader holds for that tick and `last-run.json` shows `marketData: false`; the next tick tries again. | None, unless it persists. |
+
+### Top-ups on 2026-11-14 (15:40–16:10 UTC)
+
+The health check flagged the operator (2.55 NEAR, 7.3 days at 0.35/day) and Majors (0.46). The operator also pays the daily auto top-up of Hold NEAR, Half & Half and Majors, so its real spend is about 1.25 NEAR/day. Moved spare testnet NEAR to `sp-sop-92991.testnet` (now 15.05, ~12 days): 0.58 from `quotes2.sp-lmomo`, 0.66 from `quotes.sp-lmeanrev`, 2.26 from the retired `sp-vault-60270` (each kept 0.5 above storage), 3 from the testnet verifier `sp-intents-61557` (keeps 3 above storage), and 1 from each of the 8 house vaults (each keeps ~3.5 free, ~12 days at 0.29/day). Then 2 NEAR from the operator to `majors.sp-sop-92991.testnet`. Txs: `DSMSvLQj…`, `2FmZvNbX…`, `8GwPQBa8…`, `HAEG8pma…`, `8JVjFsAY…`, `DydADgTL…`, `Dpt4VCab…`, `ABZjGbE6…`, `HV6e867U…`, `GRmgVsU4…`, `G3XeomEe…`, `9THZSikW…`, `BgMNcPeM…`.
