@@ -178,3 +178,11 @@ test("Y7/Y8: a vault with only the leader's money says 'no followers yet'; /lead
   await expect(page.locator(".site-head")).toBeVisible();
   await expect(page.getByTestId("not-found").getByRole("link", { name: "Home" })).toBeVisible();
 });
+
+test("Y10: the landing says how it differs from signal-selling apps, without naming anyone", async ({ page }) => {
+  await page.goto("/");
+  const line = page.getByTestId("compare-signals");
+  await expect(line).toContainText("Signal-selling apps: you see the trade, then copy it later, at your own price.");
+  await expect(line).toContainText("you're inside the trade, one fill, one price");
+  for (const name of ["NOVA", "Privue", "Clavis"]) await expect(page.locator("body")).not.toContainText(name);
+});

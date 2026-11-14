@@ -251,6 +251,9 @@ export default function Landing() {
           </table>
           <p className="foot-note">*Only the operator that executes trades sees positions.</p>
         </div>
+        <p className="mt-4 max-w-3xl text-[17px] leading-relaxed" style={{ color: "var(--ink-2)" }} data-testid="compare-signals">
+          <b>Signal-selling apps:</b> you see the trade, then copy it later, at your own price. <b>Silent Partner:</b> you&apos;re inside the trade, one fill, one price.
+        </p>
       </section>
 
       <section className="wrap close">

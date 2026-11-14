@@ -1,5 +1,7 @@
 # Silent Partner
 
+**Real USDC on mainnet: [deposit](https://nearblocks.io/txns/w5EU6i3veqn13buD8ZRZNuTk5uxKa8wZxwjyHCpux3w), [private trade](https://nearblocks.io/txns/6jg61f4qsPUPXK6cPzKaunZDdFP5Pjr7CWYf1uXpfEfz) and [follower payout](https://nearblocks.io/txns/E5KEBvXH7B83CzcaQQQ8Pmb9AVbn8HkFJKSyLcaaPx83).**
+
 > **Live on NEAR mainnet, real USDC.** Vault [`1f80f62c…a36e`](https://nearblocks.io/address/1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e). Its code hash `9S9R3aaEs3cPs9nyjvhZKnsK7Ry3GcHTi1f1KVBtZy34` matches the reviewed reproducible build ([docs/mainnet.md](docs/mainnet.md)). Page: https://amityadav0.github.io/silent-partner/vault/?id=1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e
 > - Deploy: [`BVvZZYcn…`](https://nearblocks.io/txns/BVvZZYcnFspLT2t7nnCCLuqyh7dqqo3RSprJnw9UxhKH)
 > - First shield, signed by the vault's MPC key: [`2v7aU92E…`](https://nearblocks.io/txns/2v7aU92EcYUsgqDz6p12JfkwYAkRpB4wend8hpFqVZBT)
@@ -14,6 +16,8 @@
 > 3. A follower paid out with the operator stopped (exit drill): https://testnet.nearblocks.io/txns/DhphuPPKd2CSu45dKwJdRrngzWj7ffD2iVfYKH4bCqDZ
 
 **Private copy-trading vaults on NEAR Confidential Intents.** A leader and their followers share one vault. The vault's funds sit in a confidential NEAR Intents account controlled by an MPC key derived for the contract. Each leader signal is filled once, for the whole pool, at one price. The public sees attested, price-bounded NAV and returns. Positions are never published; only the operator that executes the trades sees them.
+
+**How it differs from signal-selling apps.** In signal-selling copy trading you pay to see a leader's trade, then copy it from your own account later, at your own price. In Silent Partner you're inside the trade: one fill for the whole vault, one price for the leader and every follower, and only the operator that executes the trade sees the position.
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
