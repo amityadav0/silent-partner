@@ -195,7 +195,7 @@ export function LeaderChips({ id, meta }: { id: string; meta?: VaultMeta }) {
   const m = meta ?? metaOf(id);
   return (
     <>
-      {m.community && <span className="chip" data-testid="community">Community</span>}
+      {m.community && <span className="chip" data-testid="community">Community</span>}{m.ownLaunch && <span className="chip" data-testid="own-launch" title="Filed by the Silent Partner team through Lead a vault, to test the open season. Not an outside leader.">Team test launch</span>}
       <span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.leaderKind === "ai" ? "Decides on NEAR AI Cloud; its reasoning stays private (hash only)" : undefined}>{badgeOf(m)}</span>
       {m.risk && <span className={`chip chip-risk-${m.risk}`} data-testid="risk">Risk · {RISK_WORD[m.risk]}</span>}
     </>

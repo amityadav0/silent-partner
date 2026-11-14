@@ -205,17 +205,19 @@ test("lead a vault: strategy sealed in the browser, bounds from the risk band, s
   await expect(page.getByTestId("sealed-note")).toHaveCount(0);
 });
 
-test("open season: the community vault is on the leaderboard with its badge, and its page names it", async ({ page }) => {
+test("open season: the vault launched through Lead a vault is on the leaderboard, labelled as the team's test launch (B5), and its page names it", async ({ page }) => {
   await page.goto("/leaderboard/");
   const row = page.getByTestId("row-c0.sp-sop-92991.testnet");
   await expect(row).toContainText("Calm Owl");
-  await expect(row.getByTestId("community")).toHaveText("Community");
+  await expect(row.getByTestId("own-launch")).toHaveText("Team test launch");
+  await expect(row.getByTestId("community")).toHaveCount(0);
   await expect(page.getByTestId("calmest-title")).toHaveText(/^(Calmest return this week|Held up best this week)$/);
   await expect(page.getByTestId("calmest-ratio")).toHaveText(/^ · ratio −?\d+\.\d\d$/);
   await expect(page.getByTestId("calmest-ratio")).not.toHaveText(/−0\.00/);
   await page.goto("/vault/?id=c0.sp-sop-92991.testnet");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calm Owl");
-  await expect(page.getByTestId("community")).toBeVisible();
+  await expect(page.getByTestId("own-launch").first()).toBeVisible();
+  await expect(page.getByTestId("about")).toContainText("Launched by the Silent Partner team");
   await expect(page.getByTestId("about")).toContainText("strategy is sealed");
   // partner letters: the public sees that they exist, redacted
   await expect(page.getByTestId("letter-count")).toHaveText(/[1-9]\d* letters?/);

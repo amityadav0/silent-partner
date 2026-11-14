@@ -155,7 +155,7 @@ export default function VaultPage() {
 
           <WhoSeesWhat id={data.id} viewer={viewer} shares={mine?.shares ?? null} vault={vault} dec={m.dec} sym={m.sym} />
 
-          {meta.community && <Letters vault={data.id} />}
+          {(meta.community || meta.ownLaunch) && <Letters vault={data.id} />}
           {!foreign && <Alerts vault={data.id} />}
 
           <p className="muted text-sm leading-relaxed" data-testid="about">

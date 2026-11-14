@@ -2,7 +2,7 @@
 // are. Season vaults mirror operator/season/vaults.json.
 export type Mode = "paper" | "live";
 export type Risk = "low" | "med" | "high";
-export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill" | "benchmark"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean; community?: boolean; near?: [number, number];
+export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill" | "benchmark"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean; community?: boolean; ownLaunch?: boolean; near?: [number, number];
   /** A house benchmark (T3): copyable, but never the hero pick or the week's highlight. */
   benchmark?: boolean;
   /** An old test vault (T4): listed under "Test vaults", never ranked. */

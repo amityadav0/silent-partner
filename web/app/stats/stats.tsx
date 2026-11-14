@@ -15,27 +15,29 @@ export function Stats() {
     get<Funnel>("funnel.json").then(setF);
     get<Usage>("usage.json").then(setU);
   }, []);
-  const row = (label: string, today: number | string, week: number | string, testid: string) => (
-    <tr data-testid={testid}><td>{label}</td><td className="num">{today}</td><td className="num">{week}</td></tr>
-  );
   const n = (k: string, days: number) => (f ? lastDays(f.days, k, days) : "…");
+  const all = (k: string) => (f ? Number(f[k] ?? 0) : "…");
+  const row = (label: string, k: string, testid: string) => (
+    <tr data-testid={testid}><td>{label}</td><td className="num">{n(k, 1)}</td><td className="num">{n(k, 7)}</td><td className="num">{all(k)}</td></tr>
+  );
   return (
     <section className="flex max-w-3xl flex-col gap-6" data-testid="stats">
       <h1>Stats</h1>
       <p className="muted text-sm">Aggregate counts only. Page counts: no cookies, nothing per person (updated hourly{f ? `, last ${new Date(f.ranAt).toUTCString().slice(17, 22)} UTC` : ""}). On-chain usage: public chain data, accounts the project runs excluded{u ? ` (as of ${new Date(u.ranAt).toUTCString().slice(17, 22)} UTC)` : ""}.</p>
       <div className="panel p-0">
         <table className="lb w-full">
-          <thead><tr><th>Site</th><th>Today (UTC)</th><th>Last 7 days</th></tr></thead>
+          <thead><tr><th>Site</th><th>Today (UTC)</th><th>Last 7 days</th><th>All time</th></tr></thead>
           <tbody>
-            {row("Page views", n("view", 1), n("view", 7), "st-views")}
-            {row("Landing views", n("landing", 1), n("landing", 7), "st-landing")}
-            {row("$100 copies started", n("copy_start", 1), n("copy_start", 7), "st-copy")}
-            {row("/create/ai/ opens", n("create_open", 1), n("create_open", 7), "st-create")}
-            {row("Wallets connected", n("wallet_connect", 1), n("wallet_connect", 7), "st-wallet")}
-            {row("Shares", n("share_click", 1), n("share_click", 7), "st-share")}
+            {row("Page views", "view", "st-views")}
+            {row("Landing views", "landing", "st-landing")}
+            {row("$100 copies started", "copy_start", "st-copy")}
+            {row("/create/ai/ opens", "create_open", "st-create")}
+            {row("Wallets connected", "wallet_connect", "st-wallet")}
+            {row("Shares", "share_click", "st-share")}
           </tbody>
         </table>
       </div>
+      <p className="muted text-sm" data-testid="st-started">Counting started: page views, $100 copies and shares on Nov 13 (all-time column); per day, per page, landing views, /create/ai/ opens and wallet connections at 15:42 UTC on Nov 14. Visits under Do Not Track, from automated browsers, or not on the live site aren&apos;t counted.</p>
       {f?.paths && (
         <p className="text-sm" data-testid="st-paths">All-time views by page: {Object.entries(f.paths).sort((a, b) => b[1] - a[1]).map(([p, v]) => `${p} ${v}`).join(" · ")} <span className="muted">(per-page counting started Nov 14)</span></p>
       )}

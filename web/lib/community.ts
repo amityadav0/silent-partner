@@ -87,8 +87,15 @@ export async function loadLaunches(): Promise<Launch[]> {
 export const launchOfVault = (vault: string) => view<Launch | null>(REGISTRY, "launch_of_vault", { vault });
 
 /** Public metadata for a live community vault. */
+/** Launches filed by the project itself to test the open season (B5): not "community". The
+ *  operator's usage count excludes the same accounts (operator/season/own-accounts.json). */
+export const OWN_LAUNCH_LEADERS = new Set(["sp-owl-0749.testnet"]);
+
 export function communityMeta(l: Launch): VaultMeta {
-  return { name: l.name, leaderKind: l.kind, style: l.style, risk: l.risk, blurb: `Community ${l.kind === "ai" ? "AI leader on NEAR AI Cloud: its strategy is sealed, only its hash is on chain" : "leader trading by hand"}. Led by ${l.leader}.`, mode: "paper", network: "testnet", season: true, community: true };
+  const own = OWN_LAUNCH_LEADERS.has(l.leader);
+  const who = l.kind === "ai" ? "AI leader on NEAR AI Cloud: its strategy is sealed, only its hash is on chain" : "leader trading by hand";
+  const blurb = own ? `Launched by the Silent Partner team through Lead a vault, to test the open season end to end: an ${who}. Led by ${l.leader}.` : `Community ${who}. Led by ${l.leader}.`;
+  return { name: l.name, leaderKind: l.kind, style: l.style, risk: l.risk, blurb, mode: "paper", network: "testnet", season: true, community: !own, ownLaunch: own };
 }
 
 /** Public ntfy.sh topic for a vault's alerts (same as operator/src/season/alerts.ts). */

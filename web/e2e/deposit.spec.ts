@@ -212,6 +212,8 @@ test("A2/A3: /trust says how we count; /stats shows site counts and on-chain usa
   await expect(page.getByTestId("trust-counting")).toContainText("We count page views, with no cookies and nothing about you.");
   await page.goto("/stats/");
   await expect(page.getByTestId("st-copy")).toContainText("$100 copies started");
+  await expect(page.getByTestId("st-started")).toContainText("Counting started");
+  await expect(page.getByTestId("st-views").locator("td").nth(3)).toHaveText(/^[1-9]\d*$/, { timeout: 30_000 });
   await expect(page.getByTestId("st-depositors")).toHaveText(/^\d+$/, { timeout: 30_000 });
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await page.goto("/");
