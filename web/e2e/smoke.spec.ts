@@ -89,6 +89,9 @@ test("leader console signs a signal in the browser; the operator executes and re
   await page.goto(`/leader/?id=${VAULT}`);
   await expect(page.getByTestId("signal-key")).toContainText("ready");
   const before = await page.getByTestId("signals-table").locator("tbody tr").count();
+  // sell wNEAR for USDC: earlier runs bought with all of this test vault's USDC, so a buy has "nothing to sell"
+  await page.getByLabel("Sell").selectOption({ label: "wNEAR" });
+  await page.getByLabel("Buy").selectOption({ label: "USDC" });
   await page.getByLabel("Size percent of the vault").fill("5");
   await page.getByRole("button", { name: "Sign and send" }).click();
   await expect(page.getByRole("status")).toContainText("Executed for the whole vault", { timeout: 90_000 });

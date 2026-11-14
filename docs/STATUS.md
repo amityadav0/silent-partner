@@ -49,7 +49,7 @@ Deadline: 2026-11-14 23:59 UTC (we target 18:00 UTC for buffer). The hosted demo
 - [x] README, architecture.md, threat-model.md, demo script, X post, application JSON (NEEDS-AMIT §4–6)
 
 ## P7 Buffer (Nov 14)
-- [ ] re-run all tests, final push, then `git tag hackathon-submission && git push origin hackathon-submission` at the final commit (README links the diff) (dry run 2026-11-09: contract 55, operator 47, web 20, oracle-mock 1, Playwright 12 on live testnet: all green)
+- [x] re-run all tests, final push, then `git tag hackathon-submission && git push origin hackathon-submission` at the final commit (README links the diff). Done 2026-11-14 after T1–T4: contract 73 + oracle-mock 1 + registry 6, operator 99, web 67, Playwright 90 (desktop + mobile) green (dry run 2026-11-09: contract 55, operator 47, web 20, oracle-mock 1, Playwright 12 on live testnet: all green)
 
 ## Season (Nov 9–13): items from Amit's list, in order
 - [x] 1. Paper season: 4 demo vaults + drill vault on testnet, bots, operator in paper mode at real 1Click dry-quote prices, GitHub Actions cron every 15 min, honest "paper · testnet" labels
