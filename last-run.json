@@ -1,74 +1,120 @@
 {
-  "ranAt": "2026-11-14T08:02:55.170Z",
+  "ranAt": "2026-11-14T08:11:53.238Z",
   "marketData": true,
   "oracle": {
-    "tx": "CxE52xh8g4375pgaF3tSMH7nfPg9wssXbmeDXWAPU9Yh"
+    "tx": "ERhgcZNkD5AbGi1cvLL7zgDoBEjFTJrEbwiUU43DxAiQ"
   },
-  "warnings": [],
-  "topups": [],
+  "warnings": [
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "hold.sp-sop-92991.testnet",
+      "free_near": 0.34,
+      "days_left": 1.2
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "half.sp-sop-92991.testnet",
+      "free_near": 0.34,
+      "days_left": 1.2
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "majors.sp-sop-92991.testnet",
+      "free_near": 0.52,
+      "days_left": 1.8
+    }
+  ],
+  "topups": [
+    {
+      "topup": "hold.sp-sop-92991.testnet",
+      "near": 1,
+      "from": "sp-sop-92991.testnet",
+      "tx": "6FzNPydpwNoUE6MxxqCt8WFzx4H84Ngr5CPjTchrrmXD"
+    },
+    {
+      "topup": "half.sp-sop-92991.testnet",
+      "near": 1,
+      "from": "sp-sop-92991.testnet",
+      "tx": "Avai95MNu3C7s2Bjt7EFTzUGXev3Tckp73M8HqZfJWdD"
+    }
+  ],
   "community": [],
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 509,
+      "epoch": 510,
       "nav": "765515712",
-      "tx": "3BjpWw8qynCF9dSLQZkuZs9C98iBMed5mqgZSpKRrfhY"
+      "tx": "89RN45kPx28x4DfpTNaiN7SvhszkQh22PYWBrUu3Wp6"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 508,
-      "nav": "771763156",
-      "tx": "BeTBoQaWvRjGEafBLMxJFH63uZ4eCfkqNRw95zRCKkHa"
+      "epoch": 509,
+      "nav": "771844360",
+      "tx": "A6orX9cELHC1uhht5AsTP83LEFdy9seAXe3pUtPaA7E8"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 505,
+      "epoch": 506,
       "nav": "633474870",
-      "tx": "J2gAFQm3xF7g3Z4WXFAt7D7Q76mP74UawsdhaW4teinh"
+      "tx": "DyoPJGC82EfocVQf4MUC7T7DsR9jGqC1sqDB23tsZp6i"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 433,
+      "epoch": 434,
       "nav": "507605663",
-      "tx": "HPmnWypVgweDTqhy1gu42ieadozRLEjeSbJSxih2d7ME"
+      "tx": "Gh2YZZdDDc7HtJ8CZXvWiwLNKYq9GVGKvsgkP7fVWwaz"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 484,
-      "nav": "590722911",
-      "tx": "FeAmXnUqj386CJL1ukh2XkSx9DfcVWo1iJNKvBrxhJJ9"
+      "epoch": 485,
+      "nav": "592719511",
+      "tx": "5oVZnFHRrYPMGLazPecw61jRVFABETGASHPV3dStdyAq"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 480,
-      "nav": "613451091",
-      "tx": "2GnRHLi1qEDHAkE5CTgKmWp1CS6B1gVUp5Wt2fmGCKdy"
+      "epoch": 481,
+      "nav": "613958893",
+      "tx": "79dj9HotjQaQZrHLE7tHLAdCvySPA8Qq6riawKN2xSQT"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 468,
-      "nav": "317519367",
-      "tx": "HuhbYo4ztME7UtFAbrgp9BjTyYuf833okWheDQXgzYtP"
+      "epoch": 469,
+      "nav": "317784726",
+      "tx": "8b68cKVQbu43WKq6LohxzYNkP6rmsPo5mDqGBWKcZ5iL"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "error": "view sp-manual-92991.testnet.get_config: \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\""
+      "epoch": 483,
+      "nav": "632422560",
+      "tx": "9hfo19uxqSsZHH6RjGs29cPu9LtwHMk5N6T4WFExQdan"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "error": "view hold.sp-sop-92991.testnet.get_vault: \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\""
+      "epoch": 1,
+      "nav": "646140014",
+      "tx": "7MunWy2xWUowXufFFqtVcLbCKa7tevGKRV1gbiQUZjJT",
+      "signal_hash": "03bc6b4cbde65dd148c1cd9be7dda3140c1040692a3cb85491f2face36b2ebeb",
+      "signal_status": "executed"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "error": "view half.sp-sop-92991.testnet.get_vault: \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\""
+      "epoch": 1,
+      "nav": "648013924",
+      "tx": "7ruSLijaQZ8adN4HnVLr4izSZo1FADWZ214jH7jBxSfK",
+      "signal_hash": "a8160ccf4d40bb2d1dd2aa3d9b23f5afeeaec523ce0f48126514ced7063dfa86",
+      "signal_status": "executed"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "error": "view majors.sp-sop-92991.testnet.get_vault: \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\""
+      "epoch": 2,
+      "nav": "647819525",
+      "tx": "4tS7MzQ3nECmBALBWziL8c1rwprE7Jwy75Wk93Zcbr5T"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "view c0.sp-sop-92991.testnet.get_vault: \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\""
+      "epoch": 276,
+      "nav": "92181257",
+      "tx": "2AZckDNzwMZwwNadFHbZVnu5qKcRUSBkZ1k8D2uqBWL4"
     }
   ]
 }
