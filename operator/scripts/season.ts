@@ -29,6 +29,7 @@ import { aiDue, benchmarkTarget, blocked, blockedBasket, lastTradeMs, TURNOVER, 
 import { changes24h, majors, type Changes } from "../src/leaders/majors.js";
 import type { DecideBasket } from "../src/season/tick.js";
 import { costSummary, pooledBps, publish, type CostSummary } from "../src/season/costs.js";
+import { refreshVault, type Board, type BoardVault } from "../src/season/board.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
 import { aiLeader, weightBucket } from "../src/leaders/ai.js";
 import type { Attestation } from "../src/leaders/receipt.js";
@@ -43,7 +44,7 @@ import { needsTopup, TOPUP } from "../src/season/topup.js";
 import { addStake, stakeBps, type StakeDoc } from "../src/season/stake.js";
 import { computeAlerts, pushNtfy, telegram, type AlertEvent, type Snapshot, type TgState, type VaultState } from "../src/season/alerts.js";
 
-const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[] };
+const S = JSON.parse(readFileSync("season/vaults.json", "utf8")) as { operator: string; base: string; risk: string; vaults: { id: string; strategy: string; name: string }[]; usage_extra?: string[] };
 const local = existsSync("data/season-keys.json") ? JSON.parse(readFileSync("data/season-keys.json", "utf8")) : {};
 const e = process.env;
 const opKey = e.SEASON_OPERATOR_KEY || (existsSync(`${homedir()}/.near-credentials/testnet/${S.operator}.json`) ? JSON.parse(readFileSync(`${homedir()}/.near-credentials/testnet/${S.operator}.json`, "utf8")).private_key : "");
@@ -350,6 +351,24 @@ for (const f of consumed) rmSync(join(inboxDir, f), { force: true });
 // Public run summary: no positions, only what the chain already shows plus decisions' public parts.
 const ranAt = new Date().toISOString();
 writeFileSync(join(sealed, "last-run.json"), JSON.stringify({ ranAt, marketData: !!market, oracle, warnings, topups, community: communityLog, results: results.map(redact) }, null, 2) + "\n");
+// The leaderboard's first paint (Z5): views and price posts of every listed vault, incrementally.
+try {
+  const boardFile = join(sealed, "board.json");
+  const prev: Board | null = existsSync(boardFile) ? JSON.parse(readFileSync(boardFile, "utf8")) : null;
+  const ids = [...new Set([...S.vaults.map((v) => v.id), ...(S.usage_extra ?? []), ...community.map((l) => l.vault!).filter(Boolean)])];
+  const vaults: BoardVault[] = [];
+  for (const id of ids) {
+    const old = prev?.vaults.find((v) => v.id === id);
+    try {
+      vaults.push(await refreshVault(env.rpc, id, old));
+    } catch {
+      if (old) vaults.push(old);
+    }
+  }
+  writeFileSync(boardFile, JSON.stringify({ ranAt, vaults } satisfies Board) + "\n");
+} catch (x) {
+  console.log(JSON.stringify({ board_error: String((x as Error).message).slice(0, 120) }));
+}
 // Recent signals per vault (hashes only), so the vault page can match a trade to its on-chain record.
 const recentFile = join(sealed, "recent-signals.json");
 let recent: Record<string, Record<string, unknown>[]> = {};
