@@ -17,7 +17,7 @@
 
 Built at the NEAR Hackathon "Build Beyond Boundaries". Tracks: **Privacy** (primary), **DeFi**, **Agents**.
 
-**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4) (also [on X](https://x.com/amit29199/status/2121077443583000923)). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) decide every 15 minutes and trade at real 1Click prices when their target moves. NAVs and signals are real testnet transactions; the funds are testnet tokens.
+**Live site: https://amityadav0.github.io/silent-partner/**. Demo video: [docs/demo/silent-partner-demo.mp4](docs/demo/silent-partner-demo.mp4) (also [on X](https://x.com/amit29199/status/2121077443583000923)). Besides the mainnet vault, the site runs a testnet paper season: 8 house leaders (5 AI leaders on NEAR AI Cloud, 2 quant bots, 1 manual) trade at real 1Click prices, plus two benchmark vaults (Hold NEAR, Half & Half) and a multi-asset bot (Majors). Prices are posted every 15 minutes; since Nov 14 a turnover rule (≥ 20 pts, ≥ 4 h between trades, AI asked hourly) keeps trading costs from eating the returns. NAVs and signals are real testnet transactions; the funds are testnet tokens.
 
 ![Silent Partner landing page: a trade ticket stamped SEALED, with every field redacted](docs/screens/landing.png)
 
@@ -173,6 +173,16 @@ npx tsx scripts/testnet-intents.ts <near/intents>/releases/defuse-0.2.10.wasm  #
 
 The 1Click partner JWT (`ONECLICK_JWT` in `.env`) is only needed for real 1Click dry quotes. Everything is dry by default (`DRY_RUN=1`). Mainnet writes need `MAINNET_WRITES=1`, and live 1Click needs `MAINNET_LIVE_OK=1`.
 
+## After the submission tag (Nov 14, testnet)
+
+The `hackathon-submission` tag marks what was judged. Built after it, testnet only; the mainnet vault is unchanged:
+
+- **Turnover rule and trading cost on every vault** (D-T-1, D-T-2): leaders were losing ≈ 0.35% a trade, 27 trades a day. Each vault now shows "Trading cost so far" and trades per day.
+- **Benchmarks as vaults** (D-T-3): Hold NEAR and Half & Half, copyable, labelled BENCHMARK.
+- **Emergency exits paid in rounds** (D-T-5): from what's actually in the vault, pro rata, so the last one out isn't short. Live drill: [docs/drill-rounds.json](docs/drill-rounds.json).
+- **Multi-asset vaults** (D-T-6): BTC, ETH, SOL and NEAR, with a price bound over all allowed assets ([docs/multi-asset.md](docs/multi-asset.md)). The Majors vault posts with 8 real 1Click-signed quotes.
+- **Plan for a guarded real-money vault** ([docs/guarded-launch.md](docs/guarded-launch.md)): deposit caps in the contract, the full-access key deleted at launch. Nothing deployed.
+
 ## Docs
 
 - [Architecture](docs/architecture.md)
@@ -185,3 +195,5 @@ The 1Click partner JWT (`ONECLICK_JWT` in `.env`) is only needed for real 1Click
 - [Reproducibility](docs/reproducibility.md)
 - [Keeping the demo online](docs/keep-online.md)
 - [1Click kill tests](docs/killtests-copyvault.md)
+- [Multi-asset vaults](docs/multi-asset.md)
+- [Guarded real-money launch (plan)](docs/guarded-launch.md)
