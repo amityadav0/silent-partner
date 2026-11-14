@@ -47,6 +47,11 @@ export function aiFromDecisions(d: Record<string, Decision[]>): { ai: "ok" | "do
   return { ai: last.ai_status === "ok" ? "ok" : "down", at: Date.parse(last.ranAt) };
 }
 
+/** The keeper's state: its last GitHub run if known, else a mainnet post under 4 h old means it's working. */
+export function keeperFrom(run: Health["keeper"], mainnetMs: number | null, now = Date.now()): Health["keeper"] {
+  return run ?? (mainnetMs !== null && now - mainnetMs < 4 * H ? "ok" : null);
+}
+
 const KEY = "sp.health";
 const TIMEOUT_MS = 6_000;
 let cache: Promise<Health> | null = null;
@@ -67,7 +72,10 @@ export function loadHealth(): Promise<Health> {
       null,
     ),
   ]).then(([m, s, a, k]) => {
-    const fresh: Health = { mainnetMs: m, seasonMs: s, ai: a?.ai ?? null, aiMs: a?.at ?? null, keeper: k as Health["keeper"] };
+    // B6: the keeper's job is the mainnet post; if GitHub's API is slow or rate-limited, a post
+    // under 4 h old says the keeper is working.
+    const keeper = keeperFrom(k as Health["keeper"], m);
+    const fresh: Health = { mainnetMs: m, seasonMs: s, ai: a?.ai ?? null, aiMs: a?.at ?? null, keeper };
     let saved: (Health & { savedMs: number }) | null = null;
     try {
       saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
@@ -78,12 +86,12 @@ export function loadHealth(): Promise<Health> {
     const h: Health = missing && saved
       ? { mainnetMs: fresh.mainnetMs ?? saved.mainnetMs, seasonMs: fresh.seasonMs ?? saved.seasonMs, ai: fresh.ai ?? saved.ai, aiMs: fresh.aiMs ?? saved.aiMs, keeper: fresh.keeper ?? saved.keeper, staleMs: saved.savedMs }
       : fresh;
-    if (!missing) {
-      try {
-        localStorage.setItem(KEY, JSON.stringify({ ...fresh, savedMs: Date.now() }));
-      } catch {
-        /* no storage */
-      }
+    // remember whatever resolved, field by field, so one slow source never blanks the line next time
+    try {
+      const merged = { mainnetMs: fresh.mainnetMs ?? saved?.mainnetMs ?? null, seasonMs: fresh.seasonMs ?? saved?.seasonMs ?? null, ai: fresh.ai ?? saved?.ai ?? null, aiMs: fresh.aiMs ?? saved?.aiMs ?? null, keeper: fresh.keeper ?? saved?.keeper ?? null, savedMs: Date.now() };
+      localStorage.setItem(KEY, JSON.stringify(merged));
+    } catch {
+      /* no storage */
     }
     return h;
   });

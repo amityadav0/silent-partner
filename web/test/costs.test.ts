@@ -147,3 +147,14 @@ describe("stats (A3)", () => {
     expect(lastDays(undefined, "view", 7, now)).toBe(0);
   });
 });
+
+import { keeperFrom } from "../lib/health";
+describe("keeper status (B6)", () => {
+  const now = Date.parse("2026-11-14T17:00:00Z");
+  it("falls back to the mainnet post's age when GitHub doesn't answer", () => {
+    expect(keeperFrom("failed", now - 3_600_000, now)).toBe("failed");
+    expect(keeperFrom(null, now - 3 * 3_600_000, now)).toBe("ok");
+    expect(keeperFrom(null, now - 5 * 3_600_000, now)).toBeNull();
+    expect(keeperFrom(null, null, now)).toBeNull();
+  });
+});

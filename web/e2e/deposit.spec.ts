@@ -64,7 +64,7 @@ test("D4: record length, the new-leader chip, limits in numbers and the leader's
   const lim = page.getByTestId("limits");
   await expect(lim.getByTestId("limits-near")).toContainText("0–100%");
   await expect(lim.getByTestId("limits-near")).toContainText("clamped");
-  await expect(lim.getByTestId("limits-rate")).toContainText(/in the last 24 h|trades? a (day|week)|so far|no trades/);
+  await expect(lim.getByTestId("limits-rate")).toContainText(/in the last 24 h|since the 4-hour rule went live|trades? a (day|week)|so far|no trades/);
   await expect(lim).toContainText("USDC and wNEAR only");
   await expect(lim.getByTestId("limits-stake")).toContainText(/\d+\.\d% now, from \d+\.\d% on/);
   await expect(lim.getByTestId("limits-stake").getByTestId("sparkline")).toBeVisible();
@@ -250,4 +250,11 @@ test("B4: the NEAR Hunt upvote link is in the footer and on /about", async ({ pa
   await page.goto("/about/");
   await expect(page.getByTestId("nearhunt-about")).toHaveAttribute("href", URL);
   await expect(page.getByTestId("nearhunt-foot")).toHaveAttribute("href", URL);
+});
+
+test("B6: on the Genesis page the status line resolves the keeper within seconds, never stuck on 'keeper …'", async ({ page }) => {
+  await page.goto("/vault/?id=1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e");
+  const st = page.getByTestId("sys-status").first();
+  await expect(st).toContainText(/keeper (✓|✗)/, { timeout: 12_000 });
+  await expect(st).toContainText(/NEAR AI (✓|✗)/);
 });
