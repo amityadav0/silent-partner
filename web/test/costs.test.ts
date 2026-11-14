@@ -99,3 +99,18 @@ describe("trades figure (Y1/Z2)", () => {
     expect(tradesDay(c, null)).toBe("20 trades in the last 24 h");
   });
 });
+
+import { aiFromDecisions, within } from "../lib/health";
+describe("status line never hangs (Z4)", () => {
+  it("a slow source falls back after the timeout", async () => {
+    expect(await within(new Promise<number>(() => {}), 10, -1)).toBe(-1);
+    expect(await within(Promise.resolve(3), 10, -1)).toBe(3);
+    expect(await within(Promise.reject(new Error("x")), 10, -1)).toBe(-1);
+  });
+  it("AI status comes from the latest hourly decision, not the latest tick", () => {
+    const d = { a: [{ ranAt: "2026-11-14T13:00:00Z", ai_status: "ok" }], b: [{ ranAt: "2026-11-14T14:00:00Z", ai_status: "error" }] };
+    expect(aiFromDecisions(d)).toEqual({ ai: "down", at: Date.parse("2026-11-14T14:00:00Z") });
+    expect(aiFromDecisions({ a: [{ ranAt: "2026-11-14T15:00:00Z", ai_status: "ok" }] }).ai).toBe("ok");
+    expect(aiFromDecisions({}).ai).toBeNull();
+  });
+});
