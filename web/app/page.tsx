@@ -29,7 +29,7 @@ function useLive() {
     Promise.allSettled(VAULTS.map((v) => loadVault(v))).then(async (rs) => {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
-      loadNear().then((near) => setPick(pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season })), near).id));
+      loadNear().then((near) => setPick(pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near).id));
       // Recent verified events: times and ✓ only. No amounts, no holders.
       const posts: LiveEvent[] = checked
         .filter(({ d }) => d.id !== DRILL && d.navs.length)

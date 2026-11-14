@@ -36,7 +36,7 @@ export async function exposure(op: Operator, risk: string): Promise<{ nav: bigin
  * with its full rationale. The public chain sees only the signal hash, which
  * covers `memo_hash = sha256(rationale)`.
  */
-export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number; minStep?: number }): Promise<TickResult> {
+export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number; minStep?: number; allow?: (current: number, target: number) => string | null; due?: boolean }): Promise<TickResult> {
   const now = o.now ?? Date.now;
   const out: TickResult = { vault: o.vault, exposureBefore: 0 };
   await o.op.shieldPending();
@@ -45,13 +45,16 @@ export async function tick(o: { op: Operator; vault: string; base: string; risk:
   if (o.manual) {
     const r = await o.op.submitSignal(o.manual);
     out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: (o.manual as any).signal.size_bps, from: (o.manual as any).signal.from, to: (o.manual as any).signal.to } : { error: r.error };
-  } else if (o.decide && o.signalKey) {
+  } else if (o.decide && o.signalKey && o.due !== false) {
     const d = await o.decide(current);
+    // The turnover rule (T1): a target the gate blocks is kept in the notebook as a hold.
+    const stop = d.target === null ? null : o.allow?.(current, d.target) ?? null;
+    if (stop) d.why = `${d.why}; held: ${stop}`;
     // With a TEE receipt the memo commits to the model, the exact request and response
     // (hence the reasoning) and the attestation; without one, to the sealed rationale.
     const memo = d.receipt ? receiptMemo(d.receipt) : d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
     out.decision = { target: d.target, why: d.why, model: d.model, usage: d.usage, memo_hash: memo, receipt: d.receipt, receipt_error: d.receipt_error };
-    const s = d.target === null ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo, o.minStep);
+    const s = d.target === null || stop ? null : rebalance(o.vault, o.base, o.risk, current, d.target, now(), memo, o.minStep);
     if (s) {
       const r = await o.op.submitSignal(signSignal(s, KeyPair.fromString(o.signalKey as `ed25519:${string}`)));
       out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: s.size_bps, from: s.from, to: s.to } : { error: r.error };

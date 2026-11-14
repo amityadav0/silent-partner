@@ -24,9 +24,11 @@ import { Confidential } from "../src/confidential.js";
 import { FillLog } from "../src/filllog.js";
 import { Operator } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
-import { nearHistory, nearUsd, type Series } from "../src/leaders/market.js";
+import { nearHistory, nearUsd, ret, type Series } from "../src/leaders/market.js";
+import { aiDue, benchmarkTarget, blocked, lastTradeMs, TURNOVER, type Benchmark } from "../src/season/turnover.js";
+import { costSummary, pooledBps, publish, type CostSummary } from "../src/season/costs.js";
 import { STRATEGIES } from "../src/leaders/strategies.js";
-import { aiLeader, AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
+import { aiLeader, weightBucket } from "../src/leaders/ai.js";
 import type { Attestation } from "../src/leaders/receipt.js";
 import { MockFeed } from "../src/oracle.js";
 import { open, sealDir, unsealDir } from "../src/season/state.js";
@@ -125,20 +127,33 @@ const ai = (persona: Parameters<typeof aiLeader>[2]["persona"]): Decide => async
   return d;
 };
 const files: string[] = [];
+const BENCH: Record<string, true> = { hold: true, half: true };
+const ret6h = market ? ret(market.p, 72) : 0;
+const turnover = (last: number | null) => (current: number, target: number) => blocked({ current, target, lastTradeMs: last, nowMs: Date.now(), ret6h });
 for (const v of S.vaults.filter((v) => v.strategy !== "drill")) {
   const fills = `fills-${v.id}.jsonl`, notes = `notes-${v.id}.jsonl`;
   files.push(fills, notes);
   try {
     const chain = new NearVault(v.id, env.rpc, "testnet", S.operator, opKey);
     const va = (await chain.getVault()).vault_account!;
-    const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), new FillLog(v.id, join(plain, fills)), KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
+    const log = new FillLog(v.id, join(plain, fills));
+    const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), log, KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
     let decide: Decide | undefined;
     if (market && STRATEGIES[v.strategy]) decide = async (cur) => STRATEGIES[v.strategy](market!, cur);
     if (market && v.strategy.startsWith("ai")) decide = ai(v.strategy);
+    const bench = v.strategy in BENCH ? (v.strategy as Benchmark) : null;
+    const last = lastTradeMs(log.entries);
+    if (bench) decide = async (cur) => benchmarkTarget(bench, cur, last, Date.now());
     // one manual signal per vault per tick; the rest wait for the next tick
     const m = v.strategy === "manual" ? pending.find((p) => p.env?.signal?.vault === v.id) : undefined;
     if (m?.file) consumed.push(m.file);
-    results.push(await tick({ op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide, signalKey: signalKeys[v.id], manual: m?.env ?? undefined, notesPath: join(plain, notes), minStep: v.strategy.startsWith("ai") ? AI_MIN_STEP : undefined }));
+    results.push(await tick({
+      op, vault: v.id, base: S.base, risk: S.risk, decide: v.strategy === "manual" ? undefined : decide,
+      signalKey: signalKeys[v.id] ?? (bench ? ck.signalSecret : undefined), manual: m?.env ?? undefined, notesPath: join(plain, notes),
+      // The turnover rule (T1) for every automated leader; benchmarks follow their own fixed rule.
+      minStep: bench ? 0.01 : TURNOVER.minStep, allow: bench ? undefined : turnover(last),
+      due: v.strategy.startsWith("ai") ? aiDue(join(plain, notes), Date.now()) : true,
+    }));
   } catch (x) {
     results.push({ vault: v.id, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }
@@ -157,6 +172,7 @@ for (const l of community) {
     const va = (await chain.getVault()).vault_account!;
     const op = new Operator(chain, new Confidential(env.oneclickUrl, "", fetch, undefined, true), new FillLog(vid, join(plain, fills)), KeyPair.fromString(attKey), "ed25519:" + base58.encode(Buffer.from(va, "hex")), env.op);
     let decide: Decide | undefined, signalKey: string | undefined, manual: unknown;
+    const last = lastTradeMs(op.log.entries);
     if (l.kind === "ai") {
       const persona = communityPersona(l, await unseal(l.sealed_prompt ?? "", ck.sealSk, "launch"));
       const registered = await viewCall<string | null>(env.rpc, vid, "get_signal_key", {}, fetch, "optimistic");
@@ -171,7 +187,7 @@ for (const l of community) {
         manual = await unseal(s.sealed, ck.sealSk, `signal:${vid}`).then((t) => JSON.parse(t), () => undefined);
       }
     }
-    results.push(await tick({ op, vault: vid, base: S.base, risk: S.risk, decide, signalKey, manual, notesPath: join(plain, notes), minStep: l.kind === "ai" ? AI_MIN_STEP : undefined }));
+    results.push(await tick({ op, vault: vid, base: S.base, risk: S.risk, decide, signalKey, manual, notesPath: join(plain, notes), minStep: TURNOVER.minStep, allow: l.kind === "ai" ? turnover(last) : undefined, due: l.kind === "ai" ? aiDue(join(plain, notes), Date.now()) : true }));
   } catch (x) {
     results.push({ vault: vid, exposureBefore: NaN, error: String((x as Error).message).slice(0, 300) });
   }
@@ -235,6 +251,7 @@ const STYLE: Record<string, [string, string]> = {
   momentum: ["Bot", "EMA crossover"], "mean-reversion": ["Bot", "Buys −1.5σ, sells +1.5σ"], manual: ["Human", "A person trading by hand, signs every trade"],
   ai: ["AI", "Momentum + volatility, own judgement"], "ai-trend": ["AI", "Rides momentum"], "ai-contrarian": ["AI", "Fades extremes"],
   "ai-voltarget": ["AI", "Targets 40% volatility"], "ai-conviction": ["AI", "50% NEAR, tilts by conviction"],
+  hold: ["Benchmark", "100% NEAR, never sells"], half: ["Benchmark", "50/50, rebalanced weekly"],
 };
 mkdirSync(join(sealed, "cards"), { recursive: true });
 const stakeFile = join(sealed, "stake.json");
@@ -363,13 +380,36 @@ try {
 for (const a of attestations.values()) attDoc[createHash("sha256").update(Buffer.from(a.intel_quote.replace(/^0x/, ""), "hex")).digest("hex")] = { ...a, seen: ranAt };
 writeFileSync(attFile, JSON.stringify(Object.fromEntries(Object.entries(attDoc).slice(-50)), null, 1) + "\n");
 // NEAR/USD history (U9): the site's "vs holding NEAR" benchmark reads it at each post's time.
+let nearSeries: Series | null = null;
 try {
   const f = join(sealed, "near-usd.json");
   const prev = existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as Series) : null;
+  nearSeries = prev;
   const h = await nearHistory(prev, market);
-  if (h.t.length) writeFileSync(f, JSON.stringify({ source: "coingecko near/usd", ranAt, t: h.t, p: h.p }) + "\n");
+  if (h.t.length) {
+    nearSeries = h;
+    writeFileSync(f, JSON.stringify({ source: "coingecko near/usd", ranAt, t: h.t, p: h.p }) + "\n");
+  }
 } catch {
   /* keep the last file */
+}
+// Trading cost per vault (T2): totals only, from the fill logs against the NEAR/USD mid.
+if (nearSeries) {
+  try {
+    const raw: [string, CostSummary, number | null][] = [];
+    for (const r of results) {
+      const f = join(plain, `fills-${r.vault}.jsonl`);
+      if (!existsSync(f)) continue;
+      const entries = readFileSync(f, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+      const navUsd = r.nav ? Number(r.nav) / 1e6 : null;
+      raw.push([r.vault, costSummary(entries, { base: S.base, risk: S.risk, near: nearSeries, navUsd, now: Date.now() }), navUsd]);
+    }
+    const bps = pooledBps(raw.map(([, c]) => c));
+    const vaults = Object.fromEntries(raw.map(([id, c, nav]) => [id, publish(c, bps, nav)]));
+    writeFileSync(join(sealed, "costs.json"), JSON.stringify({ ranAt, cost_bps: bps, turnover_rule_since: TURNOVER.since, vaults }, null, 1) + "\n");
+  } catch (x) {
+    console.log(JSON.stringify({ costs_error: String((x as Error).message).slice(0, 120) }));
+  }
 }
 // Funnel totals (V8): four aggregate counters the site bumps (no cookies, nothing per person).
 try {

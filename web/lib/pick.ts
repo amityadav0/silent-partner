@@ -8,12 +8,12 @@ import type { NavPost } from "./vault";
 export const PICK_MIN_VERIFIED = 12;
 const WEEK = 7 * 24 * 3600_000;
 
-export type PickCandidate = { id: string; navs: Pick<NavPost, "price" | "timestamp_ms">[]; verified: number; season: boolean };
+export type PickCandidate = { id: string; navs: Pick<NavPost, "price" | "timestamp_ms">[]; verified: number; season: boolean; benchmark?: boolean };
 
 export function pickLeader(cs: PickCandidate[], near: NearSeries | null, now = Date.now()): { id: string; pts: number | null } {
   let best: { id: string; pts: number } | null = null;
   for (const c of cs) {
-    if (!c.season || c.verified < PICK_MIN_VERIFIED) continue;
+    if (!c.season || c.benchmark || c.verified < PICK_MIN_VERIFIED) continue;
     const v = vsNear(c.navs, near, now - WEEK);
     if (v && (!best || v.pts > best.pts)) best = { id: c.id, pts: v.pts };
   }

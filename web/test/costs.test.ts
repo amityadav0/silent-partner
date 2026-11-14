@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { durationWords, feeExample, medianGapMs, perfFee, withdrawEta } from "../lib/costs";
+import { costWords, durationWords, feeExample, medianGapMs, perfFee, withdrawEta } from "../lib/costs";
+import { badgeOf, META, metaOf } from "../lib/vaults";
 
 const M = 60_000;
 describe("what you pay (D2)", () => {
@@ -59,5 +60,26 @@ describe("system status (D9)", () => {
     expect(judge({ ...ok, ai: "down" }, now).headline).toContain("AI leaders are holding");
     expect(judge({ ...ok, mainnetMs: now - 13 * 3_600_000 }, now).level).toBe("bad");
     expect(judge({ ...ok, seasonMs: now - 4 * 3_600_000 }, now).headline).toContain("testnet prices stopped 4 h ago");
+  });
+});
+
+describe("trading cost so far (T2)", () => {
+  it("reads as a share of the vault and a trade count", () => {
+    expect(costWords({ trades: 37, trades_24h: 4, moved_usd: 9000, cost_pct: 0.84, cost_bps: 34.5 })).toBe("0.84% of the vault (37 trades)");
+    expect(costWords({ trades: 1, trades_24h: 1, moved_usd: 5, cost_pct: 0.004, cost_bps: 34.5 })).toBe("<0.01% of the vault (1 trade)");
+    expect(costWords({ trades: 0, trades_24h: 0, moved_usd: 0, cost_pct: null, cost_bps: 20 })).toBe("(0 trades)");
+  });
+});
+
+describe("benchmarks and test vaults (T3, T4)", () => {
+  it("two benchmark vaults, labelled BENCHMARK", () => {
+    const b = Object.entries(META).filter(([, m]) => m.benchmark);
+    expect(b.map(([, m]) => m.name).sort()).toEqual(["Half & Half", "Hold NEAR"]);
+    for (const [, m] of b) expect(badgeOf(m)).toBe("BENCHMARK");
+  });
+  it("the drill and the first testnet vault are test vaults, and the testnet one no longer collides with Genesis (mainnet)", () => {
+    expect(metaOf("sp-drill-92991.testnet").test).toBe(true);
+    expect(metaOf("sp-vault-60270.testnet")).toMatchObject({ test: true, name: "First test vault" });
+    expect(Object.values(META).filter((m) => !m.test).every((m) => !/genesis/i.test(m.name))).toBe(true);
   });
 });

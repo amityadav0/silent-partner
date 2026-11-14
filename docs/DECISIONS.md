@@ -335,3 +335,21 @@ Each decision is dated, with its reason.
 - **Folding.** The price-update table, and the AI signal hash plus season-log check, sit behind "Technical record ▸". The contract line, the TEE receipts and the stats stay visible. On a phone a "Follow …: cost and steps ↓" button jumps to the panel.
 - **Status line.** Read in the browser from the mainnet vault's last_nav_ms (amber > 4 h, red > 12 h), last-run.json (amber > 45 min, red > 3 h, NEAR AI down if no AI vault answered) and the keeper workflow's last run (GitHub API, unauthenticated, "…" if rate limited). It uses no ARIA status role, so screen readers aren't interrupted on every page.
 - **V6 e2e** deposits into a season vault, not the hand-posted Genesis testnet vault, whose price goes stale and freezes deposits.
+
+## D-T-1: the season's turnover rule (from 2026-11-14)
+- **Why.** After 4 days 6 of 8 leaders were 3–13 pts behind holding NEAR, trading ≈27 times a day at ≈0.35% a trade. Cost, not judgement, was most of the gap.
+- **Rule (operator only, `operator/src/season/turnover.ts`).** A leader's target trades only when it is ≥20 pts from the current weight AND ≥4 h have passed since the vault's last executed fill. Exempt from the 4 h wait only: a cut to a lower NEAR weight when NEAR fell ≥5% over 6 h (the 20-pt rule still holds). AI leaders are asked hourly (the clock is the last answered decision in the sealed notebook; an outage doesn't reset it); price updates stay every 15 min. Bots and community AI leaders get the same gate; human leaders' signed signals are untouched. The prompt states the rule and the measured cost ("about 0.35% of the amount moved; trade only when the expected gain clearly exceeds it"). A blocked target is kept in the notebook as a hold with the reason.
+- **Rejected.** A contract-side minimum gap (a contract change and a redeploy of 8 vaults on the last day, and it would also bind human leaders); a cost penalty only in the prompt (bots don't read prompts and models ignore it); a daily trade cap (bunches trades at the start of the day).
+- The record shows when it changed: everything before 2026-11-14 ran without it. `costs.json` carries `turnover_rule_since`.
+
+## D-T-2: trading cost from the fills, pooled
+- The operator values each fill against the NEAR/USD mid at the fill time (season-state/near-usd.json, linear between points: 5-minute since Nov 12, hourly before). One vault's fills carry timing noise against that mid: Contrarian (buys right after drops) read 2 bps a trade, Momentum 52 bps. So the published number is each vault's amount traded × the season's pooled rate (all fills of all vaults, floored at the 20 bps 1Click fee): 34.5 bps on Nov 14. "Trading cost so far: X% of the vault (N trades)" = traded × rate ÷ current NAV. Totals only; trade counts are already public as on-chain signals. The leaderboard shows trades in the last 24 h, so the turnover rule shows within a day. The "What you pay" box now shows the measured per-trade cost, not only the 20 bps fee.
+- Rejected: per-vault cost against the mid (noise larger than the signal); recording the cost at fill time only (no history for the 4 days that matter); a flat 20 bps (understates the spread by ~40%).
+
+## D-T-3: benchmarks as vaults
+- `hold.sp-sop-92991.testnet` ("Hold NEAR": 100% NEAR, buys only to invest new deposits, never sells) and `half.sp-sop-92991.testnet` ("Half & Half": 50/50, rebalanced weekly, ≥2 pts drift). Same contract build and config as the season vaults (copied from the template vault), seeded like the others (leader 100, followers 300 + 250 USDC). Their leaders are house accounts `lhold.`/`lhalf.`, keys local only; their signal key is the season's derived community signer, so no new CI secret. They skip the turnover gate (they follow their own fixed rule).
+- Labelled BENCHMARK, ranked like any vault (after 12 posts), but never the hero pick or the week's highlight.
+- Funding: 9 testnet NEAR moved to the operator from two unlisted test accounts (sp-vault2-61557, an old verifier test vault; sp-drill-92991, whose emergency drill is finished). Both added to auto top-up.
+
+## D-T-4: test vaults out of the ranking
+- The emergency drill and the testnet "Genesis vault" (renamed "First test vault", so it no longer collides with Genesis (mainnet)) are listed only in a collapsed "Test vaults" section under the table.

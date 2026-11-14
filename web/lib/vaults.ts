@@ -2,7 +2,11 @@
 // are. Season vaults mirror operator/season/vaults.json.
 export type Mode = "paper" | "live";
 export type Risk = "low" | "med" | "high";
-export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean; community?: boolean; near?: [number, number] };
+export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "drill" | "benchmark"; style: string; risk?: Risk; blurb: string; mode: Mode; network: "testnet" | "mainnet"; season?: boolean; community?: boolean; near?: [number, number];
+  /** A house benchmark (T3): copyable, but never the hero pick or the week's highlight. */
+  benchmark?: boolean;
+  /** An old test vault (T4): listed under "Test vaults", never ranked. */
+  test?: boolean };
 
 const season = { mode: "paper" as const, network: "testnet" as const, season: true };
 export const META: Record<string, VaultMeta> = {
@@ -14,8 +18,10 @@ export const META: Record<string, VaultMeta> = {
   "sp-momo-92991.testnet": { ...season, near: [0, 80], name: "Momentum bot", leaderKind: "bot", risk: "high", style: "EMA crossover", blurb: "Rule-based: long NEAR when the 1h EMA is above the 6h EMA, flat when below." },
   "sp-meanrev-92991.testnet": { ...season, near: [0, 80], name: "Mean-reversion bot", leaderKind: "bot", risk: "med", style: "Buys −1.5σ, sells +1.5σ", blurb: "Rule-based: buys NEAR 1.5σ below its 6h mean, sells 1.5σ above." },
   "sp-manual-92991.testnet": { ...season, name: "Steady Hand", leaderKind: "human", risk: "med", style: "A person trading by hand, signs every trade", blurb: "Run by a person, not a bot: every trade is signed by hand with the leader's key." },
-  "sp-drill-92991.testnet": { mode: "paper", network: "testnet", name: "Emergency drill", leaderKind: "drill", style: "Exit drill", blurb: "Test build whose price goes out of date after 5 minutes. The operator was stopped and a follower exited through the emergency path." },
-  "sp-vault-60270.testnet": { mode: "paper", network: "testnet", name: "Genesis vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted prices and one browser-signed signal." },
+  "hold.sp-sop-92991.testnet": { ...season, benchmark: true, near: [100, 100], name: "Hold NEAR", leaderKind: "benchmark", risk: "high", style: "100% NEAR, never sells", blurb: "Benchmark: 100% NEAR from day one. It buys only to invest new deposits and never sells, so it is exactly \"holding NEAR\", with the same fees as every vault." },
+  "half.sp-sop-92991.testnet": { ...season, benchmark: true, near: [50, 50], name: "Half & Half", leaderKind: "benchmark", risk: "low", style: "50/50, rebalanced weekly", blurb: "Benchmark: 50% NEAR and 50% USDC, put back to 50/50 once a week. The cautious way to hold NEAR." },
+  "sp-drill-92991.testnet": { test: true, mode: "paper", network: "testnet", name: "Emergency drill", leaderKind: "drill", style: "Exit drill", blurb: "Test build whose price goes out of date after 5 minutes. The operator was stopped and a follower exited through the emergency path." },
+  "sp-vault-60270.testnet": { test: true, mode: "paper", network: "testnet", name: "First test vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted prices and one browser-signed signal." },
 };
 
 /** The live mainnet vault (real funds, D-P5-11). Never listed with the testnet
@@ -34,4 +40,4 @@ export const metaOf = (id: string): VaultMeta =>
 export const modeLabel = (m: VaultMeta) => (m.mode === "paper" ? `paper · ${m.network}` : m.network === "mainnet" ? "MAINNET · real funds" : `live · ${m.network}`);
 
 /** Leader badge: who decides the trades. */
-export const badgeOf = (m: VaultMeta) => ({ ai: "AI", bot: "Bot", human: "Human", drill: "Drill" })[m.leaderKind];
+export const badgeOf = (m: VaultMeta) => ({ ai: "AI", bot: "Bot", human: "Human", drill: "Drill", benchmark: "BENCHMARK" })[m.leaderKind];

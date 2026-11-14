@@ -49,6 +49,7 @@ describe("hero pick (U11)", () => {
         { id: "b.testnet", navs: navs(1.02), verified: 40, season: true },
         { id: "c.testnet", navs: navs(1.5), verified: 5, season: true }, // too new
         { id: "d.testnet", navs: navs(1.5), verified: 40, season: false }, // not in the season
+        { id: "half.testnet", navs: navs(1.4), verified: 40, season: true, benchmark: true }, // benchmarks are never the pick (T3)
       ],
       near,
       10 * H,

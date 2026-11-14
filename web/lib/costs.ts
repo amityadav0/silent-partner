@@ -1,3 +1,4 @@
+import { seasonUrl } from "./vault";
 // What a depositor pays and how long things take (D2, D3). Every number here is
 // either a contract parameter or measured from the vault's own signed price updates.
 
@@ -40,4 +41,20 @@ export function feeExample(feeBps: number, amount = 1000, ret = 0.05): string {
   const fee = perfFee(amount, ret, feeBps);
   const $ = (x: number) => `$${x.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
   return `${$(amount)} for a month at +${(ret * 100).toFixed(0)}% → fee ${$(fee)} (${feeBps / 100}% of the ${$(gain)} gain). A month at a loss → fee $0.`;
+}
+
+// Trading cost so far (T2), published per vault by the season job (season-state/costs.json):
+// totals only, from the operator's fills against the NEAR/USD mid, at the season's pooled rate.
+export type VaultCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_bps: number };
+export type CostDoc = { ranAt: string; cost_bps: number; turnover_rule_since: string; vaults: Record<string, VaultCost> };
+let costCache: Promise<CostDoc | null> | null = null;
+export function loadCosts(): Promise<CostDoc | null> {
+  costCache ??= fetch(seasonUrl("costs.json")).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  return costCache;
+}
+
+/** "0.84% of the vault (37 trades)". */
+export function costWords(c: VaultCost): string {
+  const pct = c.cost_pct === null ? "" : `${c.cost_pct < 0.01 && c.cost_pct > 0 ? "<0.01" : c.cost_pct.toFixed(2)}% of the vault `;
+  return `${pct}(${c.trades.toLocaleString("en-US")} trade${c.trades === 1 ? "" : "s"})`;
 }

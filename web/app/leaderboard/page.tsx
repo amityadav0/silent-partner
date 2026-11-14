@@ -10,6 +10,7 @@ import { ratio2, vsNear, type NearSeries, type VsNear } from "@/lib/bench";
 import { loadTee } from "@/lib/tee";
 import { useRouter } from "next/navigation";
 import { badgeOf } from "@/lib/vaults";
+import { loadCosts, type CostDoc } from "@/lib/costs";
 
 type Row = { d: VaultData; m: VaultMeta; ret: number; dd: number; stake: number; ok: number; bad: number; vs?: VsNear | null };
 const WEEK = 7 * 24 * 3600_000;
@@ -23,14 +24,12 @@ const SORTS: Record<Key, { label: string; by: (a: Row, b: Row) => number }> = {
 
 /** A vault is ranked once it has this many browser-verified price posts; newer ones wait in "New this week". */
 const MIN_POSTS = 12;
-// Old test vaults (not in the season) keep their place at the bottom instead.
-const ranked = (r: Row) => r.ok >= MIN_POSTS || !r.m.season;
-
-// The drill and first test vaults barely traded, so they can't rank above real leaders.
+// Old test vaults (the drill, the first test vault) are never ranked: they sit in "Test vaults" (T4).
+const ranked = (r: Row) => !r.m.test && (r.ok >= MIN_POSTS || !r.m.season);
 const rank = (r: Row) => (r.m.season ? 0 : 1);
 
 // Avatar colour by who leads, so the kind reads at a glance.
-const KIND_TINT = { ai: "#2F3FD8", bot: "#2E7D6B", human: "#7A5C00", drill: "#655D50" } as const;
+const KIND_TINT = { ai: "#2F3FD8", bot: "#2E7D6B", human: "#7A5C00", drill: "#655D50", benchmark: "#4A4A4A" } as const;
 
 export default function Leaderboard() {
   const [raw, setRows] = useState<Row[] | null>(null);
@@ -43,7 +42,12 @@ export default function Leaderboard() {
   const router = useRouter();
   const worst = useMemo(() => Math.max(0.0001, ...(rows ?? []).map((r) => r.dd)), [rows]);
   const sorted = useMemo(() => (rows ? rows.filter(ranked).sort((a, b) => rank(a) - rank(b) || SORTS[sort].by(a, b)) : null), [rows, sort]);
-  const fresh = useMemo(() => (rows ?? []).filter((r) => !ranked(r)).sort((a, b) => b.ok - a.ok), [rows]);
+  const fresh = useMemo(() => (rows ?? []).filter((r) => !ranked(r) && !r.m.test).sort((a, b) => b.ok - a.ok), [rows]);
+  const tests = useMemo(() => (rows ?? []).filter((r) => r.m.test), [rows]);
+  const [costs, setCosts] = useState<CostDoc | null>(null);
+  useEffect(() => {
+    loadCosts().then(setCosts);
+  }, []);
   useEffect(() => {
     (async () => {
       // House leaders plus every live community vault from the open season registry.
@@ -100,8 +104,8 @@ export default function Leaderboard() {
                       <span className="tile-initial" style={{ background: KIND_TINT[m.leaderKind] }} aria-hidden="true">{m.name.charAt(0)}</span>
                       <div className="flex min-w-0 flex-col gap-1">
                         <Link href={`/vault/?id=${r.d.id}`} className="who-name" title={`${r.d.id} · leader ${r.d.cfg.leader}`}>{m.name}</Link>
-                        <span className="muted text-sm">{m.style}</span>
-                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge">{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
+                        <span className="muted text-sm">{m.style}{costs?.vaults[r.d.id] && <span data-testid="trades-day" title="Trades in the last 24 hours. Each one costs the vault about the measured trading cost."> · {costs.vaults[r.d.id].trades_24h} trade{costs.vaults[r.d.id].trades_24h === 1 ? "" : "s"}/day</span>}</span>
+                        <div className="who-chips"><span className={`chip ${m.leaderKind === "ai" ? "chip-ai" : "chip-kind"}`} data-testid="badge" title={m.benchmark ? "A house benchmark: a fixed rule, no leader decisions. Compare any leader with it, or copy it." : undefined}>{badgeOf(m)}</span>{tee[r.d.id] && <Link href={`/vault/?id=${r.d.id}#ai`} className="chip chip-ok no-underline" title="This AI leader's latest decision has a NEAR AI TEE receipt, checked in your browser just now" data-testid="tee-chip">TEE ✓</Link>}{m.community && <span className="chip" data-testid="community">Community</span>}<RiskDots risk={m.risk} />{st !== "active" && <StatusChip s={st} />}</div>
                       </div>
                     </div>
                   </td>
@@ -145,6 +149,18 @@ export default function Leaderboard() {
         </div>
       )}
 
+      {tests.length > 0 && (
+        <details className="panel flex flex-col gap-3" data-testid="test-vaults">
+          <summary className="cursor-pointer text-[15px] font-medium">Test vaults ({tests.length})</summary>
+          <p className="muted mt-2 text-sm">Vaults we used to test the contract end to end. Not leaders, not ranked.</p>
+          <ul className="mt-2 flex flex-col gap-2">
+            {tests.map((r) => (
+              <li key={r.d.id} data-testid={`test-${r.d.id}`}><Link href={`/vault/?id=${r.d.id}`}>{r.m.name}</Link> <span className="muted text-sm">· {r.m.style}</span></li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       <div className="flex flex-wrap gap-4">
         <div className="panel lead-card flex min-w-0 flex-[1_1_320px] flex-col items-start gap-3" data-testid="lead-card">
           <h2 className="text-[32px]">Trade well? Lead a vault.</h2>
@@ -169,7 +185,7 @@ function Calmest({ rows, near }: { rows: Row[] | null; near: NearSeries | null }
   const best = useMemo(() => {
     if (!rows) return null;
     const since = Date.now() - WEEK;
-    const scored = rows.filter((r) => r.m.season && ranked(r)).flatMap((r) => {
+    const scored = rows.filter((r) => r.m.season && !r.m.benchmark && ranked(r)).flatMap((r) => {
       const s = windowStats(r.d.navs, since);
       return s && s.posts >= 4 ? [{ r, s, v: vsNear(r.d.navs, near, since) }] : [];
     });

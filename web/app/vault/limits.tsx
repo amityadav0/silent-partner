@@ -8,6 +8,7 @@ import type { VaultMeta } from "@/lib/vaults";
 import type { Config, VaultView } from "@/lib/vault";
 import { leaderStake } from "@/lib/vault";
 import { Sparkline } from "../ui";
+import { costWords, loadCosts, type VaultCost } from "@/lib/costs";
 
 export function RecordChips({ times }: { times: number[] }) {
   return (
@@ -22,13 +23,17 @@ const pctB = (bps: number) => `${(bps / 100).toFixed(1)}%`;
 
 export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: VaultMeta; cfg: Config; vault: VaultView; times: number[] }) {
   const [stake, setStake] = useState<StakeSeries | null | undefined>(undefined);
+  const [cost, setCost] = useState<VaultCost | null>(null);
   useEffect(() => {
     loadStake().then((d) => setStake(d?.[id] ?? null));
+    loadCosts().then((d) => setCost(d?.vaults[id] ?? null));
   }, [id]);
   const assets = [...new Set(cfg.allowed_assets.map((a) => ASSETS[a]?.symbol ?? a.replace(/^nep141:/, "")))].join(" and ");
   const near = meta.near
     ? <><span className="num">{meta.near[0]}–{meta.near[1]}%</span> {meta.leaderKind === "ai" ? "(every AI answer is clamped to this by the operator's code)" : "(set by its code)"}</>
     : meta.leaderKind === "human" ? "the leader's call, 0–100%" : "0–100%";
+  // a fixed benchmark rule rather than a range (T3)
+  const fixed = meta.benchmark && meta.near ? <><span className="num">{meta.near[0]}%</span> (a fixed rule in the operator&apos;s code)</> : null;
   const now = leaderStake(vault);
   const first = stake && stake.bps.length > 1 ? stake.bps[0] : null;
   return (
@@ -36,8 +41,14 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
       <h2>Track record and limits</h2>
       <div className="mt-2">
         <div className="row-kv"><span>Record</span><span data-testid="limits-record">{recordWords(times)}{isNewLeader(times) ? ": short, so judge it on more than its return" : ""}</span></div>
-        <div className="row-kv"><span>NEAR in the vault</span><span data-testid="limits-near">{near}</span></div>
+        <div className="row-kv"><span>NEAR in the vault</span><span data-testid="limits-near">{fixed ?? near}</span></div>
         <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{tradeRateWords(vault.signals, times)}</span></div>
+        {cost && (
+          <div className="row-kv" data-testid="limits-cost">
+            <span>Trading cost so far</span>
+            <span><span className="num">{costWords(cost)}</span> <span className="muted">· ≈{(cost.cost_bps / 100).toFixed(2)}% of each trade, measured across the season&apos;s fills · {cost.trades_24h} in the last 24 h</span></span>
+          </div>
+        )}
         <div className="row-kv"><span>What it can hold</span><span>{assets} only <span className="muted">(enforced by the contract)</span></span></div>
         <div className="row-kv"><span>Worst fill per trade</span><span><span className="num">{cfg.max_slippage_bps / 100}%</span> slippage at most <span className="muted">(enforced by the contract)</span></span></div>
         <div className="row-kv" data-testid="limits-stake">

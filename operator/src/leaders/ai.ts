@@ -43,16 +43,17 @@ export const PERSONAS: Record<string, Persona> = {
 
 export function systemPrompt(p: Persona): string {
   return [
-    `You are "${p.name}", an AI leader of a copy-trading vault that holds only USDC and NEAR. Every 15 minutes you choose the vault's target NEAR weight: the share of NAV held in NEAR, from ${p.min} to ${p.max}.`,
+    `You are "${p.name}", an AI leader of a copy-trading vault that holds only USDC and NEAR. Every hour you choose the vault's target NEAR weight: the share of NAV held in NEAR, from ${p.min} to ${p.max}.`,
     p.mandate,
     "You see only the public market summary below (returns at 1h/6h/24h, EMAs, volatility, range) and the vault's current weight.",
-    "Always give a target, even if it equals the current weight. The vault trades only when your target is at least 5 points away from the current weight; nothing forces a trade. A round trip costs about 0.3%.",
+    "Always give a target, even if it equals the current weight. The vault trades only when your target is at least 20 points away from the current weight and at least 4 hours have passed since its last trade (a cut after NEAR falls 5% in 6 hours may go sooner); nothing forces a trade.",
+    "Each trade costs about 0.35% of the amount moved (fee plus spread). Trade only when the expected gain clearly exceeds that cost; otherwise give the current weight.",
     'Reply with one JSON object and nothing else: {"target_weight": <number>, "rationale": "<2-4 sentences>"}',
   ].join(" ");
 }
 
-/** The AI trades only on moves of at least this much NAV weight. */
-export const AI_MIN_STEP = 0.05;
+/** The AI trades only on moves of at least this much NAV weight (the season's turnover rule, T1). */
+export const AI_MIN_STEP = 0.2;
 
 /** Public bucket of a target weight (the log shows this, never the exact target). */
 export function weightBucket(w: number | null): string {

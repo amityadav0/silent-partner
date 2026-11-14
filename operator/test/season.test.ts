@@ -197,10 +197,16 @@ describe("NAV bound plumbing", () => {
 import { AI_MIN_STEP, weightBucket } from "../src/leaders/ai.js";
 
 describe("AI allocator", () => {
-  it("trades on a 5-point move, not on less", () => {
-    expect(rebalance("v", USDC, WNEAR, 0.4, 0.45, NOW, undefined, AI_MIN_STEP)!.size_bps).toBe(500);
-    expect(rebalance("v", USDC, WNEAR, 0.4, 0.44, NOW, undefined, AI_MIN_STEP)).toBeNull();
-    expect(rebalance("v", USDC, WNEAR, 0.4, 0.45, NOW)).toBeNull(); // bots keep 10 points
+  it("trades on a 20-point move, not on less (turnover rule, T1)", () => {
+    expect(rebalance("v", USDC, WNEAR, 0.4, 0.6, NOW, undefined, AI_MIN_STEP)!.size_bps).toBe(2000);
+    expect(rebalance("v", USDC, WNEAR, 0.4, 0.59, NOW, undefined, AI_MIN_STEP)).toBeNull();
+  });
+  it("the prompt states the turnover rule and the cost", () => {
+    const p = systemPrompt(PERSONAS.ai);
+    expect(p).toMatch(/Every hour/);
+    expect(p).toMatch(/at least 20 points away/);
+    expect(p).toMatch(/4 hours/);
+    expect(p).toMatch(/0\.35% of the amount moved/);
   });
   it("the public log shows a 20-point bucket, not the target", () => {
     expect([weightBucket(0), weightBucket(0.19), weightBucket(0.2), weightBucket(0.73), weightBucket(1), weightBucket(null)]).toEqual(["0–20%", "0–20%", "20–40%", "60–80%", "80–100%", "hold"]);
