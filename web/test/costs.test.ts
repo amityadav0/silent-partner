@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costWords, durationWords, feeExample, medianGapMs, perfFee, withdrawEta } from "../lib/costs";
+import { costWords, durationWords, exitWords, feeExample, medianGapMs, perfFee, spanWords, UPDATE_EVERY_MS } from "../lib/costs";
 import { badgeOf, META, metaOf } from "../lib/vaults";
 
 const M = 60_000;
@@ -14,13 +14,15 @@ describe("what you pay (D2)", () => {
 });
 
 describe("what happens after Follow (D3)", () => {
-  it("withdrawal ≈ two update gaps, from the vault's own cadence", () => {
+  it("withdrawal ≈ two update gaps, one value per network (Y5: FAQ and vault pages agree)", () => {
     const testnet = [0, 15, 30, 45, 60].map((m) => m * M);
     expect(medianGapMs(testnet)).toBe(15 * M);
-    expect(withdrawEta(testnet)).toBe("~30 min");
-    const mainnet = [0, 3, 6, 9].map((h) => h * 60 * M);
-    expect(withdrawEta(mainnet)).toBe("~6 h");
-    expect(withdrawEta([0, 1])).toBeNull();
+    expect(medianGapMs([0, 1])).toBeNull();
+    expect(UPDATE_EVERY_MS.mainnet).toBe(3 * 60 * M);
+    expect(exitWords("testnet")).toBe("30 minutes");
+    expect(exitWords("mainnet")).toBe("6 hours");
+    expect(spanWords(M)).toBe("1 minute");
+    expect(spanWords(72 * 60 * M)).toBe("3 days");
   });
   it("duration words", () => {
     expect(durationWords(20_000)).toBe("~1 min");
@@ -42,7 +44,9 @@ describe("track record (D4)", () => {
   it("trade rate", () => {
     expect(tradeRateWords(0, times, 4 * D)).toBe("no trades yet");
     expect(tradeRateWords(12, times, 4 * D)).toBe("≈ 3 trades a day");
-    expect(tradeRateWords(2, times, 7 * D)).toBe("≈ 2 trades a week");
+    expect(tradeRateWords(2, times, 7 * D)).toBe("2 trades so far"); // Y4: a handful is a count, not a rate
+    expect(tradeRateWords(1, times, 4 * D)).toBe("1 trade so far");
+    expect(tradeRateWords(6, times, 7 * D)).toBe("≈ 6 trades a week");
   });
 });
 
