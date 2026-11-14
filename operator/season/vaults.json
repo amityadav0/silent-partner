@@ -82,6 +82,13 @@
       "blurb": "Benchmark: 50% NEAR, 50% USDC, rebalanced once a week."
     },
     {
+      "id": "majors.sp-sop-92991.testnet",
+      "leader": "lmajors.sp-sop-92991.testnet",
+      "strategy": "majors",
+      "name": "Majors",
+      "blurb": "Bot: holds whichever of BTC, ETH, SOL and NEAR are up over 24 hours, equal weights, 80% at most."
+    },
+    {
       "id": "sp-drill-92991.testnet",
       "leader": "sp-leader-60270.testnet",
       "strategy": "drill",
@@ -104,6 +111,7 @@
   "auto_topup": [
     "c0.sp-sop-92991.testnet",
     "hold.sp-sop-92991.testnet",
-    "half.sp-sop-92991.testnet"
+    "half.sp-sop-92991.testnet",
+    "majors.sp-sop-92991.testnet"
   ]
 }

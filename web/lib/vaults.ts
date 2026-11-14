@@ -6,7 +6,9 @@ export type VaultMeta = { name: string; leaderKind: "bot" | "ai" | "human" | "dr
   /** A house benchmark (T3): copyable, but never the hero pick or the week's highlight. */
   benchmark?: boolean;
   /** An old test vault (T4): listed under "Test vaults", never ranked. */
-  test?: boolean };
+  test?: boolean;
+  /** Holds a mix of several risky assets (T6): the strategy's rule, in words. */
+  mix?: string };
 
 const season = { mode: "paper" as const, network: "testnet" as const, season: true };
 export const META: Record<string, VaultMeta> = {
@@ -20,6 +22,7 @@ export const META: Record<string, VaultMeta> = {
   "sp-manual-92991.testnet": { ...season, name: "Steady Hand", leaderKind: "human", risk: "med", style: "A person trading by hand, signs every trade", blurb: "Run by a person, not a bot: every trade is signed by hand with the leader's key." },
   "hold.sp-sop-92991.testnet": { ...season, benchmark: true, near: [100, 100], name: "Hold NEAR", leaderKind: "benchmark", risk: "high", style: "100% NEAR, never sells", blurb: "Benchmark: 100% NEAR from day one. It buys only to invest new deposits and never sells, so it is exactly \"holding NEAR\", with the same fees as every vault." },
   "half.sp-sop-92991.testnet": { ...season, benchmark: true, near: [50, 50], name: "Half & Half", leaderKind: "benchmark", risk: "low", style: "50/50, rebalanced weekly", blurb: "Benchmark: 50% NEAR and 50% USDC, put back to 50/50 once a week. The cautious way to hold NEAR." },
+  "majors.sp-sop-92991.testnet": { ...season, mix: "any of BTC, ETH, SOL and NEAR that are up over 24 h, equal weights, 80% at most (its code)", name: "Majors", leaderKind: "bot", risk: "high", style: "BTC, ETH, SOL, NEAR: holds what's up", blurb: "Bot, multi-asset: holds whichever of BTC, ETH, SOL and NEAR rose more than 1% over 24 hours, at equal weights, never more than 80% of the vault. Its price updates are bounded by 1Click-signed quotes for all four." },
   "sp-drill-92991.testnet": { test: true, mode: "paper", network: "testnet", name: "Emergency drill", leaderKind: "drill", style: "Exit drill", blurb: "Test build whose price goes out of date after 5 minutes. The operator was stopped and a follower exited through the emergency path." },
   "sp-vault-60270.testnet": { test: true, mode: "paper", network: "testnet", name: "First test vault", leaderKind: "human", style: "First end-to-end run", blurb: "The P2/P3 end-to-end vault: hand-posted prices and one browser-signed signal." },
 };

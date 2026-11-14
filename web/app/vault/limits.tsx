@@ -28,12 +28,14 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
     loadStake().then((d) => setStake(d?.[id] ?? null));
     loadCosts().then((d) => setCost(d?.vaults[id] ?? null));
   }, [id]);
-  const assets = [...new Set(cfg.allowed_assets.map((a) => ASSETS[a]?.symbol ?? a.replace(/^nep141:/, "")))].join(" and ");
+  const syms = [...new Set(cfg.allowed_assets.map((a) => ASSETS[a]?.symbol ?? a.replace(/^nep141:/, "")))];
+  const assets = syms.length > 1 ? `${syms.slice(0, -1).join(", ")} and ${syms.at(-1)}` : syms.join("");
   const near = meta.near
     ? <><span className="num">{meta.near[0]}–{meta.near[1]}%</span> {meta.leaderKind === "ai" ? "(every AI answer is clamped to this by the operator's code)" : "(set by its code)"}</>
     : meta.leaderKind === "human" ? "the leader's call, 0–100%" : "0–100%";
   // a fixed benchmark rule rather than a range (T3)
   const fixed = meta.benchmark && meta.near ? <><span className="num">{meta.near[0]}%</span> (a fixed rule in the operator&apos;s code)</> : null;
+  const mix = meta.mix ? <>{meta.mix}. No leverage, no shorting: it can only hold the assets themselves <span className="muted">(enforced by the contract)</span></> : null;
   const now = leaderStake(vault);
   const first = stake && stake.bps.length > 1 ? stake.bps[0] : null;
   return (
@@ -41,7 +43,7 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
       <h2>Track record and limits</h2>
       <div className="mt-2">
         <div className="row-kv"><span>Record</span><span data-testid="limits-record">{recordWords(times)}{isNewLeader(times) ? ": short, so judge it on more than its return" : ""}</span></div>
-        <div className="row-kv"><span>NEAR in the vault</span><span data-testid="limits-near">{fixed ?? near}</span></div>
+        <div className="row-kv"><span>{mix ? "What it holds" : "NEAR in the vault"}</span><span data-testid="limits-near">{mix ?? fixed ?? near}</span></div>
         <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{tradeRateWords(vault.signals, times)}</span></div>
         {cost && (
           <div className="row-kv" data-testid="limits-cost">

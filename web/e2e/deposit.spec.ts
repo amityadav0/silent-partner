@@ -137,3 +137,12 @@ test("T3/T4: benchmarks are labelled BENCHMARK; the drill and the first test vau
   await page.goto("/vault/?id=half.sp-sop-92991.testnet");
   await expect(page.getByTestId("badge").first()).toHaveText("BENCHMARK");
 });
+
+test("T6: the multi-asset Majors vault shows what it may hold and its rule, positions still sealed", async ({ page }) => {
+  await page.goto("/vault/?id=majors.sp-sop-92991.testnet");
+  const lim = page.getByTestId("limits");
+  await expect(lim).toContainText("USDC, wNEAR, BTC, ETH and SOL only");
+  await expect(lim.getByTestId("limits-near")).toContainText("BTC, ETH, SOL and NEAR");
+  await expect(lim.getByTestId("limits-near")).toContainText("No leverage, no shorting");
+  await expect(page.getByText(/\d+(\.\d+)? BTC\b/)).toHaveCount(0);
+});

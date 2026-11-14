@@ -1,5 +1,5 @@
 // Operator configuration from the environment. Secrets are read, never logged.
-import { USDC, WNEAR } from "./intents.js";
+import { BTC, ETH, SOL, USDC, WNEAR } from "./intents.js";
 import type { OperatorCfg } from "./operator.js";
 
 export type Env = {
@@ -33,7 +33,7 @@ export function loadEnv(e: NodeJS.ProcessEnv = process.env): Env {
       slippageBps: Number(e.SLIPPAGE_BPS ?? 50),
       minShield: BigInt(e.MIN_SHIELD ?? "1000000"),
       assetMap: network === "testnet" ? testnetMap : {},
-      decimals: { [USDC]: 6, [WNEAR]: 24, "nep141:usdc.fakes.testnet": 6, "nep141:wrap.testnet": 24 },
+      decimals: { [USDC]: 6, [WNEAR]: 24, "nep141:usdc.fakes.testnet": 6, "nep141:wrap.testnet": 24, [BTC]: 8, [ETH]: 18, [SOL]: 9 },
       signalMaxAgeMs: 5 * 60_000,
       pollMs: 3000,
       pollTries: 60,

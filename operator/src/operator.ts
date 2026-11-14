@@ -23,7 +23,7 @@ import { NavRejected, type VaultChain, type Claim, type SignKind } from "./chain
 import { Confidential, TERMINAL, type Leg, type VerifiedQuote } from "./confidential.js";
 import { FillLog } from "./filllog.js";
 import { fold } from "./ledger.js";
-import { verifySignal, type Signal, type SignedSignal } from "./signal.js";
+import { verifySignal, type BasketSignal, type Signal, type SignedSignal } from "./signal.js";
 import { nep413Prehash, type Nep413Payload } from "./intents.js";
 import { randomBytes } from "node:crypto";
 
@@ -118,6 +118,10 @@ export class Operator {
     if (!chk.ok) return chk;
     const s = x as SignedSignal;
     this.log.append("signal", { hash: chk.hash, nonce: s.signal.nonce, type: s.signal.type }, this.now());
+    if (s.signal.type === "basket") {
+      const fill = await this.executeBasket(s.signal, chk.hash, s.signature);
+      return { ok: true, hash: chk.hash, status: "executed", fill };
+    }
     if (s.signal.type === "limit") {
       this.limits.push({ signal: s.signal, hash: chk.hash, signature: s.signature });
       return { ok: true, hash: chk.hash, status: "pending" };
@@ -163,8 +167,37 @@ export class Operator {
     return amt < bal ? amt : bal;
   }
 
+  /**
+   * Multi-asset target (T6): move every allowed risky asset to its target weight, through the
+   * base (sells first, so the buys have the cash), one quote per leg for the whole vault. The
+   * signal is recorded on chain once, after the last leg. Legs under 1 point are skipped.
+   */
+  async executeBasket(sig: BasketSignal, hash: string, leaderSig: string): Promise<string> {
+    const { base, allowed } = await this.meta();
+    if (sig.targets_bps[base] !== undefined) return this.log.append("note", { signal: hash, msg: "the base can't be a basket target" }, this.now()).hash;
+    const n = await this.nav();
+    if (n.nav === 0n) return this.log.append("note", { signal: hash, msg: "empty vault" }, this.now()).hash;
+    const legs: Signal[] = [];
+    const cur = (a: string) => Number((BigInt(n.holdings[a]?.value ?? "0") * 10_000n) / n.nav);
+    const risky = allowed.filter((a) => a !== base);
+    const leg = (from: string, to: string, size_bps: number): Signal => ({ v: 1, vault: sig.vault, type: "market", from, to, size_bps, nonce: sig.nonce, created_ms: sig.created_ms });
+    for (const a of risky) {
+      const d = (sig.targets_bps[a] ?? 0) - cur(a);
+      if (d <= -100) legs.push(leg(a, base, (sig.targets_bps[a] ?? 0) === 0 ? 10_000 : -d));
+    }
+    for (const a of risky) {
+      const d = (sig.targets_bps[a] ?? 0) - cur(a);
+      if (d >= 100) legs.push(leg(base, a, Math.min(10_000, d)));
+    }
+    if (!legs.length) return this.log.append("note", { signal: hash, msg: "already at target" }, this.now()).hash;
+    let last = "";
+    for (const l of legs) last = await this.execute(l, hash, leaderSig, undefined, false);
+    if (this.cfg.chainWrites) await this.chain.recordSignal(hash, leaderSig, last, this.now());
+    return last;
+  }
+
   /** One confidential quote for the whole vault. Returns the fill entry hash. */
-  async execute(sig: Signal, hash: string, leaderSig: string, sized?: bigint): Promise<string> {
+  async execute(sig: Signal, hash: string, leaderSig: string, sized?: bigint, record = true): Promise<string> {
     const amount = sized ?? (await this.size(sig));
     if (amount === 0n) return this.log.append("note", { signal: hash, msg: "nothing to sell" }, this.now()).hash;
     const q = await this.quote("trade", sig.from, sig.to, amount, this.cfg.dryRun);
@@ -183,7 +216,7 @@ export class Operator {
       // A refund returns amount_in to the vault, so a non-success fill moves nothing.
       entry = this.log.append("fill", { ...base, amount_in: r.status === "SUCCESS" ? base.amount_in : "0", amount_out: out.toString(), dry: false, status: r.status, deposit_address: q.depositAddress, intent_hash: r.intentHash, sign_tx: r.tx }, this.now());
     }
-    if (this.cfg.chainWrites) await this.chain.recordSignal(hash, leaderSig, entry.hash, this.now());
+    if (record && this.cfg.chainWrites) await this.chain.recordSignal(hash, leaderSig, entry.hash, this.now());
     return entry.hash;
   }
 
@@ -302,10 +335,22 @@ export class Operator {
    * verifies them with its immutable `oneclick_key`.
    */
   async priceQuotes(): Promise<VerifiedQuote["signed"][] | undefined> {
-    const nq = (await this.chain.getConfig()).nav_quotes;
-    if (!nq) return undefined;
     const { vaultAccount } = await this.meta();
     const q = (from: string, to: string, amount: bigint) => this.oc.quote({ leg: "trade", from, to, amount: amount.toString(), slippageBps: this.cfg.slippageBps, vault: vaultAccount, deadlineMs: this.now() + 10 * 60_000, dry: true });
+    // Multi-asset bound (T6): a pair for every allowed risky asset, held or not, so the set
+    // of quotes says nothing about the holdings.
+    const basket = await this.chain.getNavBasket?.();
+    if (basket) {
+      const out: VerifiedQuote["signed"][] = [];
+      for (const r of basket.risk_ids) {
+        const buy = await q(basket.base_id, r, PRICE_QUOTE_BASE);
+        const sell = await q(r, basket.base_id, buy.amountOut);
+        out.push(buy.signed, sell.signed);
+      }
+      return out;
+    }
+    const nq = (await this.chain.getConfig()).nav_quotes;
+    if (!nq) return undefined;
     const buy = await q(nq.base_id, nq.risk_id, PRICE_QUOTE_BASE);
     const sell = await q(nq.risk_id, nq.base_id, buy.amountOut);
     return [buy.signed, sell.signed];

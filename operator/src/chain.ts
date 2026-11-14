@@ -10,12 +10,16 @@ export type InFlight = { prehash: string; nonce: string; amount: string; deadlin
 export type Claim = { id: number; account: string; exit_account: string; amount: string; paid: string; in_flight: InFlight[]; epoch: number; emergency: boolean; opened_ms?: number };
 export type SignedIntent = { standard: "nep413"; payload: Nep413Payload; public_key: string; signature: string };
 export type NavQuotes = { base_id: string; risk_id: string; max_age_ms: number; tolerance_bps: number; max_spread_bps: number; min_interval_ms?: number; window_up_bps?: number };
+/** Multi-asset price bound (T6): 2 signed quotes per risky asset with every post. */
+export type NavBasket = { base_id: string; risk_ids: string[]; max_age_ms: number; tolerance_bps: number; max_spread_bps: number; min_interval_ms: number; window_up_bps: number };
 export type Config = { base_token: string; base_asset_id: string; allowed_assets: string[]; max_slippage_bps: number; intents_contract: string | null; leader: string; nav_quotes?: NavQuotes | null };
 
 export interface VaultChain {
   readonly contractId: string;
   getVault(): Promise<VaultView>;
   getConfig(): Promise<Config>;
+  /** The basket bound, if the vault has one (T6). Optional: single-asset fakes leave it out. */
+  getNavBasket?(): Promise<NavBasket | null>;
   getClaims(): Promise<Claim[]>;
   getSignalKey(): Promise<string | null>;
   /** Base units of the base asset held publicly: in the contract + on intents.near for the vault account. */
@@ -66,6 +70,8 @@ export class NearVault implements VaultChain {
 
   getVault() { return this.view<VaultView>("get_vault"); }
   getConfig() { return this.view<Config>("get_config"); }
+  // vaults built before T6 have no such view: no basket
+  getNavBasket() { return this.view<{ cfg: NavBasket } | null>("get_nav_basket").then((b) => b?.cfg ?? null, () => null); }
   async getClaims() {
     const out: Claim[] = [];
     for (let from = 0; ; from += 200) {

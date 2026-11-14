@@ -1,6 +1,8 @@
 # More than NEAR: multi-asset vaults (T6)
 
-**Status:** design, Nov 14. Built on testnet in the order of "Build plan" below; the mainnet build is unchanged until Amit approves an upgrade.
+**Status:** built on testnet, Nov 14 (steps 1–4 of the build plan below). The mainnet build is unchanged until Amit approves an upgrade.
+
+**Live:** `majors.sp-sop-92991.testnet` ("Majors"), allowed USDC, NEAR, BTC, ETH, SOL; `set_nav_basket` tx `YDaryE7TN7af31hL7eqjGQrMa3Bx2KVhJBdzLPd7uSG`; its first price post `9gQbVdQu5sssp6mVZyjynVP2zWkho281NuJxVzBrYTfi` carried 8 real 1Click-signed quotes, verified on chain against 1Click's key, for 7.3 Tgas. Code: `contract/src/basket.rs`, `operator/src/operator.ts` (`executeBasket`, `priceQuotes`), `operator/src/leaders/majors.ts`; tests `basket_*` (contract unit + property), `operator/test/basket.test.ts`, e2e "T6".
 
 ## Why
 
@@ -12,11 +14,11 @@ A trader who can only toggle NEAR/USDC won't lead a vault. The leaders worth cop
 |---|---|---|---|
 | USDC (base) | `nep141:17208628…36133a1` | 6 | `nep141:usdc.fakes.testnet` (mapped to mainnet USDC for pricing) |
 | NEAR | `nep141:wrap.near` | 24 | `nep141:wrap.testnet` (mapped to `wrap.near`) |
-| BTC | `nep141:btc.omft.near` | 8 | the mainnet id itself (paper fills only, nothing is deposited) |
+| BTC | `nep141:nbtc.bridge.near` | 8 | the mainnet id itself (paper fills only, nothing is deposited). `btc.omft.near` answers "No liquidity" on the INTENTS legs |
 | ETH | `nep141:eth.omft.near` | 18 | the mainnet id itself |
 | SOL | `nep141:sol.omft.near` | 9 | the mainnet id itself |
 
-All five have live 1Click quotes (checked against `/v0/tokens` on Nov 14). The contract's `allowed_assets` lists them; it already refuses trades into anything else.
+All five have live 1Click quotes (checked on Nov 14: a $10 and a $100 round trip each lose 42–61 bps, so half-spreads are ~21–30 bps, well under a 100 bps cap). The contract's `allowed_assets` lists them; it already refuses trades into anything else.
 
 ## What changes
 

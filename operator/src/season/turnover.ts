@@ -50,6 +50,15 @@ export function aiDue(notesPath: string, nowMs: number): boolean {
   return true;
 }
 
+/** The same rule for a basket (T6): Σ|target − current| ≥ 20 pts, and 4 h since the last trade. */
+export function blockedBasket(o: { current: Record<string, number>; targets: Record<string, number>; lastTradeMs: number | null; nowMs: number }): string | null {
+  const keys = new Set([...Object.keys(o.current), ...Object.keys(o.targets)]);
+  const moved = [...keys].reduce((s, k) => s + Math.abs((o.targets[k] ?? 0) - (o.current[k] ?? 0)), 0);
+  if (moved < TURNOVER.minStep - 1e-9) return `basket within ${TURNOVER.minStep * 100} pts`;
+  if (o.lastTradeMs !== null && o.nowMs - o.lastTradeMs < TURNOVER.minGapMs) return `last trade under 4 h ago`;
+  return null;
+}
+
 export const BENCHMARKS = {
   /** 100% NEAR. Buys only to invest new deposits (cash above 5%); never sells. */
   hold: { target: 1, why: "Hold NEAR: 100% NEAR" },

@@ -486,3 +486,51 @@ proptest! {
         prop_assert!((lo - recovered_permille as f64 / 1000.0).abs() < 1e-5 || recovered_permille == 0, "fraction {} vs recovered {}", lo, recovered_permille);
     }
 }
+
+// ---------------- multi-asset basket bound (T6) ----------------
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 100, ..ProptestConfig::default() })]
+
+    /// Whatever the private weights (any mix of NEAR, BTC and cash) and moves: honest NAVs pass,
+    /// and a NAV past the envelope over all allowed assets (± allowances) is refused.
+    #[test]
+    fn basket_bound_honest_pass_lies_fail(
+        w in (0u32..=1000, 0u32..=1000),
+        steps in prop::collection::vec((-400i64..=400, -400i64..=400, 0u32..=60, 0u32..=80, any::<bool>()), 1..10),
+    ) {
+        use crate::tests::{basket_quotes, basket_vault};
+        let k = crate::quote::tests::test_key();
+        let (wn, wb) = (w.0.min(1000), w.1.min(1000 - w.0.min(1000)));
+        let mut v = basket_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let mut t = T0_MS + 60_000;
+        let (mut near, mut btc) = (3_000_000u128, 60_000_000_000u128);
+        prop_assert_eq!(crate::tests::post_q(&mut v, 10_000_000, basket_quotes(near, btc, 10, t, &k), t), Ok(true));
+        for (mn, mb, hs, lie, up) in steps {
+            t += 61_000;
+            let (n2, b2) = ((near as i128 * (10_000 + mn as i128) / 10_000) as u128, (btc as i128 * (10_000 + mb as i128) / 10_000) as u128);
+            let qs = basket_quotes(n2, b2, hs as u128, t, &k);
+            let last = v.get_nav_basket().unwrap().last.unwrap();
+            ctx("op.testnet", t);
+            let p = v.basket_point(&crate::tests::basket_cfg(), qs.clone());
+            let rn = math::mid_return_bps(last.point.mids[0].0, p.mids[0].0).unwrap();
+            let rb = math::mid_return_bps(last.point.mids[1].0, p.mids[1].0).unwrap();
+            let spread = p.spread_bps as i128 + last.point.spread_bps as i128;
+            let p_last = last.share_price.0 as i128;
+            let nav_at = |ret: i128, v: &Vault| ((p_last * (10_000 + ret) / 10_000) * v.total_shares as i128 / math::PRICE_SCALE as i128).max(0) as u128;
+            // honest: the mix's return (floored a little, as costs only lower NAV)
+            let honest = (rn * wn as i128 + rb * wb as i128) / 1000 - 1;
+            let (lo, hi) = (rn.min(rb).min(0), rn.max(rb).max(0));
+            let lie_ret = if up { hi + 50 + spread + 2 + lie as i128 } else { lo - (50 + 100 + spread) - 2 - lie as i128 };
+            let (epoch, book) = (v.epoch, v.book_nav);
+            let (lie_nav, honest_nav) = (nav_at(lie_ret, &v), nav_at(honest, &v));
+            prop_assert_eq!(crate::tests::post_q(&mut v, lie_nav, qs.clone(), t), Ok(false), "lie {} bps accepted (near {} btc {})", lie_ret, rn, rb);
+            prop_assert_eq!((v.epoch, v.book_nav), (epoch, book));
+            prop_assert_eq!(crate::tests::post_q(&mut v, honest_nav, qs, t + 1), Ok(true), "honest {} bps refused (near {} btc {})", honest, rn, rb);
+            near = n2;
+            btc = b2;
+            t += 1;
+        }
+    }
+}

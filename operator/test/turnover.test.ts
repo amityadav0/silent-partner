@@ -79,7 +79,7 @@ describe("trading cost (T2)", () => {
     expect(priceAt(near, 99)).toBe(4);
     expect(priceAt({ t: [], p: [] }, 1)).toBeNull();
   });
-  const fill = (ts: number, from: string, amount_in: string, amount_out: string) => ({ seq: 0, prev: "", ts, kind: "fill", data: { from, amount_in, amount_out }, hash: "" }) as Entry;
+  const fill = (ts: number, from: string, amount_in: string, amount_out: string) => ({ seq: 0, prev: "", ts, kind: "fill", data: { from, to: from === USDC ? WNEAR : USDC, amount_in, amount_out }, hash: "" }) as Entry;
   it("buy and sell against the mid", () => {
     // buy $100 → 24.75 NEAR at $4 = $99 (1% cost); sell 25 NEAR ($100) → $99.5
     const entries = [fill(10, USDC, "100000000", (24.75e24).toString()), fill(20, WNEAR, (25e24).toString(), "99500000"), fill(20, USDC, "0", "0")];
@@ -96,5 +96,25 @@ describe("trading cost (T2)", () => {
     const c = { trades: 1, trades_24h: 0, moved_usd: 100, cost_usd: -1, avg_cost_bps: -100, cost_pct: null };
     expect(pooledBps([c])).toBe(FEE_BPS);
     expect(pooledBps([])).toBe(FEE_BPS);
+  });
+});
+
+import { majors, MAJORS } from "../src/leaders/majors.js";
+import { blockedBasket } from "../src/season/turnover.js";
+
+describe("Majors bot and the basket turnover rule (T6)", () => {
+  it("holds what's up >1% over 24 h, equal weights, 40% each and 80% in all at most", () => {
+    expect(majors({ bitcoin: 2, ethereum: 0.5, solana: -3, near: 1.5 }).targets).toEqual({ [MAJORS.bitcoin]: 0.4, [MAJORS.ethereum]: 0, [MAJORS.solana]: 0, [MAJORS.near]: 0.4 });
+    expect(majors({ bitcoin: 2, ethereum: 2, solana: 2, near: 2 }).targets![MAJORS.solana]).toBe(0.2);
+    expect(majors({ bitcoin: 5, ethereum: 0, solana: 0, near: 0 }).targets![MAJORS.bitcoin]).toBe(0.4);
+    expect(Object.values(majors({ bitcoin: -1, ethereum: -1, solana: -1, near: -1 }).targets!).every((w) => w === 0)).toBe(true);
+    expect(majors({ bitcoin: 2 }).targets).toBeNull();
+  });
+  it("basket trades need Σ|Δ| ≥ 20 pts and 4 h", () => {
+    const cur = { a: 0.4, b: 0.4 };
+    expect(blockedBasket({ current: cur, targets: { a: 0.3, b: 0.4 }, lastTradeMs: null, nowMs: NOW })).toMatch(/within 20/);
+    expect(blockedBasket({ current: cur, targets: { a: 0.3, b: 0.3 }, lastTradeMs: null, nowMs: NOW })).toBeNull();
+    expect(blockedBasket({ current: cur, targets: { c: 0.2 }, lastTradeMs: NOW - H, nowMs: NOW })).toMatch(/4 h/);
+    expect(blockedBasket({ current: cur, targets: { c: 0.2 }, lastTradeMs: NOW - 4 * H, nowMs: NOW })).toBeNull();
   });
 });

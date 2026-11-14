@@ -6,6 +6,10 @@ import { createHash, randomBytes } from "node:crypto";
 export const TREASURY = "51e8f94d77b5e90dc9852ca6113771e11e8382ce69473a75e313e41665de7cbe";
 export const USDC = "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
 export const WNEAR = "nep141:wrap.near";
+/** Multi-asset vaults (T6): 1Click asset ids, checked against /v0/tokens on 2026-11-14. */
+export const BTC = "nep141:nbtc.bridge.near"; // btc.omft.near quotes "No liquidity" on the INTENTS legs
+export const ETH = "nep141:eth.omft.near";
+export const SOL = "nep141:sol.omft.near";
 /** Confidential (intents.far) token id for a public asset id. */
 export const imt = (publicId: string) => `imt:${TREASURY}:${publicId}`;
 

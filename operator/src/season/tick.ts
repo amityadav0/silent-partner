@@ -5,7 +5,8 @@ import { receiptMemo, type Attestation, type Receipt } from "../leaders/receipt.
 import { appendFileSync } from "node:fs";
 import { KeyPair } from "near-api-js";
 import type { Operator } from "../operator.js";
-import { signSignal } from "../signal.js";
+import { signSignal, type BasketSignal } from "../signal.js";
+import { randomBytes } from "node:crypto";
 import { rebalance } from "../leaders/strategies.js";
 
 export type Decision = {
@@ -21,6 +22,8 @@ export type Decision = {
   attestation?: Attestation;
 };
 export type Decide = (current: number) => Promise<Decision>;
+/** Multi-asset leaders (T6): current weights by asset → target weights (0..1), or null to hold. */
+export type DecideBasket = (current: Record<string, number>) => Promise<{ targets: Record<string, number> | null; why: string; rationale?: string }>;
 // minStep: smallest weight change worth a trade for this leader (bots 0.1, AI 0.05).
 
 export type TickResult = { vault: string; exposureBefore: number; decision?: Omit<Decision, "rationale" | "attestation"> & { memo_hash?: string }; signal?: { hash: string; status: string; size_bps: number; from: string; to: string } | { error: string }; epoch?: number; nav?: string; tx?: string | null; error?: string };
@@ -36,13 +39,29 @@ export async function exposure(op: Operator, risk: string): Promise<{ nav: bigin
  * with its full rationale. The public chain sees only the signal hash, which
  * covers `memo_hash = sha256(rationale)`.
  */
-export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number; minStep?: number; allow?: (current: number, target: number) => string | null; due?: boolean }): Promise<TickResult> {
+export async function tick(o: { op: Operator; vault: string; base: string; risk: string; decide?: Decide; signalKey?: string; manual?: unknown; notesPath: string; now?: () => number; minStep?: number; allow?: (current: number, target: number) => string | null; due?: boolean;
+  decideBasket?: DecideBasket; allowBasket?: (current: Record<string, number>, targets: Record<string, number>) => string | null }): Promise<TickResult> {
   const now = o.now ?? Date.now;
   const out: TickResult = { vault: o.vault, exposureBefore: 0 };
   await o.op.shieldPending();
   const { current } = await exposure(o.op, o.risk);
   out.exposureBefore = current;
-  if (o.manual) {
+  if (o.decideBasket && o.signalKey && !o.manual) {
+    // Multi-asset: weights per asset from the private holdings; one basket signal (T6).
+    const n = await o.op.nav();
+    const cur = Object.fromEntries(Object.entries(n.holdings).filter(([a]) => a !== o.base).map(([a, h]) => [a, n.nav > 0n ? Number((BigInt(h.value) * 10_000n) / n.nav) / 10_000 : 0]));
+    const d = await o.decideBasket(cur);
+    const stop = d.targets ? o.allowBasket?.(cur, d.targets) ?? null : null;
+    const memo = d.rationale ? createHash("sha256").update(d.rationale).digest("hex") : undefined;
+    out.decision = { target: null, why: stop ? `${d.why}; held: ${stop}` : d.why, memo_hash: memo };
+    let s: BasketSignal | null = null;
+    if (d.targets && !stop) {
+      s = { v: 1, vault: o.vault, type: "basket", targets_bps: Object.fromEntries(Object.entries(d.targets).map(([a, w]) => [a, Math.round(w * 10_000)])), nonce: randomBytes(8).toString("hex"), created_ms: now(), ...(memo ? { memo_hash: memo } : {}) };
+      const r = await o.op.submitSignal(signSignal(s, KeyPair.fromString(o.signalKey as `ed25519:${string}`)));
+      out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: 0, from: o.base, to: "basket" } : { error: r.error };
+    }
+    appendFileSync(o.notesPath, JSON.stringify({ ts: now(), current: cur, ...d, memo_hash: memo, signal: s, signal_hash: out.signal && "hash" in out.signal ? out.signal.hash : null }) + "\n");
+  } else if (o.manual) {
     const r = await o.op.submitSignal(o.manual);
     out.signal = r.ok ? { hash: r.hash, status: r.status, size_bps: (o.manual as any).signal.size_bps, from: (o.manual as any).signal.from, to: (o.manual as any).signal.to } : { error: r.error };
   } else if (o.decide && o.signalKey && o.due !== false) {

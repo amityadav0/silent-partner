@@ -18,6 +18,7 @@
 //! 1Click-signed quote (see `sign_intent`), so the operator can choose trades
 //! but cannot send funds anywhere except back to the vault or to a holder's claim.
 
+pub mod basket;
 pub mod intent;
 pub mod math;
 pub mod migrate;
@@ -708,6 +709,16 @@ impl Vault {
     ) -> PromiseOrValue<Option<NavPost>> {
         self.only_operator();
         self.check_nav_post(epoch, nav, timestamp_ms, &fills_head, &signature);
+        if let Some(b) = basket::config() {
+            let p = self.basket_point(&b, price_quotes.unwrap_or_default());
+            if let Err(why) = self.check_basket(&b, nav.0, &p) {
+                env::log_str(&format!("silent-partner.nav_rejected epoch={epoch} nav={} reason={why}", nav.0));
+                return PromiseOrValue::Value(None);
+            }
+            let post = self.apply_nav(epoch, nav, timestamp_ms, fills_head, signature);
+            self.record_basket(p);
+            return PromiseOrValue::Value(Some(post));
+        }
         if self.cfg.nav_quotes.is_some() {
             let p = self.price_from_quotes(price_quotes.unwrap_or_default());
             if let Err(why) = self.check_band(nav.0, &p) {
@@ -811,21 +822,24 @@ impl Vault {
     /// Verify two signed quotes and return the price point they give (panics if refused).
     pub fn price_from_quotes(&self, price_quotes: Vec<SignedQuote>) -> PricePoint {
         let q = self.cfg.nav_quotes.as_ref().unwrap_or_else(|| env::panic_str("vault has no nav_quotes"));
-        let key = quote::decode_ed25519::<32>(&self.cfg.oneclick_key).unwrap();
         let [a, b] = &price_quotes[..] else {
             env::panic_str("need exactly two price quotes")
         };
+        self.quote_pair(a, b, &q.base_id, &q.risk_id, q.max_age_ms, q.max_spread_bps)
+    }
+
+    /// One observation of one risky asset from a base → risky and a risky → base quote,
+    /// both signed by 1Click (either order).
+    pub(crate) fn quote_pair(&self, a: &SignedQuote, b: &SignedQuote, base_id: &str, risk_id: &str, max_age_ms: u64, max_spread_bps: u16) -> PricePoint {
+        let key = quote::decode_ed25519::<32>(&self.cfg.oneclick_key).unwrap();
         let fa = quote::price_facts(a, &key).unwrap_or_else(|e| env::panic_str(&format!("price quote refused: {e:?}")));
         let fb = quote::price_facts(b, &key).unwrap_or_else(|e| env::panic_str(&format!("price quote refused: {e:?}")));
-        let (buy, sell) = if fa.origin_asset == q.base_id { (fa, fb) } else { (fb, fa) };
-        require!(buy.origin_asset == q.base_id && buy.destination_asset == q.risk_id, "need a base → risky quote");
-        require!(
-            sell.origin_asset == q.risk_id && sell.destination_asset == q.base_id,
-            "need a risky → base quote"
-        );
+        let (buy, sell) = if fa.origin_asset == base_id { (fa, fb) } else { (fb, fa) };
+        require!(buy.origin_asset == base_id && buy.destination_asset == risk_id, "need a base → risky quote");
+        require!(sell.origin_asset == risk_id && sell.destination_asset == base_id, "need a risky → base quote");
         let now = now_ms();
         for t in [buy.timestamp_ms, sell.timestamp_ms] {
-            require!(t <= now + 60_000 && now.saturating_sub(t) <= q.max_age_ms, "price quote too old");
+            require!(t <= now + 60_000 && now.saturating_sub(t) <= max_age_ms, "price quote too old");
         }
         // One observation: both legs within 30 s of each other, the same size both ways
         // (the sell leg sells what the buy leg bought, ±5%).
@@ -838,7 +852,7 @@ impl Vault {
             "price quote legs differ in size"
         );
         let (mid, hs) = math::bracket(buy.amount_in, buy.amount_out, sell.amount_in, sell.amount_out).unwrap_or_else(|| env::panic_str("bad quote amounts"));
-        require!(hs <= q.max_spread_bps as u32, "price quotes too wide");
+        require!(hs <= max_spread_bps as u32, "price quotes too wide");
         PricePoint {
             mid: U128(mid),
             half_spread_bps: hs,

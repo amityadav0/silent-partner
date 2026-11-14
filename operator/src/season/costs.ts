@@ -51,6 +51,8 @@ export function costSummary(entries: Entry[], o: { base: string; risk: string; n
   let trades = 0, trades24 = 0, moved = 0, cost = 0;
   for (const e of entries) {
     if (e.kind !== "fill" || e.data.amount_in === "0") continue;
+    // priced against NEAR/USD: fills in other assets (multi-asset vaults) aren't counted here
+    if (![e.data.from, e.data.to].includes(o.risk) || ![e.data.from, e.data.to].includes(o.base)) continue;
     const px = priceAt(o.near, e.ts);
     if (px === null) continue;
     const ain = Number(e.data.amount_in), aout = Number(e.data.amount_out);

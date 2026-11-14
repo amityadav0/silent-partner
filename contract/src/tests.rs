@@ -1896,3 +1896,166 @@ fn dip_credit_does_not_carry_past_the_next_post() {
         "a stale dip must not widen a later post"
     );
 }
+
+// ---------------- multi-asset basket bound (T6) ----------------
+
+pub(crate) const BTC: &str = "nep141:btc.omft.near";
+
+/// Like `price_quotes`, for any risky asset id (24 decimals in tests).
+pub(crate) fn pair_quotes(risk: &str, usd_micro: u128, hs_bps: u128, at_ms: u64, key: &SigningKey) -> Vec<SignedQuote> {
+    let ask = usd_micro * (10_000 + hs_bps) / 10_000;
+    let bid = usd_micro * (10_000 - hs_bps) / 10_000;
+    let unit = 1_000_000_000_000_000_000_000_000u128;
+    let buy_out = 10_000_000u128 * unit / ask;
+    let sell_out = buy_out * bid / unit;
+    let t = json!(iso(at_ms));
+    let leg = |from: &str, to: &str, amt: u128, out: u128| {
+        sign_like_oneclick(
+            &qmsg(&[
+                ("dry", json!(true)),
+                ("originAsset", json!(from)),
+                ("destinationAsset", json!(to)),
+                ("amount", json!(amt.to_string())),
+                ("amountIn", json!(amt.to_string())),
+                ("amountOut", json!(out.to_string())),
+                ("timestamp", t.clone()),
+            ]),
+            key,
+        )
+    };
+    vec![leg(USDC, risk, 10_000_000, buy_out), leg(risk, USDC, buy_out, sell_out)]
+}
+
+pub(crate) fn basket_cfg() -> basket::NavBasket {
+    basket::NavBasket {
+        base_id: USDC.into(),
+        risk_ids: vec![WNEAR.into(), BTC.into()],
+        max_age_ms: 5 * 60_000,
+        tolerance_bps: 50,
+        max_spread_bps: 100,
+        min_interval_ms: 60_000,
+        window_up_bps: 300,
+    }
+}
+
+pub(crate) fn basket_vault() -> Vault {
+    ctx("owner.testnet", T0_MS);
+    near_sdk::mock::with_mocked_blockchain(|b| drop(b.take_storage()));
+    let mut c = cfg();
+    c.allowed_assets.push(BTC.into());
+    let mut v = Vault::new(c);
+    ctx("vault.testnet", T0_MS);
+    v.on_activate(Ok(pk_str(&mpc_key())));
+    ctx("owner.testnet", T0_MS);
+    v.set_nav_basket(basket_cfg());
+    v
+}
+
+/// Quotes for NEAR at `near` and BTC at `btc` (micro-USD), half-spread `hs`.
+pub(crate) fn basket_quotes(near: u128, btc: u128, hs: u128, at: u64, k: &SigningKey) -> Vec<SignedQuote> {
+    let mut q = pair_quotes(WNEAR, near, hs, at, k);
+    q.extend(pair_quotes(BTC, btc, hs, at, k));
+    q
+}
+
+#[test]
+fn basket_setup_rules() {
+    let mut v = vault();
+    ctx("leader.testnet", T0_MS);
+    assert!(panics(|| v.set_nav_basket(basket_cfg())).contains("only the owner"));
+    ctx("owner.testnet", T0_MS);
+    let mut dup = basket_cfg();
+    dup.risk_ids = vec![WNEAR.into(), WNEAR.into()];
+    assert!(panics(|| v.set_nav_basket(dup)).contains("distinct"));
+    let mut wide = basket_cfg();
+    wide.tolerance_bps = 501;
+    assert!(panics(|| v.set_nav_basket(wide)).contains("too wide"));
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| v.set_nav_basket(basket_cfg())).contains("before the first deposit"));
+    let mut q = quotes_vault();
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| q.set_nav_basket(basket_cfg())).contains("already has a price bound"));
+    let mut b = basket_vault();
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| b.set_nav_basket(basket_cfg())).contains("already set"));
+    assert_eq!(b.get_nav_basket().unwrap().cfg, basket_cfg());
+}
+
+#[test]
+fn basket_needs_every_assets_quotes_in_order() {
+    let k = crate::quote::tests::test_key();
+    let mut v = basket_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    // only NEAR's pair: refused, nothing changes
+    assert!(post_q(&mut v, 10_000_000, pair_quotes(WNEAR, 3_000_000, 10, t, &k), t)
+        .unwrap_err()
+        .contains("two price quotes per risky asset"));
+    // BTC's pair first: refused
+    let mut swapped = pair_quotes(BTC, 60_000_000_000, 10, t, &k);
+    swapped.extend(pair_quotes(WNEAR, 3_000_000, 10, t, &k));
+    assert!(post_q(&mut v, 10_000_000, swapped, t).unwrap_err().contains("base → risky"));
+    // a quote signed by someone else
+    let other = SigningKey::from_bytes(&[9u8; 32]);
+    assert!(post_q(&mut v, 10_000_000, basket_quotes(3_000_000, 60_000_000_000, 10, t, &other), t)
+        .unwrap_err()
+        .contains("price quote refused"));
+    assert_eq!(post_q(&mut v, 10_000_000, basket_quotes(3_000_000, 60_000_000_000, 10, t, &k), t), Ok(true));
+    assert_eq!(v.get_nav_basket().unwrap().last.unwrap().point.mids.len(), 2);
+}
+
+/// NEAR −2%, BTC +3% in one step: any honest mix passes; a NAV beyond max(0, +3%) + tolerance +
+/// spreads, or below min(0, −2%) − (tolerance + slippage + spreads), is refused.
+#[test]
+fn basket_envelope_over_all_allowed_assets() {
+    let k = crate::quote::tests::test_key();
+    let (n0, b0) = (3_000_000u128, 60_000_000_000u128);
+    for (w_near, w_btc) in [(0u128, 0u128), (1000, 0), (0, 1000), (500, 500), (300, 200)] {
+        let mut v = basket_vault();
+        deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+        let t = T0_MS + 60_000;
+        assert_eq!(post_q(&mut v, 10_000_000, basket_quotes(n0, b0, 10, t, &k), t), Ok(true));
+        let t2 = t + 120_000;
+        let qs = basket_quotes(n0 * 98 / 100, b0 * 103 / 100, 10, t2, &k);
+        let honest = 10_000_000 * (1000 * 10_000 - w_near as i128 * 200 + w_btc as i128 * 300) as u128 / (1000 * 10_000);
+        assert_eq!(post_q(&mut v, honest, qs, t2), Ok(true), "weights {w_near}/{w_btc}");
+    }
+    let mut v = basket_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let t = T0_MS + 60_000;
+    assert_eq!(post_q(&mut v, 10_000_000, basket_quotes(n0, b0, 10, t, &k), t), Ok(true));
+    let t2 = t + 120_000;
+    // 10 bps past each edge (the mids carry the quotes' rounding)
+    let hi = 10_000_000u128 * (10_000 + 300 + 50 + 20 + 10) / 10_000;
+    let lo = 10_000_000u128 * (10_000 - 200 - 50 - 100 - 20 - 10) / 10_000;
+    assert_eq!(post_q(&mut v, hi, basket_quotes(n0 * 98 / 100, b0 * 103 / 100, 10, t2, &k), t2), Ok(false));
+    assert_eq!(
+        post_q(&mut v, lo, basket_quotes(n0 * 98 / 100, b0 * 103 / 100, 10, t2 + 1, &k), t2 + 1),
+        Ok(false)
+    );
+}
+
+/// The per-post tolerance can't be stacked: flat prices, each post 40 bps up (inside the
+/// per-post 50 + spreads), and the 24 h window (300 bps + spreads) refuses it within a few posts.
+#[test]
+fn basket_window_stops_stacked_tolerance() {
+    let k = crate::quote::tests::test_key();
+    let mut v = basket_vault();
+    deposit(&mut v, "leader.testnet", 10_000_000, T0_MS);
+    let mut t = T0_MS + 60_000;
+    let mut nav = 10_000_000u128;
+    assert_eq!(post_q(&mut v, nav, basket_quotes(3_000_000, 60_000_000_000, 10, t, &k), t), Ok(true));
+    let mut accepted = 0;
+    for _ in 0..20 {
+        t += 61_000;
+        nav = nav * 10_040 / 10_000;
+        match post_q(&mut v, nav, basket_quotes(3_000_000, 60_000_000_000, 10, t, &k), t) {
+            Ok(true) => accepted += 1,
+            Ok(false) => break,
+            Err(e) => panic!("{e}"),
+        }
+    }
+    // 320 bps of window budget; the 20% performance fee keeps a fifth of each step out of the share price
+    assert!((7..=10).contains(&accepted), "accepted {accepted} stacked posts");
+}
