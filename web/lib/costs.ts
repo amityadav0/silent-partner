@@ -24,11 +24,21 @@ export function durationWords(ms: number): string {
   return `~${Math.round(h / 24)} days`;
 }
 
-/** A withdrawal is priced at the next update and paid at the one after: about two gaps. */
-export function withdrawEta(times: number[]): string | null {
-  const g = medianGapMs(times);
-  return g === null ? null : durationWords(2 * g);
+/** How often each network's vaults post a price: the testnet season ticks every 15 minutes,
+ *  the mainnet keeper every 3 hours (keeper.yml). The FAQ and every vault page read these. */
+export const UPDATE_EVERY_MS = { testnet: 15 * 60_000, mainnet: 3 * 3_600_000 } as const;
+
+/** "30 minutes", "6 hours", "2 days" (no "~": callers say "about"). */
+export function spanWords(ms: number): string {
+  const m = Math.round(ms / 60_000);
+  if (m < 90) return `${Math.max(1, m)} minute${m === 1 ? "" : "s"}`;
+  const h = Math.round(m / 60);
+  if (h < 36) return `${h} hour${h === 1 ? "" : "s"}`;
+  return `${Math.round(h / 24)} days`;
 }
+
+/** A withdrawal is priced at the next update and paid at the one after: about two update gaps. */
+export const exitWords = (network: keyof typeof UPDATE_EVERY_MS) => spanWords(2 * UPDATE_EVERY_MS[network]);
 
 /** Performance fee on a gain above the high-water mark, assuming you enter at the high. */
 export function perfFee(amount: number, ret: number, feeBps: number): number {

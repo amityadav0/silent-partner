@@ -3,7 +3,7 @@
 // parameters and the vault's own update cadence; nothing estimated that we can measure.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { EMERGENCY_MS, SWAP_FEE_BPS, durationWords, feeExample, loadCosts, medianGapMs, withdrawEta } from "@/lib/costs";
+import { EMERGENCY_MS, SWAP_FEE_BPS, UPDATE_EVERY_MS, exitWords, feeExample, loadCosts, spanWords } from "@/lib/costs";
 
 export function CostBox({ feeBps, quoteFee }: { feeBps: number; quoteFee?: string | null }) {
   // measured per-trade cost (fee plus spread) once the season has published it (T2)
@@ -25,18 +25,33 @@ export function CostBox({ feeBps, quoteFee }: { feeBps: number; quoteFee?: strin
   );
 }
 
-export function FollowTimeline({ times, price, sym }: { times: number[]; price: number; sym: string }) {
-  const gap = medianGapMs(times);
-  const eta = withdrawEta(times);
+export function FollowTimeline({ network, price, sym, title = "What happens after you click Follow" }: { network: keyof typeof UPDATE_EVERY_MS; price: number; sym: string; title?: string }) {
   return (
     <div className="timeline" data-testid="follow-timeline">
-      <span className="text-[15px] font-medium">What happens after you click Follow</span>
+      <span className="text-[15px] font-medium">{title}</span>
       <ol>
         <li><b>Seconds later:</b> your deposit lands and you get shares at today&apos;s price ({price.toFixed(4)} {sym} each). If a rule refuses it, the same transaction refunds you.</li>
         <li><b>Every trade:</b> fills once for the whole vault, so you get the leader&apos;s price, not a worse one after them.</li>
-        <li data-testid="timeline-exit"><b>When you want out:</b> ask to withdraw. It&apos;s priced at the next price update and paid at the one after{eta ? <>: about <b>{eta}</b> here{gap ? `, where prices update every ${durationWords(gap)}` : ""}.</> : "."}</li>
+        <li data-testid="timeline-exit"><b>When you want out:</b> ask to withdraw. It&apos;s priced at the next price update and paid at the one after: about <b>{exitWords(network)}</b> here, where prices update every {spanWords(UPDATE_EVERY_MS[network])}.</li>
         <li><b>If we stop:</b> no price update for {Math.round(EMERGENCY_MS / 3_600_000)}&nbsp;h and anyone can open the emergency exit. Every holder takes their share at the last price, without us. <Link href="/trust/">Risks &amp; trust →</Link></li>
       </ol>
     </div>
+  );
+}
+
+/** Three mainnet transactions a judge can open in one click (docs/mainnet.md has every one). */
+export const MAINNET_PROOF = [
+  ["Follower deposits 5 USDC", "w5EU6i3veqn13buD8ZRZNuTk5uxKa8wZxwjyHCpux3w"],
+  ["Leader's confidential trade (USDC → wNEAR, MPC-signed)", "6jg61f4qsPUPXK6cPzKaunZDdFP5Pjr7CWYf1uXpfEfz"],
+  ["Follower paid out 1.99 USDC", "E5KEBvXH7B83CzcaQQQ8Pmb9AVbn8HkFJKSyLcaaPx83"],
+] as const;
+
+export function MainnetProof() {
+  return (
+    <ul className="mt-3 flex flex-col gap-1 text-sm" data-testid="mainnet-proof">
+      {MAINNET_PROOF.map(([what, tx]) => (
+        <li key={tx}>{what}: <a href={`https://nearblocks.io/txns/${tx}`} target="_blank" rel="noreferrer" className="num">{tx.slice(0, 8)}… ↗</a></li>
+      ))}
+    </ul>
   );
 }

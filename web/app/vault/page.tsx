@@ -18,7 +18,7 @@ import { Term } from "../term";
 import { Alerts } from "./alerts";
 import { Letters } from "./letters";
 import { LinkedTrackRecord } from "./linked";
-import { CostBox, FollowTimeline } from "./costs";
+import { CostBox, FollowTimeline, MainnetProof } from "./costs";
 import { Limits, RecordChips } from "./limits";
 import { SystemStatus } from "../status";
 import { copyLine, type PaperFollow } from "@/lib/paper";
@@ -169,10 +169,11 @@ export default function VaultPage() {
               <p className="muted mt-1 text-sm leading-relaxed">
                 Everything on this page is read live from NEAR mainnet and checked in your browser. This site&apos;s wallet is on testnet, so deposits and withdrawals for this vault aren&apos;t offered here. Every mainnet transaction is listed in <a href="https://github.com/amityadav0/silent-partner/blob/master/docs/mainnet.md">docs/mainnet.md</a>.
               </p>
+              <MainnetProof />
               <div className="mt-4"><RealMoneySoon /></div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <CostBox feeBps={cfg.perf_fee_bps} />
-                <FollowTimeline times={navs.map((n) => n.timestamp_ms)} price={m.price} sym={m.sym} />
+                <FollowTimeline network="mainnet" price={m.price} sym={m.sym} title="How a real-money vault will work" />
               </div>
             </div>
           ) : (

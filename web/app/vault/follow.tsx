@@ -185,7 +185,7 @@ export function FollowPanel({ name, data, price, dec, sym, active, shares, paper
         <span className="muted text-[13px]" data-testid="follow-faq"><a href="../faq/">Questions</a> · <a href="../trust/">Risks &amp; trust</a></span>
       </div>
 
-      <FollowTimeline times={navs.map((n) => n.timestamp_ms)} price={price} sym={sym} />
+      <FollowTimeline network={NETWORK} price={price} sym={sym} />
 
       {q && c && (
         <div className="text-sm" data-testid="cc-result">

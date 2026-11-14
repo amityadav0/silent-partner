@@ -34,7 +34,8 @@ test("D3: the timeline gives a clock estimate for exiting, from this vault's cad
   await page.goto(`/vault/?id=${VAULT}`);
   const tl = page.getByTestId("follow-timeline");
   await expect(tl).toBeVisible({ timeout: 30_000 });
-  await expect(tl.getByTestId("timeline-exit")).toContainText(/about ~\d+ (min|h)/);
+  await expect(tl.getByTestId("timeline-exit")).toContainText("about 30 minutes here, where prices update every 15 minutes");
+  await expect(tl).not.toContainText("~");
   await expect(tl).toContainText("emergency exit");
   await expect(tl).not.toContainText("epoch");
 });
@@ -43,7 +44,17 @@ test("D2/D3: the read-only mainnet vault shows the same cost box and timeline", 
   await page.goto("/vault/?id=1f80f62c945eec98005dac38ab9db5f95c44ef1258cf5ca9606fb8c7dd4da36e");
   const ro = page.getByTestId("mainnet-readonly");
   await expect(ro.getByTestId("cost-box")).toContainText("20% of new gains", { timeout: 30_000 });
-  await expect(ro.getByTestId("timeline-exit")).toContainText(/about ~\d+ (min|h)/);
+  // Y4/Y5: no Follow button here, so the timeline says how a real-money vault will work; the
+  // exit figure is the same one the FAQ reads; one trade so far is a count; three proof links
+  await expect(ro.getByTestId("follow-timeline")).toContainText("How a real-money vault will work");
+  await expect(ro).not.toContainText("after you click Follow");
+  await expect(ro.getByTestId("timeline-exit")).toContainText("about 6 hours here");
+  await expect(page.getByTestId("limits-rate")).toHaveText("1 trade so far");
+  const proof = ro.getByTestId("mainnet-proof").getByRole("link");
+  await expect(proof).toHaveCount(3);
+  for (const tx of ["w5EU6i3v", "6jg61f4q", "E5KEBvXH"]) await expect(ro.getByTestId("mainnet-proof").locator(`a[href*="${tx}"]`)).toBeVisible();
+  await page.goto("/faq/");
+  await expect(page.locator("body")).toContainText("about 6 hours on the mainnet vault");
 });
 
 test("D4: record length, the new-leader chip, limits in numbers and the leader's stake over time", async ({ page }) => {
