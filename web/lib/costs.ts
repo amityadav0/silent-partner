@@ -45,7 +45,7 @@ export function feeExample(feeBps: number, amount = 1000, ret = 0.05): string {
 
 // Trading cost so far (T2), published per vault by the season job (season-state/costs.json):
 // totals only, from the operator's fills against the NEAR/USD mid, at the season's pooled rate.
-export type VaultCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_bps: number };
+export type VaultCost = { trades: number; trades_24h: number; moved_usd: number; cost_pct: number | null; cost_24h_pct?: number | null; cost_bps: number };
 export type CostDoc = { ranAt: string; cost_bps: number; turnover_rule_since: string; vaults: Record<string, VaultCost> };
 let costCache: Promise<CostDoc | null> | null = null;
 export function loadCosts(): Promise<CostDoc | null> {
@@ -57,4 +57,13 @@ export function loadCosts(): Promise<CostDoc | null> {
 export function costWords(c: VaultCost): string {
   const pct = c.cost_pct === null ? "" : `${c.cost_pct < 0.01 && c.cost_pct > 0 ? "<0.01" : c.cost_pct.toFixed(2)}% of the vault `;
   return `${pct}(${c.trades.toLocaleString("en-US")} trade${c.trades === 1 ? "" : "s"})`;
+}
+
+/** The one trade-frequency figure the site shows (leaderboard row and vault page alike). */
+export const tradesDay = (c: VaultCost) => `${c.trades_24h} trade${c.trades_24h === 1 ? "" : "s"} in the last 24 h`;
+
+/** "0.12% in the last 24 h" (null before the season publishes it). */
+export function cost24Words(c: VaultCost): string | null {
+  if (c.cost_24h_pct === undefined || c.cost_24h_pct === null) return null;
+  return `${c.cost_24h_pct > 0 && c.cost_24h_pct < 0.01 ? "<0.01" : c.cost_24h_pct.toFixed(2)}% in the last 24 h`;
 }

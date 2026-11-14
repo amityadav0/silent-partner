@@ -53,7 +53,7 @@ test("D4: record length, the new-leader chip, limits in numbers and the leader's
   const lim = page.getByTestId("limits");
   await expect(lim.getByTestId("limits-near")).toContainText("0–100%");
   await expect(lim.getByTestId("limits-near")).toContainText("clamped");
-  await expect(lim.getByTestId("limits-rate")).toContainText(/trades? a (day|week)|so far|no trades/);
+  await expect(lim.getByTestId("limits-rate")).toContainText(/in the last 24 h|trades? a (day|week)|so far|no trades/);
   await expect(lim).toContainText("USDC and wNEAR only");
   await expect(lim.getByTestId("limits-stake")).toContainText(/\d+\.\d% now, from \d+\.\d% on/);
   await expect(lim.getByTestId("limits-stake").getByTestId("sparkline")).toBeVisible();
@@ -115,8 +115,13 @@ test("T2: trading cost so far on the vault, trades/day on the leaderboard, measu
   await expect(lim.getByTestId("limits-cost")).toContainText(/Trading cost so far\s*\d+\.\d\d% of the vault \(\d[\d,]* trades?\)/);
   await expect(lim.getByTestId("limits-cost")).toContainText(/measured across the season/);
   await expect(page.getByTestId("cost-per-trade").first()).toContainText(/≈0\.\d\d% per trade, shared \(measured\)/);
+  // Y1: one trade-frequency figure, the same on the vault page and the leaderboard
+  await expect(lim.getByTestId("limits-rate")).toContainText(/\d+ trades? in the last 24 h/);
+  const onVault = (await lim.getByTestId("limits-rate").innerText()).match(/(\d+) trades? in the last 24 h/)![1];
+  await expect(lim).not.toContainText(/trades? a day/);
   await page.goto("/leaderboard/");
-  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText(/\d+ trades?\/day/);
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText(`${onVault} trade`);
+  await expect(page.getByTestId("row-sp-trend-8952.testnet").getByTestId("trades-day")).toContainText("in the last 24 h");
 });
 
 test("T3/T4: benchmarks are labelled BENCHMARK; the drill and the first test vault sit in a collapsed Test vaults section", async ({ page }) => {

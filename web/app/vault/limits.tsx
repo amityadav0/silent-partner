@@ -8,7 +8,7 @@ import type { VaultMeta } from "@/lib/vaults";
 import type { Config, VaultView } from "@/lib/vault";
 import { leaderStake } from "@/lib/vault";
 import { Sparkline } from "../ui";
-import { costWords, loadCosts, type VaultCost } from "@/lib/costs";
+import { cost24Words, costWords, loadCosts, tradesDay, type VaultCost } from "@/lib/costs";
 
 export function RecordChips({ times }: { times: number[] }) {
   return (
@@ -44,11 +44,11 @@ export function Limits({ id, meta, cfg, vault, times }: { id: string; meta: Vaul
       <div className="mt-2">
         <div className="row-kv"><span>Record</span><span data-testid="limits-record">{recordWords(times)}{isNewLeader(times) ? ": short, so judge it on more than its return" : ""}</span></div>
         <div className="row-kv"><span>{mix ? "What it holds" : "NEAR in the vault"}</span><span data-testid="limits-near">{mix ?? fixed ?? near}</span></div>
-        <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{tradeRateWords(vault.signals, times)}</span></div>
+        <div className="row-kv"><span>How often it trades</span><span data-testid="limits-rate">{cost ? <>{tradesDay(cost)} <span className="muted">· the 4-hour rule (from Nov 14) allows 6 at most</span></> : tradeRateWords(vault.signals, times)}</span></div>
         {cost && (
           <div className="row-kv" data-testid="limits-cost">
             <span>Trading cost so far</span>
-            <span><span className="num">{costWords(cost)}</span> <span className="muted">· ≈{(Math.round(cost.cost_bps) / 100).toFixed(2)}% of each trade, measured across the season&apos;s fills · {cost.trades_24h} in the last 24 h</span></span>
+            <span><span className="num">{costWords(cost)}</span>{cost24Words(cost) && <> · <span className="num" data-testid="limits-cost-24h">{cost24Words(cost)}</span></>} <span className="muted">· ≈{(Math.round(cost.cost_bps) / 100).toFixed(2)}% of each trade, measured across the season&apos;s fills</span></span>
           </div>
         )}
         <div className="row-kv"><span>What it can hold</span><span>{assets} only <span className="muted">(enforced by the contract)</span></span></div>

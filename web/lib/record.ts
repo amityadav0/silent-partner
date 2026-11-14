@@ -23,7 +23,8 @@ export const isNewLeader = (times: number[], now = Date.now()) => recordAge(time
 export function tradeRateWords(signals: number, times: number[], now = Date.now()): string {
   if (!signals) return "no trades yet";
   const days = recordAge(times, now) / DAY;
-  if (days < 1) return `${signals} so far`;
+  // a rate from a handful of trades is a guess: say the count
+  if (days < 1 || signals < 5) return `${signals} trade${signals === 1 ? "" : "s"} so far`;
   const perDay = signals / days;
   if (perDay >= 1) return `≈ ${Math.round(perDay)} trade${Math.round(perDay) === 1 ? "" : "s"} a day`;
   const perWeek = perDay * 7;
