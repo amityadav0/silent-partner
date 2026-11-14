@@ -109,6 +109,8 @@ jobs:
             # one redacted line per vault (CI logs are public)
             grep -E '^\{|unavailable|Error' /tmp/season.log
             echo "tick $i exit $code"
+            # hourly: who uses it, from public chain data (A1), counts only
+            [ $((i % 4)) -eq 1 ] && { npx tsx scripts/usage.ts --quiet --out ../season-state/usage.json >/dev/null 2>&1 || echo "usage refresh failed"; }
             (cd ../season-state && git add -A && { git diff --cached --quiet || git commit -qm "season tick $(date -u +%FT%TZ)"; } \
               && for t in 1 2 3 4 5; do git pull -q --rebase && git push -q && break; sleep $((t * 5)); done)
             # backup trigger for the mainnet keeper: cron is unreliable on this repo; it skips if not due
