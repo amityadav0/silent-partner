@@ -1,0 +1,110 @@
+{
+  "ranAt": "2026-11-14T04:20:54.618Z",
+  "vault": "drill2.sp-sop-92991.testnet",
+  "vault_account": "4567b68c0d9b5070ba0b3d427cca59a99c6cc2949a9faa8813872344fdc0cae4",
+  "build": "drill (5-minute NAV timeout), T5 emergency rounds",
+  "vault_public_usdc_at_round": "100000000",
+  "round_1": {
+    "allocs": [
+      "50000000"
+    ],
+    "pool": "50000000"
+  },
+  "claims": [
+    {
+      "id": 0,
+      "account": "sp-follower-60270.testnet",
+      "amount": "50000000",
+      "allocation": "50000000",
+      "paid": "50000000"
+    },
+    {
+      "id": 1,
+      "account": "sp-fund-61557.testnet",
+      "amount": "30000000",
+      "allocation": "30000000",
+      "paid": "30000000"
+    }
+  ],
+  "pool_after": "20000000",
+  "vault_public_usdc_after": "20000000",
+  "txs": [
+    {
+      "step": "follower: payout before any round",
+      "who": "sp-follower-60270.testnet",
+      "tx": "HQ2jnQpkWj72AmdKieTPTHDssvcRqw6LGnXBhhNm6Pce",
+      "note": "emergency: above this claim's round allocation; call emergency_round"
+    },
+    {
+      "step": "anyone: emergency_round",
+      "who": "sp-fund-61557.testnet",
+      "tx": "5PGjAddcHtaAe579bQPLGvZaDvoLnztVmKCMsh5D1HmP",
+      "note": "silent-partner.round balance=100000000 free=100000000 allocated=100000000 pool=50000000"
+    },
+    {
+      "step": "sp-follower-60270.testnet: sign_intent(PublicPayout) 50 USDC",
+      "who": "sp-follower-60270.testnet",
+      "tx": "HB5kp9K8mixFgxFBvcVfyLqbuBnEEMnD7huYmNtg3xRs",
+      "note": "silent-partner.signed prehash=ecb64d17f05c3c3cd7729f714ef0c85f5945c4b472d90c55a4267482fcc77ca3 signature=ed25519:4N2xNgYtcb9bCDYM8VxH4mePz3zrErpFKnAdiVWHJgCHt8k1X5QLcwZZt96Sb1otRsJDEonR6d3CV128NmFgiccW"
+    },
+    {
+      "step": "sp-follower-60270.testnet: execute_intents on the verifier",
+      "who": "sp-follower-60270.testnet",
+      "tx": "3KFK4Q4YfQ814dxKHSzTSSGhPSivQ7Z9mmWWuiQxy8hZ"
+    },
+    {
+      "step": "sp-follower-60270.testnet: ft_withdraw to wallet",
+      "who": "sp-follower-60270.testnet",
+      "tx": "4827utiMDD7umrqArBxPNDd8trtDERNG5nEJHhKQwAV2"
+    },
+    {
+      "step": "anyone: settle_payout (verifier: nonce used)",
+      "who": "sp-fund-61557.testnet",
+      "tx": "GFvQeU8uhSDHgn5x8rmsgm4uWMMyw7UUQVx5JjJSgvXL",
+      "note": "silent-partner.settle claim=0 prehash=ecb64d17f05c3c3cd7729f714ef0c85f5945c4b472d90c55a4267482fcc77ca3 result=paid"
+    },
+    {
+      "step": "second follower: emergency_exit",
+      "who": "sp-fund-61557.testnet",
+      "tx": "8NHJcM95JfeR2MycYk7XHzpE9CTSfkTfDXtNbjZN1bGn",
+      "note": "silent-partner.claim id=1 account=sp-fund-61557.testnet amount=30000000 emergency=true"
+    },
+    {
+      "step": "sp-fund-61557.testnet: sign_intent(PublicPayout) 30 USDC",
+      "who": "sp-fund-61557.testnet",
+      "tx": "EZ3dXbnHxUkg8jcCWyaXc1HsMCKzg7xLBUtDt9vqQgDa",
+      "note": "silent-partner.signed prehash=e93c00950a129041ae5607a1cd759c92135d6383c9f52a9a1d4f6d0850ca84bf signature=ed25519:5npdpSSGpSrdCUTg2MTq5QZy9qeUfyx18cRKCJDD4fZ5n6tFfAR4cWPx7szuC3FirmqApc8xKXSYDCX2NxYjT1Mo"
+    },
+    {
+      "step": "sp-fund-61557.testnet: execute_intents on the verifier",
+      "who": "sp-fund-61557.testnet",
+      "tx": "4d2VNxT47Zv1xZUBvLYqw1boJNGTidYxrUQwJEGNRquv"
+    },
+    {
+      "step": "sp-fund-61557.testnet: ft_withdraw to wallet",
+      "who": "sp-fund-61557.testnet",
+      "tx": "AG4H4P96gGBV1wCHmPdCZyp5JHTuiY5tTKNTXsmfYSQ"
+    },
+    {
+      "step": "anyone: settle_payout (verifier: nonce used)",
+      "who": "sp-fund-61557.testnet",
+      "tx": "3ydARc9Gyai3AG1HNSfPvsLznuewwhpozVDwRzxZGn7U",
+      "note": "silent-partner.settle claim=1 prehash=e93c00950a129041ae5607a1cd759c92135d6383c9f52a9a1d4f6d0850ca84bf result=paid"
+    }
+  ],
+  "first_run_txs": [
+    {
+      "step": "anyone: trigger_emergency (5 min without a price update)",
+      "tx": "Bq4ufnREQ2NKmg9yjTHsJSywV2iqqbgbzN9RbjAR2Row"
+    },
+    {
+      "step": "follower: emergency_exit \u2192 claim 0, 50 USDC at the last price",
+      "tx": "5FQ4aRgongU4kd2QtkWGNas3DPYYVmiuP2ZGmULjCATR"
+    },
+    {
+      "step": "follower: payout before any round \u2192 refused (emergency: above this claim's round allocation)",
+      "tx": "EGvGrzMZfSarhkrqfLW6jn1w3M7RThL9BCetCea8cSxT"
+    }
+  ],
+  "note": "The script stopped after the first expected refusal (the client threw); the second run resumed at the claim and recorded the rest."
+}

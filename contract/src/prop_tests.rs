@@ -385,3 +385,104 @@ proptest! {
         prop_assert_eq!(math::mul_div(a as u128, b as u128, c), Some(a as u128 * b as u128 / c));
     }
 }
+
+// ---------------- emergency rounds (T5) ----------------
+
+#[derive(Debug, Clone)]
+enum RoundOp {
+    /// holder 0..4 exits
+    Exit(usize),
+    /// the unwind brings in this permille of the book's value
+    Cash(u32),
+    Round,
+    /// pay a claim (index among opened claims) its whole current allocation
+    Pay(usize),
+}
+
+fn round_op() -> impl Strategy<Value = RoundOp> {
+    prop_oneof![
+        (0usize..4).prop_map(RoundOp::Exit),
+        (0u32..400).prop_map(RoundOp::Cash),
+        Just(RoundOp::Round),
+        (0usize..4).prop_map(RoundOp::Pay)
+    ]
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 300, ..ProptestConfig::default() })]
+
+    /// Whatever the order of exits, cash arrivals, rounds and payouts: nothing is allocated beyond
+    /// the cash that arrived, no claim is allocated beyond what it's owed, and after a final round
+    /// with everyone out, every claim holds the same fraction of what it's owed (to rounding).
+    #[test]
+    fn emergency_rounds_are_pro_rata_in_any_order(
+        deposits in prop::collection::vec(1_000_000u128..50_000_000, 4),
+        ops in prop::collection::vec(round_op(), 0..40),
+        recovered_permille in 0u32..=1000,
+    ) {
+        let mut v = vault();
+        for (i, d) in deposits.iter().enumerate() {
+            deposit(&mut v, WHO[i], *d * if i == 0 { 10 } else { 1 }, T0_MS);
+        }
+        let book = v.book_nav;
+        let late = T0_MS + NAV_STALE_MS + 1;
+        ctx("anyone.testnet", late);
+        v.trigger_emergency(None);
+        // total that will ever arrive is capped at `recovered` of the book
+        let cap = book * recovered_permille as u128 / 1000;
+        let (mut arrived, mut balance, mut paid) = (0u128, 0u128, 0u128);
+        let mut claims: Vec<u64> = vec![];
+        let round = |v: &mut Vault, bal: u128| {
+            ctx("vault.testnet", late);
+            v.on_round(Ok(U128(bal)));
+        };
+        for op in ops {
+            match op {
+                RoundOp::Exit(i) => {
+                    ctx(WHO[i], late);
+                    if v.balance(&acc(WHO[i])) > 0 {
+                        claims.push(v.emergency_exit(acc(WHO[i])));
+                    }
+                }
+                RoundOp::Cash(p) => {
+                    let add = (book * p as u128 / 1000).min(cap - arrived);
+                    arrived += add;
+                    balance += add;
+                }
+                RoundOp::Round => round(&mut v, balance),
+                RoundOp::Pay(k) => {
+                    if let Some(&id) = claims.get(k) {
+                        // a payout executes and is settled: it leaves the balance and counts as paid
+                        let mut c = v.claims[id as u32].clone();
+                        let room = rounds::alloc_of(id).saturating_sub(c.paid.0);
+                        c.paid = U128(c.paid.0 + room);
+                        v.claims.replace(id as u32, c);
+                        balance -= room;
+                        paid += room;
+                    }
+                }
+            }
+            let allocated: u128 = (0..v.claims.len() as u64).map(rounds::alloc_of).sum::<u128>() + rounds::pool_alloc();
+            prop_assert!(allocated <= arrived, "allocated {} > arrived {}", allocated, arrived);
+            prop_assert_eq!(balance + paid, arrived);
+            for id in &claims {
+                prop_assert!(rounds::alloc_of(*id) <= v.claims[*id as u32].amount.0);
+            }
+        }
+        // everyone out, the rest of the unwind arrives, one more round
+        for w in WHO {
+            ctx(w, late);
+            if v.balance(&acc(w)) > 0 {
+                claims.push(v.emergency_exit(acc(w)));
+            }
+        }
+        balance += cap - arrived;
+        round(&mut v, balance);
+        prop_assert_eq!(rounds::pool_alloc(), 0);
+        // same fraction for all: alloc_i / amount_i within 1e-6 + rounding of each other
+        let fr: Vec<f64> = claims.iter().map(|id| rounds::alloc_of(*id) as f64 / v.claims[*id as u32].amount.0 as f64).collect();
+        let (lo, hi) = fr.iter().fold((f64::MAX, 0f64), |(l, h), &x| (l.min(x), h.max(x)));
+        prop_assert!(hi - lo < 1e-5, "fractions {:?}", fr);
+        prop_assert!((lo - recovered_permille as f64 / 1000.0).abs() < 1e-5 || recovered_permille == 0, "fraction {} vs recovered {}", lo, recovered_permille);
+    }
+}

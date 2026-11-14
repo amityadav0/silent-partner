@@ -601,6 +601,8 @@ fn vault_with_claim(amount: u128, emergency: bool) -> Vault {
         v.last_nav_ms = T0_MS - NAV_STALE_MS - 10;
         ctx("anyone.testnet", T0_MS);
         v.trigger_emergency(None);
+        // a round with the whole vault in cash: every claim is covered in full (T5)
+        round(&mut v, 10_000_000, T0_MS);
     } else {
         post(&mut v, 1, 10_000_000, T0_MS + 1); // priced
         post(&mut v, 2, 10_000_000, T0_MS + 2); // burned: claim opens
@@ -897,12 +899,82 @@ fn overdue_claim_opens_emergency() {
     ctx("anyone.testnet", opened + CLAIM_GRACE_MS + 1);
     v.trigger_emergency(Some(0));
     assert!(v.emergency);
-    // the (non-emergency) claim is now payable by its claimant
+    // the (non-emergency) claim is now payable by its claimant, once a round has covered it
+    round(&mut v, 10_000_000, opened + CLAIM_GRACE_MS + 1);
     let d = "2026-11-10T10:10:00.000Z";
     let pl = payload("exit.testnet", USDC, 4_000_000, "intents.near", d, &vault_acct());
     ctx("follower.testnet", parse_ms(d) - 10 * 60_000);
     let _ = v.sign_intent(SignKind::PublicPayout { claim_id: 0 }, pl, None);
     assert_eq!(v.get_claims(0, 1)[0].in_flight.len(), 1);
+}
+
+/// Run an emergency round as if the verifier reported `balance` of the base asset.
+pub(crate) fn round(v: &mut Vault, balance: u128, ms: u64) -> u128 {
+    ctx("vault.testnet", ms);
+    v.on_round(Ok(U128(balance))).0
+}
+
+/// T5: emergency exits are paid from what's actually there, in rounds, pro rata. A run on the
+/// vault can't leave the last one out short: everyone gets the same fraction of what they're owed.
+#[test]
+fn emergency_rounds_pay_everyone_the_same_fraction() {
+    let mut v = vault();
+    deposit(&mut v, "leader.testnet", 2_000_000, T0_MS);
+    deposit(&mut v, "follower.testnet", 6_000_000, T0_MS);
+    deposit(&mut v, "late.testnet", 2_000_000, T0_MS);
+    let late = T0_MS + NAV_STALE_MS + 1;
+    ctx("anyone.testnet", late);
+    v.trigger_emergency(None);
+    // the follower runs first; nothing is allocated yet, so nothing can be paid
+    ctx("follower.testnet", late);
+    let f = v.emergency_exit(acc("follower-exit.testnet"));
+    let pay = |amt: u128| payload("follower-exit.testnet", USDC, amt, "intents.near", DL, &vault_acct());
+    let at = T0_MS;
+    assert!(sign(&mut v, "follower.testnet", SignKind::PublicPayout { claim_id: f }, pay(1), None).contains("round allocation"));
+    // the unwind recovered only 5 of the book's 10 (the price fell): round 1 splits 5 pro rata
+    assert_eq!(round(&mut v, 5_000_000, late), 5_000_000);
+    let (a, pool) = v.get_rounds(0, 10);
+    assert_eq!((a[f as usize].0, pool.0), (3_000_000, 2_000_000)); // 6/10 of 5, and 4/10 for the two still in
+                                                                   // the follower can take its 3, not its 6, and neither can the operator pay it more
+    assert!(sign(&mut v, "follower.testnet", SignKind::PublicPayout { claim_id: f }, pay(3_000_001), None).contains("round allocation"));
+    assert!(sign(&mut v, "op.testnet", SignKind::PublicPayout { claim_id: f }, pay(3_000_001), None).contains("round allocation"));
+    ctx("follower.testnet", at);
+    let _ = v.sign_intent(SignKind::PublicPayout { claim_id: f }, pay(3_000_000), None);
+    // the second round sees the same balance (the payout is in flight): nothing new to give
+    assert_eq!(round(&mut v, 5_000_000, late), 0);
+    // the late holder exits after round 1 and takes its part of the pool
+    ctx("late.testnet", late);
+    let l = v.emergency_exit(acc("late.testnet"));
+    assert_eq!(v.get_rounds(0, 10).0[l as usize].0, 1_000_000);
+    // the payout executed (balance 2), then 3 more came in from the unwind: 5 in the vault
+    let pre = v.get_claims(f, 1)[0].in_flight[0].prehash.clone();
+    ctx("vault.testnet", late);
+    assert_eq!(v.on_settle(f, pre, Ok(true)), "paid");
+    round(&mut v, 5_000_000, late);
+    ctx("leader.testnet", late);
+    let ld = v.emergency_exit(acc("leader.testnet"));
+    let (a, pool) = v.get_rounds(0, 10);
+    let cs = v.get_claims(0, 10);
+    // everyone ends at 8/10 of what they were owed, whatever order they left in
+    for id in [f, l, ld] {
+        let c = &cs[id as usize];
+        assert_eq!(a[id as usize].0 * 10, c.amount.0 * 8, "claim {id}");
+    }
+    assert_eq!(pool.0, 0);
+    assert_eq!(v.get_vault().total_shares.0, 0);
+}
+
+#[test]
+fn round_with_the_verifier_down_changes_nothing() {
+    let mut v = vault_with_claim(4_000_000, true);
+    let before = v.get_rounds(0, 10);
+    ctx("vault.testnet", T0_MS);
+    assert_eq!(v.on_round(Err(PromiseError::Failed)).0, 0);
+    assert_eq!(v.get_rounds(0, 10), before);
+    // and a round outside emergency is refused
+    let mut n = vault_with_claim(4_000_000, false);
+    ctx("anyone.testnet", T0_MS);
+    assert!(panics(|| n.emergency_round()).contains("not in emergency"));
 }
 
 fn parse_ms(iso: &str) -> u64 {

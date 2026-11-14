@@ -23,6 +23,38 @@ pub mod math;
 pub mod migrate;
 pub mod quote;
 
+/// Emergency round state (T5), kept under its own storage keys outside the root struct, so the
+/// vault's stored layout is unchanged and live vaults upgrade by a plain code deploy.
+pub mod rounds {
+    use near_sdk::env;
+    fn key(id: u64) -> Vec<u8> {
+        let mut k = b"xa".to_vec();
+        k.extend(id.to_le_bytes());
+        k
+    }
+    fn read(k: &[u8]) -> u128 {
+        env::storage_read(k).and_then(|v| v.try_into().ok()).map(u128::from_le_bytes).unwrap_or(0)
+    }
+    /// Cash a round has set aside for claim `id` (paid out of it so far included).
+    pub fn alloc_of(id: u64) -> u128 {
+        read(&key(id))
+    }
+    pub fn set_alloc(id: u64, v: u128) {
+        if v == 0 {
+            env::storage_remove(&key(id));
+        } else {
+            env::storage_write(&key(id), &v.to_le_bytes());
+        }
+    }
+    /// Cash set aside for holders who haven't exited yet; each exit takes its part.
+    pub fn pool_alloc() -> u128 {
+        read(b"xp")
+    }
+    pub fn set_pool_alloc(v: u128) {
+        env::storage_write(b"xp", &v.to_le_bytes());
+    }
+}
+
 use intent::{Nep413Payload, Parsed};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap, LookupSet, Vector};
@@ -54,6 +86,8 @@ pub const MPC_DOMAIN_EDDSA: u64 = 1;
 const GAS_MPC_SIGN: Gas = Gas::from_tgas(100);
 const GAS_CALLBACK: Gas = Gas::from_tgas(15);
 const GAS_VIEW: Gas = Gas::from_tgas(10);
+/// The round callback reads every claim once.
+const GAS_ROUND: Gas = Gas::from_tgas(100);
 /// The NAV callback burns up to 100 withdrawals.
 const GAS_NAV_CALLBACK: Gas = Gas::from_tgas(200);
 /// The cumulative NAV band's window.
@@ -94,6 +128,7 @@ pub trait PriceOracle {
 #[ext_contract(ext_verifier)]
 pub trait Verifier {
     fn is_nonce_used(&self, account_id: String, nonce: String) -> bool;
+    fn mt_balance_of(&self, account_id: String, token_id: String) -> U128;
 }
 
 #[ext_contract(ext_ft)]
@@ -865,16 +900,74 @@ impl Vault {
         env::log_str("silent-partner.emergency");
     }
 
-    /// Holder, in emergency: burn all shares at the last NAV and open a claim.
+    /// Holder, in emergency: burn all shares at the last NAV and open a claim. The claim takes
+    /// its part of the cash earlier rounds set aside for holders who hadn't exited yet (T5).
     pub fn emergency_exit(&mut self, exit_account: AccountId) -> u64 {
         require!(self.emergency, "not in emergency");
         let who = env::predecessor_account_id();
         let s = self.balance(&who);
         require!(s > 0, "no shares");
         let pay = math::payout_for_shares(s, self.book_nav, self.total_shares);
+        let pool = rounds::pool_alloc();
+        let part = math::pool_part(pool, s, self.total_shares);
         self.burn(&who, s);
         self.book_nav -= pay;
-        self.open_claim(who, exit_account, pay, self.epoch, true)
+        let id = self.open_claim(who, exit_account, pay, self.epoch, true);
+        rounds::set_pool_alloc(pool - part);
+        rounds::set_alloc(id, part.min(pay));
+        id
+    }
+
+    /// Anyone, in emergency: start a payout round (T5). It reads the vault's public base
+    /// balance on the verifier and splits what isn't already set aside pro rata over every open
+    /// claim and the holders still in, by what each is owed at the last price. Claimants can then
+    /// pay out up to their allocation, so the last one out gets the same fraction as the first,
+    /// whatever the unwind recovers. Call again after more is unwound or unshielded.
+    pub fn emergency_round(&mut self) -> Promise {
+        require!(self.emergency, "not in emergency");
+        let vault = self.vault_account.clone().unwrap_or_else(|| env::panic_str("not active"));
+        ext_verifier::ext(self.public_verifier().parse().unwrap())
+            .with_static_gas(GAS_VIEW)
+            .mt_balance_of(vault, self.cfg.base_asset_id.clone())
+            .then(Self::ext(env::current_account_id()).with_static_gas(GAS_ROUND).on_round())
+    }
+
+    #[private]
+    pub fn on_round(&mut self, #[callback_result] balance: Result<U128, PromiseError>) -> U128 {
+        let Ok(balance) = balance else {
+            env::log_str("silent-partner.round verifier unavailable");
+            return U128(0);
+        };
+        let pool = rounds::pool_alloc();
+        // What each claim already has covered: allocated, or paid and in flight (a claim paid
+        // before the emergency was never allocated). Covered but unpaid cash is set aside.
+        let n = self.claims.len();
+        let (mut covered, mut owed) = (Vec::with_capacity(n as usize), Vec::with_capacity(n as usize));
+        let mut reserved = pool;
+        for i in 0..n {
+            let c = &self.claims[i];
+            let sent = c.paid.0 + c.in_flight.iter().map(|x| x.amount.0).sum::<u128>();
+            let cov = rounds::alloc_of(i as u64).max(sent).min(c.amount.0);
+            reserved += cov - c.paid.0.min(cov);
+            owed.push(c.amount.0 - cov);
+            covered.push(cov);
+        }
+        let cash = balance.0.saturating_sub(reserved);
+        let (adds, pool_add) = math::round_adds(cash, &owed, self.book_nav.saturating_sub(pool));
+        let mut given = pool_add;
+        for i in 0..n as usize {
+            if adds[i] > 0 || covered[i] != rounds::alloc_of(i as u64) {
+                rounds::set_alloc(i as u64, covered[i] + adds[i]);
+            }
+            given += adds[i];
+        }
+        rounds::set_pool_alloc(pool + pool_add);
+        env::log_str(&format!(
+            "silent-partner.round balance={} free={cash} allocated={given} pool={}",
+            balance.0,
+            pool + pool_add
+        ));
+        U128(given)
     }
 
     // ---------- signing through MPC ----------
@@ -929,6 +1022,11 @@ impl Vault {
                 );
                 require!(receiver_id == c.exit_account.as_str(), "payout must go to the claim's exit account");
                 require!(*amount > 0 && *amount <= open_of(c), "payout exceeds the claim");
+                // In emergency every payout, the operator's included, waits for a round (T5).
+                require!(
+                    !self.emergency || *amount <= rounds::alloc_of(*claim_id).saturating_sub(c.amount.0 - open_of(c)),
+                    "emergency: above this claim's round allocation; call emergency_round"
+                );
                 require!(p.deadline_ms >= now + MIN_PAYOUT_AHEAD_MS, "payout deadline too soon");
                 require!(!p.nonce.starts_with(&VERSIONED_NONCE_PREFIX), "payouts need a plain nonce");
                 require!(!c.in_flight.iter().any(|f| f.prehash == prehash_hex), "payload already in flight");
@@ -1082,6 +1180,13 @@ impl Vault {
 
     pub fn get_config(&self) -> Config {
         self.cfg.clone()
+    }
+
+    /// Emergency rounds (T5): each claim's allocation from `from`, and the cash set aside for
+    /// holders still in.
+    pub fn get_rounds(&self, from: u64, limit: u64) -> (Vec<U128>, U128) {
+        let end = (from + limit.min(200)).min(self.claims.len() as u64);
+        ((from..end).map(|i| U128(rounds::alloc_of(i))).collect(), U128(rounds::pool_alloc()))
     }
 
     pub fn get_vault(&self) -> VaultView {

@@ -157,6 +157,30 @@ pub fn leader_ok(leader: u128, total: u128, min_bps: u128) -> bool {
     total == 0 || leader * BPS >= min_bps * total
 }
 
+/// One emergency round (T5): split `cash` (the vault's free public base balance) pro rata over
+/// what each claim is still owed (`claims[i]` = amount − already covered) and what the holders who
+/// haven't exited yet are owed together (`pool`). Nobody gets more than they're owed; whatever is
+/// left after everyone is whole stays in the vault. Floors, so the adds never sum above `cash`.
+pub fn round_adds(cash: u128, claims: &[u128], pool: u128) -> (Vec<u128>, u128) {
+    let owed: u128 = claims.iter().fold(pool, |s, &e| s.saturating_add(e));
+    if owed == 0 || cash == 0 {
+        return (vec![0; claims.len()], 0);
+    }
+    if cash >= owed {
+        return (claims.to_vec(), pool);
+    }
+    let share = |e: u128| mul_div(cash, e, owed).unwrap_or(0).min(e);
+    (claims.iter().map(|&e| share(e)).collect(), share(pool))
+}
+
+/// A holder exiting in emergency takes their part of the cash already set aside for the pool.
+pub fn pool_part(pool_alloc: u128, burn: u128, shares: u128) -> u128 {
+    if shares == 0 {
+        return 0;
+    }
+    mul_div(pool_alloc, burn.min(shares), shares).unwrap_or(0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
