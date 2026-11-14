@@ -977,6 +977,36 @@ fn round_with_the_verifier_down_changes_nothing() {
     assert!(panics(|| n.emergency_round()).contains("not in emergency"));
 }
 
+/// T7: deposit caps for a guarded launch. Per depositor (not the leader) and for the vault,
+/// refunded when over; once set they only go down.
+#[test]
+fn deposit_caps() {
+    let mut v = vault();
+    ctx("leader.testnet", T0_MS);
+    assert!(panics(|| v.set_deposit_caps(U128(200_000_000), U128(5_000_000_000))).contains("only the owner"));
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| v.set_deposit_caps(U128(0), U128(1))).contains("bad caps"));
+    assert!(panics(|| v.set_deposit_caps(U128(2), U128(1))).contains("bad caps"));
+    v.set_deposit_caps(U128(200_000_000), U128(1_000_000_000));
+    assert_eq!(v.get_deposit_caps(), Some((U128(200_000_000), U128(1_000_000_000))));
+    // `deposit` returns the refund: 0 = accepted. The leader isn't capped per account.
+    assert_eq!(deposit(&mut v, "leader.testnet", 300_000_000, T0_MS), 0);
+    // a follower: 150 then 60 → the second is refused (210 > 200), 50 fits
+    assert_eq!(deposit(&mut v, "follower.testnet", 150_000_000, T0_MS), 0);
+    assert_eq!(deposit(&mut v, "follower.testnet", 60_000_000, T0_MS), 60_000_000);
+    assert_eq!(deposit(&mut v, "follower.testnet", 50_000_000, T0_MS), 0);
+    // the vault cap: 500 in, then 900, 1000 max
+    for f in ["f2.testnet", "f3.testnet"] {
+        assert_eq!(deposit(&mut v, f, 200_000_000, T0_MS), 0);
+    }
+    assert_eq!(deposit(&mut v, "f4.testnet", 150_000_000, T0_MS), 150_000_000, "900 + 150 > 1000");
+    assert_eq!(deposit(&mut v, "f4.testnet", 100_000_000, T0_MS), 0);
+    // only tighter from here
+    ctx("owner.testnet", T0_MS);
+    assert!(panics(|| v.set_deposit_caps(U128(300_000_000), U128(1_000_000_000))).contains("only be lowered"));
+    v.set_deposit_caps(U128(100_000_000), U128(1_000_000_000));
+}
+
 fn parse_ms(iso: &str) -> u64 {
     crate::quote::parse_iso_ms(iso).unwrap()
 }

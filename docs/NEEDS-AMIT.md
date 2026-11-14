@@ -316,3 +316,7 @@ A keeper only posts prices. It never trades or pays out; I do those by hand.
 | Setup | Me: about 30 min plus one `add_key` tx from the operator account. You: say "A" | Me: about 15 min. You: keep the Mac plugged in and awake through Nov 25 (`caffeinate -s`, or Energy settings) | Both |
 
 **Recommendation: A.** It's the only option that survives your Mac sleeping or being away. A leaked secret can't move funds, because the key is limited to `post_nav` with a small gas allowance. To pick, reply "A", "B" or "C". Nothing goes into GitHub until you do.
+
+## 13. Guarded real-money launch: your go / no-go (2026-11-14)
+
+Plan: [guarded-launch.md](guarded-launch.md). One new mainnet vault, NEAR/USDC, full-access key deleted at launch (code can't change), published build hash, $200 per depositor and $5,000 per vault enforced by the contract, emergency exits paid pro rata in rounds. Nothing is deployed until you say go. You decide: (1) go / no-go, (2) who leads (you or an invited trader, with their NEAR account), (3) when (after the hackathon review). Cost ≈ 6 NEAR plus the leader's seed. The exact commands are in the plan's checklist.

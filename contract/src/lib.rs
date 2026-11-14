@@ -23,6 +23,23 @@ pub mod math;
 pub mod migrate;
 pub mod quote;
 
+/// Deposit caps for a guarded real-money launch (T7): per depositor and per vault, in base
+/// units, under their own storage key (no layout change). Once set they can only be tightened.
+pub mod caps {
+    use near_sdk::env;
+    const KEY: &[u8] = b"xc";
+    pub fn get() -> Option<(u128, u128)> {
+        let v = env::storage_read(KEY)?;
+        let (a, b) = v.split_at(16);
+        Some((u128::from_le_bytes(a.try_into().ok()?), u128::from_le_bytes(b.try_into().ok()?)))
+    }
+    pub fn set(per_account: u128, vault_total: u128) {
+        let mut v = per_account.to_le_bytes().to_vec();
+        v.extend(vault_total.to_le_bytes());
+        env::storage_write(KEY, &v);
+    }
+}
+
 /// Emergency round state (T5), kept under its own storage keys outside the root struct, so the
 /// vault's stored layout is unchanged and live vaults upgrade by a plain code deploy.
 pub mod rounds {
@@ -918,6 +935,18 @@ impl Vault {
         id
     }
 
+    /// Owner: cap deposits per depositor (the leader excepted) and for the whole vault, in base
+    /// units (T7). Once set, caps can only be lowered, so followers can rely on them.
+    pub fn set_deposit_caps(&mut self, per_account: U128, vault_total: U128) {
+        require!(env::predecessor_account_id() == self.cfg.owner, "only the owner");
+        require!(per_account.0 > 0 && per_account.0 <= vault_total.0, "bad caps");
+        if let Some((a, b)) = caps::get() {
+            require!(per_account.0 <= a && vault_total.0 <= b, "caps can only be lowered");
+        }
+        caps::set(per_account.0, vault_total.0);
+        env::log_str(&format!("silent-partner.caps per_account={} vault_total={}", per_account.0, vault_total.0));
+    }
+
     /// Anyone, in emergency: start a payout round (T5). It reads the vault's public base
     /// balance on the verifier and splits what isn't already set aside pro rata over every open
     /// claim and the holders still in, by what each is owed at the last price. Claimants can then
@@ -1180,6 +1209,11 @@ impl Vault {
 
     pub fn get_config(&self) -> Config {
         self.cfg.clone()
+    }
+
+    /// Deposit caps (T7): (per depositor, whole vault) in base units, if set.
+    pub fn get_deposit_caps(&self) -> Option<(U128, U128)> {
+        caps::get().map(|(a, b)| (U128(a), U128(b)))
     }
 
     /// Emergency rounds (T5): each claim's allocation from `from`, and the cash set aside for
@@ -1590,6 +1624,16 @@ impl Vault {
         let leader = &self.cfg.leader;
         if self.total_shares == 0 && who != leader {
             return Err("the leader seeds the vault first");
+        }
+        if let Some((per_account, vault_total)) = caps::get() {
+            if self.book_nav.saturating_add(amount) > vault_total {
+                return Err("vault cap reached");
+            }
+            // the leader's own money isn't capped: it has to keep its minimum stake as the vault grows
+            let held = math::payout_for_shares(self.balance(who), self.book_nav, self.total_shares);
+            if who != leader && held.saturating_add(amount) > per_account {
+                return Err("per-depositor cap reached");
+            }
         }
         let minted = math::shares_for_deposit(amount, self.book_nav, self.total_shares).ok_or("vault has no value")?;
         if minted == 0 {
