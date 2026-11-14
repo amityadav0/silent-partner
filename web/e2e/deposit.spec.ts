@@ -231,3 +231,14 @@ test("B1: the held-up-best card and the top of Calmest first need 3 days and 200
   await expect(page.getByTestId("row-majors.sp-sop-92991.testnet").getByTestId("new-chip")).toBeVisible();
   await expect(page.getByTestId("calmest")).not.toContainText("Majors");
 });
+
+test("B3: the hero paints its pick and proof line at once from the season's board, and never flips to another leader", async ({ page }) => {
+  const t0 = Date.now();
+  await page.goto("/");
+  const btn = page.getByTestId("hero-copy");
+  await expect(btn).toBeVisible({ timeout: 5_000 });
+  expect(Date.now() - t0).toBeLessThan(5_000);
+  const first = await btn.innerText();
+  await expect(page.getByTestId("hero-proof-state")).toContainText("verified in your browser", { timeout: 60_000 });
+  expect(await btn.innerText()).toBe(first);
+});

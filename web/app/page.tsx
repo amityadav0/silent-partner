@@ -8,6 +8,7 @@ import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { COPY_DEFAULT } from "@/lib/copy";
 import { loadNear } from "@/lib/bench";
 import { pickLeader, proofLine } from "@/lib/pick";
+import { loadBoard } from "@/lib/board";
 import type { VsNear } from "@/lib/bench";
 import { WatchButton } from "./watch";
 import { Redact } from "./ui";
@@ -18,9 +19,21 @@ const DRILL = "sp-drill-92991.testnet";
 function useLive() {
   const [s, setS] = useState<{ navs: number; verified: number; signals: number; events: LiveEvent[] } | null>(null);
   const [main, setMain] = useState<{ epoch: number; ok: boolean; events: LiveEvent[] } | null>(null);
-  const [pick, setPick] = useState<string>(COPY_DEFAULT);
+  const [pick, setPick] = useState<string | null>(null);
   const [proof, setProof] = useState<VsNear | null>(null);
+  const [proofOk, setProofOk] = useState(false);
   useEffect(() => {
+    // B3: the pick and its proof line from the season's board.json at first paint (the same data
+    // the leaderboard paints from); the verified pick below replaces it if it differs.
+    let verifiedPick = false;
+    Promise.all([loadBoard(), loadNear()]).then(([b, near]) => {
+      if (!b || verifiedPick) return;
+      const p = pickLeader(b.map((d) => ({ id: d.id, navs: d.navs, verified: d.navs.length, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near);
+      setPick(p.id);
+      setProof(p.v ?? null);
+    });
+    // never leave the button hidden: fall back to the default after 3 s
+    const t = setTimeout(() => setPick((x) => x ?? COPY_DEFAULT), 3_000);
     // The mainnet vault, kept apart from the testnet paper season's numbers.
     loadVault(MAINNET_VAULT).then((d) => {
       const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
@@ -33,8 +46,10 @@ function useLive() {
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
       loadNear().then((near) => {
         const p = pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near);
+        verifiedPick = true;
         setPick(p.id);
         setProof(p.v ?? null);
+        setProofOk(true);
       });
       // Recent verified events: times and ✓ only. No amounts, no holders.
       const posts: LiveEvent[] = checked
@@ -61,8 +76,9 @@ function useLive() {
         events: [...recent, ...drill.slice(0, 1)],
       });
     });
+    return () => clearTimeout(t);
   }, []);
-  return { pick, proof, live: s ? { ...s, main, events: [...(main?.events ?? []), ...s.events] } : null };
+  return { pick, proof, proofOk, live: s ? { ...s, main, events: [...(main?.events ?? []), ...s.events] } : null };
 }
 
 const when = (t: number) => {
@@ -161,7 +177,7 @@ const COMPARE: [string, string, string, string, string][] = [
 ];
 
 export default function Landing() {
-  const { pick, proof, live } = useLive();
+  const { pick, proof, proofOk, live } = useLive();
   return (
     <div className="bleed" data-testid="landing">
       <section className="wrap hero">
@@ -170,10 +186,14 @@ export default function Landing() {
           <h1>Copy the trader.<br /><em className="mark">Not the crowd.</em></h1>
           <p className="lede">On other platforms your copy is a public trade: bots see it first, you fill last. Here you share one sealed vault with the trader. Same trade, same price, nothing to front-run.</p>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={`/copy/?id=${encodeURIComponent(pick)}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy" data-pick={pick}>Copy {metaOf(pick).name} with $100: no wallet, 10 seconds</Link>
+            {pick ? (
+              <Link href={`/copy/?id=${encodeURIComponent(pick)}&start=1`} className="btn btn-primary btn-lg" data-testid="hero-copy" data-pick={pick}>Copy {metaOf(pick).name} with $100: no wallet, 10 seconds</Link>
+            ) : (
+              <span className="btn btn-primary btn-lg" style={{ visibility: "hidden" }} aria-hidden="true">Copy a leader with $100: no wallet, 10 seconds</span>
+            )}
             <WatchButton />
           </div>
-          {proof && <p className="num text-[15px]" style={{ color: "var(--ink-2)" }} data-testid="hero-proof">{proofLine(metaOf(pick).name, proof)} <span className="muted">· paper · testnet, verified in your browser</span></p>}
+          {proof && pick && <p className="num text-[15px]" style={{ color: "var(--ink-2)" }} data-testid="hero-proof">{proofLine(metaOf(pick).name, proof)} <span className="muted" data-testid="hero-proof-state">· paper · testnet{proofOk ? ", ✓ verified in your browser" : ", checking…"}</span></p>}
           <p className="muted text-sm" data-testid="hero-faq">Before you put money in: <Link href="/faq/">questions</Link> · <Link href="/trust/">risks</Link> · <Link href="/about/">who built it</Link></p>
         </div>
         <Ticket />
