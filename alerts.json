@@ -1,7 +1,7 @@
 {
   "state": {
     "sp-momo-92991.testnet": {
-      "price": 0.9277669429376838,
+      "price": 0.9253899422695306,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -10,7 +10,7 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9493848802812601,
+      "price": 0.9476006844710508,
       "peak": 1.0085308546861929,
       "ddLevel": 1,
       "silent": false,
@@ -19,7 +19,7 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.9066392331717305,
+      "price": 0.905691265399543,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.8481243332814752,
+      "price": 0.8468888254382868,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 0.9376584867727383,
+      "price": 0.936217612211981,
       "peak": 1.048802249757816,
       "ddLevel": 2,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9018636422632271,
+      "price": 0.9009319620115086,
       "peak": 1.0034015725891603,
       "ddLevel": 2,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.8917251308519312,
+      "price": 0.887140330767053,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9587755850665557,
+      "price": 0.9564000262521618,
       "peak": 1.009732148096798,
       "ddLevel": 1,
       "silent": false,
@@ -82,16 +82,16 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 0.9505758584615385,
+      "price": 0.9410299353846154,
       "peak": 1,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "half.sp-sop-92991.testnet": {
-      "price": 0.9753560030769232,
+      "price": 0.9714160630769232,
       "peak": 1,
       "ddLevel": 0,
       "silent": false,
@@ -110,6 +110,12 @@
     }
   },
   "events": [
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Hold NEAR: drawdown crossed −5% from its high.",
+      "at": "2026-11-15T14:02:36.955Z"
+    },
     {
       "vault": "sp-voltgt-8952.testnet",
       "kind": "drawdown",
