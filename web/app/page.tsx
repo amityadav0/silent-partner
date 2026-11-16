@@ -2,12 +2,13 @@
 // Landing: why a copied trade should be private, and the enforced facts behind it.
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { preload } from "react-dom";
 import { VAULTS } from "@/lib/config";
-import { loadVault, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
+import { loadVault, seasonUrl, verifyNavs, view, type Claim, type SignalRec } from "@/lib/vault";
 import { MAINNET_VAULT, metaOf } from "@/lib/vaults";
 import { COPY_DEFAULT } from "@/lib/copy";
 import { loadNear } from "@/lib/bench";
-import { pickLeader, proofLine } from "@/lib/pick";
+import { keepPick, pickLeader, proofLine } from "@/lib/pick";
 import { loadBoard } from "@/lib/board";
 import type { VsNear } from "@/lib/bench";
 import { WatchButton } from "./watch";
@@ -26,14 +27,17 @@ function useLive() {
     // B3: the pick and its proof line from the season's board.json at first paint (the same data
     // the leaderboard paints from); the verified pick below replaces it if it differs.
     let verifiedPick = false;
+    let boardPick: string | null = null;
     Promise.all([loadBoard(), loadNear()]).then(([b, near]) => {
       if (!b || verifiedPick) return;
       const p = pickLeader(b.map((d) => ({ id: d.id, navs: d.navs, verified: d.navs.length, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near);
+      boardPick = p.id;
       setPick(p.id);
       setProof(p.v ?? null);
     });
-    // never leave the button hidden: fall back to the default after 3 s
-    const t = setTimeout(() => setPick((x) => x ?? COPY_DEFAULT), 3_000);
+    // never leave the button hidden: fall back to the default only if neither board.json nor the
+    // chain answered in 10 s (at 3 s a cold load showed the default, then switched: C3)
+    const t = setTimeout(() => setPick((x) => x ?? COPY_DEFAULT), 10_000);
     // The mainnet vault, kept apart from the testnet paper season's numbers.
     loadVault(MAINNET_VAULT).then((d) => {
       const v = verifyNavs(d.id, d.cfg.attestation_key, d.navs);
@@ -45,7 +49,7 @@ function useLive() {
       const ok = rs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       const checked = ok.map((d) => ({ d, v: verifyNavs(d.id, d.cfg.attestation_key, d.navs) }));
       loadNear().then((near) => {
-        const p = pickLeader(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near);
+        const p = keepPick(checked.map(({ d, v }) => ({ id: d.id, navs: d.navs, verified: v.ok, season: !!metaOf(d.id).season, benchmark: !!metaOf(d.id).benchmark })), near, boardPick);
         verifiedPick = true;
         setPick(p.id);
         setProof(p.v ?? null);
@@ -177,6 +181,10 @@ const COMPARE: [string, string, string, string, string][] = [
 ];
 
 export default function Landing() {
+  // C3: start the two files the hero's pick needs while the HTML is still parsing (the static
+  // export puts these in <head>), not after hydration; loadBoard/loadNear reuse the responses.
+  preload(seasonUrl("board.json"), { as: "fetch", crossOrigin: "anonymous" });
+  preload(seasonUrl("near-usd.json"), { as: "fetch", crossOrigin: "anonymous" });
   const { pick, proof, proofOk, live } = useLive();
   return (
     <div className="bleed" data-testid="landing">

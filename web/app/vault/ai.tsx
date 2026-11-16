@@ -6,7 +6,7 @@ import { seasonUrl, view, type SignalRec } from "@/lib/vault";
 import { short } from "../ui";
 import { checkReceipt, receiptOk, type AttestationDoc, type PublicReceipt } from "@/lib/receipt";
 
-type RunRow = { vault: string; ai_model?: string; ai_status?: "ok" | "unavailable"; ai_error?: string; ai_tokens?: unknown; ai_target_band?: string; ai_rationale_hash?: string | null };
+type RunRow = { vault: string; ai_model?: string; ai_status?: "ok" | "unavailable"; ai_error?: string; ai_tokens?: unknown; ai_target_band?: string; ai_rationale_hash?: string | null; nav?: string; tx?: string | null; error?: string };
 type Decision = { ranAt: string; ai_model: string; ai_status?: string; ai_target_band: string | null; ai_rationale_hash: string | null; signal_hash: string | null; ai_receipt?: PublicReceipt };
 type Recent = { ranAt: string; epoch: number; signal_hash: string; ai_target_band: string | null; ai_rationale_hash: string | null; ai_model?: string; ai_receipt?: PublicReceipt };
 
@@ -49,7 +49,7 @@ export function AiDecisions({ id }: { id: string }) {
           <span>{fallback ? "Last decision" : "Last tick"}{shown ? `, ${when(shown.ranAt)}` : ""}</span>
           <span className={down ? "neg" : undefined}>{!shown ? "…" : down ? "NEAR AI unavailable: holding" : row?.ai_target_band ? `decided ${row.ai_target_band} NEAR` : "no decision this tick"}</span>
         </div>
-        {fallback && run && <div className="row-kv muted text-sm" data-testid="ai-latest-tick-note"><span>Latest tick, {when(run.ranAt)}</span><span>no decision (the price post didn&apos;t go through)</span></div>}
+        {fallback && run && <div className="row-kv muted text-sm" data-testid="ai-latest-tick-note"><span>Latest tick, {when(run.ranAt)}</span><span>{latestRow?.tx ? "price posted ✓ · no decision due (AI leaders are asked hourly)" : "no decision (the price post didn\u2019t go through)"}</span></div>}
         <div className="row-kv" data-testid="ai-latest">
           <span>Latest trade</span>
           <span>{last === undefined ? "…" : last ? `signal #${last.index}, ${when(last.executed_ms)}` : "none yet"}</span>

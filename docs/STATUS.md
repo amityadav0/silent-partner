@@ -141,3 +141,10 @@ The site counts four aggregate events: page view → simulated copy started → 
 |---|---|---|---|---|
 | 2026-11-13 05:30 (just shipped) | 0 | 0 | 0 | 0 |
 
+## Nov 16: keep-online batch C
+
+- C1: every season vault topped up to about 13 days of testnet NEAR (until about Nov 29), and the operator to about 17 NEAR. `health.yml` is green and uptime issue #4 is closed.
+- C2: the AI panel no longer calls a tick without a decision a failed price post.
+- C3: the hero shows its leader and proof line once, with no named fallback first and no swap after the chain check.
+- C4: the funnel counters no longer drop to 0 when the counter service fails.
+

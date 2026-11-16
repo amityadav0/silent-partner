@@ -25,6 +25,7 @@ import { FillLog } from "../src/filllog.js";
 import { Operator } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
 import { nearHistory, nearUsd, ret, type Series } from "../src/leaders/market.js";
+import { mergeCount, readCounter } from "../src/season/funnel";
 import { aiDue, benchmarkTarget, blocked, blockedBasket, lastTradeMs, TURNOVER, type Benchmark } from "../src/season/turnover.js";
 import { changes24h, majors, type Changes } from "../src/leaders/majors.js";
 import type { DecideBasket } from "../src/season/tick.js";
@@ -446,19 +447,19 @@ try {
   const ff = join(sealed, "funnel.json");
   const prevF = existsSync(ff) ? JSON.parse(readFileSync(ff, "utf8")) : null;
   if (!prevF?.days || Date.now() - Date.parse(prevF.ranAt) > 55 * 60_000) {
-    const get = (k: string) => fetch(`https://abacus.jasoncameron.dev/get/silent-partner-funnel/${k}`).then((x) => (x.ok ? x.json() : { value: 0 }), () => ({ value: 0 })).then((r) => (r as { value?: number }).value ?? 0);
+    const get = (k: string) => readCounter(`https://abacus.jasoncameron.dev/get/silent-partner-funnel/${k}`);
     const events = ["view", "copy_start", "share_click", "ref_landing", "landing", "create_open", "wallet_connect"];
     const paths = ["home", "leaderboard", "vault", "copy", "create-ai", "how", "trust", "faq", "chain", "partners", "other"];
     const funnel: Record<string, number> = {};
-    for (const k of events) funnel[k] = await get(k);
+    for (const k of events) funnel[k] = mergeCount(prevF?.[k], await get(k));
     const days: Record<string, Record<string, number>> = {};
     for (let i = 0; i < 7; i++) {
       const d = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10).replace(/-/g, "");
       days[d] = {};
-      for (const k of events) days[d][k] = await get(`${k}-d${d}`);
+      for (const k of events) days[d][k] = mergeCount(prevF?.days?.[d]?.[k], await get(`${k}-d${d}`));
     }
     const byPath: Record<string, number> = {};
-    for (const p of paths) byPath[p] = await get(`view-p-${p}`);
+    for (const p of paths) byPath[p] = mergeCount(prevF?.paths?.[p], await get(`view-p-${p}`));
     writeFileSync(ff, JSON.stringify({ ranAt, ...funnel, days, paths: byPath }, null, 1) + "\n");
   }
 } catch {

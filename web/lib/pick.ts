@@ -21,6 +21,18 @@ export function pickLeader(cs: PickCandidate[], near: NearSeries | null, now = D
   return best ?? { id: COPY_DEFAULT, pts: null };
 }
 
+/** C3: once a pick is on screen (painted from board.json), the verified pass keeps it while it still
+ *  qualifies and only refreshes its numbers; board.json can trail the chain by a tick, and two close
+ *  leaders would otherwise swap names a few seconds after first paint. */
+export function keepPick(cs: PickCandidate[], near: NearSeries | null, shown: string | null, now = Date.now()): { id: string; pts: number | null; v?: VsNear } {
+  const c = shown ? cs.find((x) => x.id === shown) : undefined;
+  if (c && c.season && !c.benchmark && c.verified >= PICK_MIN_VERIFIED && hasRecord(c.navs)) {
+    const v = vsNear(c.navs, near, now - WEEK);
+    if (v) return { id: c.id, pts: v.pts, v };
+  }
+  return pickLeader(cs, near, now);
+}
+
 const pct = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(1)}%`;
 /** The hero's proof line (Z6): "Steady Hand: −3.0% while NEAR fell −8.6% this week". */
 export function proofLine(name: string, v: VsNear): string {

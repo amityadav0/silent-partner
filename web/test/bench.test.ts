@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { copyVsNear, nearAt, ptsWords, ratio2, vsNear, type NearSeries } from "../lib/bench";
-import { pickLeader } from "../lib/pick";
+import { keepPick, pickLeader } from "../lib/pick";
 import { agoWords, nextUpdateWords, shareText } from "../lib/copy";
 
 const H = 3_600_000;
@@ -44,6 +44,18 @@ describe("hero pick (U11, B1)", () => {
   // a real record: 201 posts over 100 h (≥ 3 days and ≥ 200 posts)
   const navs = (end: number) => Array.from({ length: 201 }, (_, i) => nav(i * 0.5 * H, i === 200 ? end : 1));
   const near: NearSeries = { t: Array.from({ length: 101 }, (_, i) => i * H), p: Array.from({ length: 101 }, (_, i) => 5 - 0.005 * i) };
+  it("the verified pass keeps the painted pick while it still qualifies (C3)", () => {
+    const cs = [
+      { id: "a.testnet", navs: navs(1.01), verified: 40, season: true },
+      { id: "b.testnet", navs: navs(1.02), verified: 40, season: true },
+    ];
+    expect(pickLeader(cs, near, 100 * H).id).toBe("b.testnet");
+    expect(keepPick(cs, near, "a.testnet", 100 * H).id).toBe("a.testnet");
+    expect(keepPick(cs, near, "a.testnet", 100 * H).v).toBeTruthy();
+    // a painted pick that fails verification is replaced
+    expect(keepPick([{ ...cs[0], verified: 3 }, cs[1]], near, "a.testnet", 100 * H).id).toBe("b.testnet");
+    expect(keepPick(cs, near, null, 100 * H).id).toBe("b.testnet");
+  });
   it("a vault without 3 days and 200 posts is never the pick", () => {
     const young = Array.from({ length: 20 }, (_, i) => nav(90 * H + i * 0.5 * H, i === 19 ? 1.5 : 1));
     expect(pickLeader([{ id: "a.testnet", navs: navs(0.99), verified: 201, season: true }, { id: "majors.testnet", navs: young, verified: 20, season: true }], near, 100 * H).id).toBe("a.testnet");

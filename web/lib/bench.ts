@@ -68,7 +68,8 @@ export function ratio2(x: number): string {
 let cache: Promise<NearSeries | null> | null = null;
 
 async function fromSeason(fetchImpl: typeof fetch): Promise<NearSeries> {
-  const r = await fetchImpl(seasonUrl("near-usd.json"), { cache: "no-store" });
+  // default cache mode, so the landing page's preload is reused (raw GitHub sends max-age=300)
+  const r = await fetchImpl(seasonUrl("near-usd.json"));
   if (!r.ok) throw new Error(`near-usd.json ${r.status}`);
   const j = (await r.json()) as NearSeries;
   if (!j.t?.length || j.t.length !== j.p.length) throw new Error("near-usd.json empty");
