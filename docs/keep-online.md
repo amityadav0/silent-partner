@@ -63,9 +63,25 @@ Top-ups made on 2026-11-16, after `last-run.json` warned that seven vaults had 6
 
 The silent-partner spares are now nearly empty. Each one keeps about 0.5 NEAR above storage.
 
+Second round, the same day (INBOX C1: at least 12 days per vault). The spares were spent, so a new faucet account, `sp-gas-1116.testnet` (10 testnet NEAR), funded every season vault to about 13 days (until about Nov 29) and the operator to about 17 NEAR. After this, `health.yml` passed and uptime issue #4 closed.
+
+| To | NEAR | Tx |
+|---|---|---|
+| `sp-ai-92991` | 0.6 | [`8ABQrSjt…`](https://testnet.nearblocks.io/txns/8ABQrSjtTE7BKbdbYVnTekLec1mbbL91r3NzTso3ELvo) |
+| `sp-trend-8952` | 0.4 | [`DzjsFYG4…`](https://testnet.nearblocks.io/txns/DzjsFYG4h5U2QQupkhExSTmmrDvpVqi1o3aR3JRNS6cb) |
+| `sp-contra-8952` | 0.45 | [`AMxsTKKE…`](https://testnet.nearblocks.io/txns/AMxsTKKEymYP7nVFoM6HaZsV3Qennu8pdMTRQ2U43ARG) |
+| `sp-voltgt-8952` | 0.35 | [`13XFsvN3…`](https://testnet.nearblocks.io/txns/13XFsvN3SDmofRBBTL5cUyEThgpvLkABbNsuvz3opDMB) |
+| `sp-convict-8952` | 0.5 | [`DRks5yyX…`](https://testnet.nearblocks.io/txns/DRks5yyXw7tfHGjxhfC6QzXzSbUPv8FZnhSepTDvVN77) |
+| `sp-momo-92991` | 0.55 | [`92kkPHcX…`](https://testnet.nearblocks.io/txns/92kkPHcXiLyRBEpd3BZeoZNV7gKwrHRorcWDSzgDpuoz) |
+| `sp-meanrev-92991` | 0.15 | [`GYz3ifUM…`](https://testnet.nearblocks.io/txns/GYz3ifUMJ5NYoU3kSq8N4qFMku4cPQvd9vn7UfspsTSG) |
+| `sp-manual-92991` | 0.7 | [`QGubK9YD…`](https://testnet.nearblocks.io/txns/QGubK9YDHqKkGzHer4nWdwrcrTnvtn5cEAyQaCrRhej) |
+| `sp-sop-92991` (operator) | 5.5 | [`2rfiPP1o…`](https://testnet.nearblocks.io/txns/2rfiPP1ox27nVLMi8RaYk4DZMw2cUzZfQe5XdkjbtQNe) |
+
+The operator gets extra because its real spend is about 0.9 NEAR/day (posting plus the auto top-ups of community, Hold, Half and Majors vaults), not the 0.35/day the warning assumes.
+
 **Community vaults refill themselves.** Calm Owl (`c0.sp-sop-92991.testnet`) and any vault launched from the site have no access key, and Calm Owl ran dry on 2026-11-11 (refilled with 3 NEAR from `sp-lai-92991.testnet` on 2026-11-12, tx [`6moUePvW…`](https://testnet.nearblocks.io/txns/6moUePvW6ri3pcauH3eKugJttum1g4bBXoUesaRomBk8)). Each season tick now sends 1 NEAR from the operator to any community vault, or any vault in `vaults.json` `auto_topup` (Calm Owl is listed), that has less than 3 days of spend left. It never takes the operator below 3 NEAR, and the transfers are listed in `last-run.json` as `topups` (D-J-6). Such a vault only shows up as a low-balance warning if a top-up fails. Then top up the operator.
 
-**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. As of 2026-11-16 every silent-partner spare is down to about 0.5 NEAR free, so the next top-up needs a faucet account (below). Then run:
+**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. As of 2026-11-16 every silent-partner spare is down to about 0.5 NEAR free. `sp-gas-1116.testnet` (faucet, ~0.7 left) is the newest; the next top-up needs a new faucet account (below). Then run:
 
 ```sh
 near tokens <spare>.testnet send-near <account>.testnet '2 NEAR' network-config testnet sign-with-keychain send
