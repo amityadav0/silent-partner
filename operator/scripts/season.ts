@@ -25,7 +25,7 @@ import { FillLog } from "../src/filllog.js";
 import { Operator } from "../src/operator.js";
 import { loadEnv } from "../src/config.js";
 import { nearHistory, nearUsd, ret, type Series } from "../src/leaders/market.js";
-import { mergeCount, readCounter } from "../src/season/funnel";
+import { mergeCount, readCounter } from "../src/season/funnel.js";
 import { aiDue, benchmarkTarget, blocked, blockedBasket, lastTradeMs, TURNOVER, type Benchmark } from "../src/season/turnover.js";
 import { changes24h, majors, type Changes } from "../src/leaders/majors.js";
 import type { DecideBasket } from "../src/season/tick.js";

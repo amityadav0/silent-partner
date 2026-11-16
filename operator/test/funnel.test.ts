@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeCount, readCounter } from "../src/season/funnel";
+import { mergeCount, readCounter } from "../src/season/funnel.js";
 
 const res = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
 
