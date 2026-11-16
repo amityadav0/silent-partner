@@ -44,9 +44,28 @@ Top-ups made on 2026-11-10, from spare test accounts that don't spend during the
 | `sp-lmeanrev-92991.testnet` | `sp-voltgt-8952.testnet` | 1.5 | [`HaVnAVGm…`](https://testnet.nearblocks.io/txns/HaVnAVGme3PqUtsMXQTChDMadLZM2nxdNERJaS8QT5EC) |
 | `sp-lmeanrev-92991.testnet` | `sp-trend-8952.testnet` | 1.5 | [`9cH5CMmv…`](https://testnet.nearblocks.io/txns/9cH5CMmv8hVqTZfhCUhtnQYZ7Yz1dazNmsPZ2Mc9ViN1) |
 
+Top-ups made on 2026-11-16, after `last-run.json` warned that seven vaults had 6.7–9.9 days left. Each house vault now has 3.27–3.71 NEAR free, which lasts 11.3–12.8 days at 0.29/day, until Nov 27 (AI) to Nov 29 (Mean Reversion). Faucet account creation wasn't used.
+
+| From | To | NEAR | Tx |
+|---|---|---|---|
+| `sp-fund-61557` | `sp-convict-8952` | 0.95 | [`BSe8URb4…`](https://testnet.nearblocks.io/txns/BSe8URb4PBSwzfcVb7dubykq7htesVBtdDRjc13n5ocA) |
+| `sp-lconvict-8952` | `sp-convict-8952` | 0.45 | [`5t2qSmGy…`](https://testnet.nearblocks.io/txns/5t2qSmGyydeMjKahLjZQd5mJdGr2tExCoo8L2bVCjWyY) |
+| `sp-follower-60270` | `sp-contra-8952` | 1.4 | [`2EUyu9oF…`](https://testnet.nearblocks.io/txns/2EUyu9oFbRHMiS6abrzrR65hJZzrCeq8yrFKNjKgz8zF) |
+| `sp-op-60270` | `sp-voltgt-8952` | 0.95 | [`8U1fr8kU…`](https://testnet.nearblocks.io/txns/8U1fr8kUKcUmzF7ebpaygZQD47xNH35xF74AooaKEUzY) |
+| `sp-lvoltgt-8952` | `sp-voltgt-8952` | 0.45 | [`5saNfVQg…`](https://testnet.nearblocks.io/txns/5saNfVQgDebh699r2M9H6xv3xfA5fA8jvDjqeQer9qEr) |
+| `sp-probe-1794059432` | `sp-ai-92991` | 0.45 | [`9VnBgs1C…`](https://testnet.nearblocks.io/txns/9VnBgs1CuCuGVxtP3gokPa7Vqz1hjCJrN14ottdzyYP4) |
+| `sp-lai-92991` | `sp-ai-92991` | 0.45 | [`H2tgaB1f…`](https://testnet.nearblocks.io/txns/H2tgaB1fsaSPA8DfTu8C5bWE4Rpix1CZ7NYgqobHwtcv) |
+| `sp-ltrend-8952` | `sp-trend-8952` | 0.45 | [`Ej9ZKQfB…`](https://testnet.nearblocks.io/txns/Ej9ZKQfBroq3EYdGG6teRcuScWJDhbRrP8AZnYVox9aw) |
+| `sp-lcontra-8952` | `sp-trend-8952` | 0.45 | [`3GsHVNrh…`](https://testnet.nearblocks.io/txns/3GsHVNrhJDi4EvzgLgyiaZy2SBWtBaDw1tE2QpXWmKeg) |
+| `sp-lmeanrev-92991` | `sp-meanrev-92991` | 0.45 | [`Bjsv8yE9…`](https://testnet.nearblocks.io/txns/Bjsv8yE9VPnvnsDgKS6SVPh55shDvtniGAiY4mKgymGr) |
+| `sp-lmanual-92991` | `sp-meanrev-92991` | 0.45 | [`FyzLaub5…`](https://testnet.nearblocks.io/txns/FyzLaub5VXevwDaLPmeFaNVSUfSCF1BqFq5rvTEwBb1M) |
+| `sp-lmomo-92991` | `sp-momo-92991` | 0.45 | [`En36aW8X…`](https://testnet.nearblocks.io/txns/En36aW8XjFznBMK99Gnipc9BgatAprGV9tqZQY4DXJrc) |
+
+The silent-partner spares are now nearly empty. Each one keeps about 0.5 NEAR above storage.
+
 **Community vaults refill themselves.** Calm Owl (`c0.sp-sop-92991.testnet`) and any vault launched from the site have no access key, and Calm Owl ran dry on 2026-11-11 (refilled with 3 NEAR from `sp-lai-92991.testnet` on 2026-11-12, tx [`6moUePvW…`](https://testnet.nearblocks.io/txns/6moUePvW6ri3pcauH3eKugJttum1g4bBXoUesaRomBk8)). Each season tick now sends 1 NEAR from the operator to any community vault, or any vault in `vaults.json` `auto_topup` (Calm Owl is listed), that has less than 3 days of spend left. It never takes the operator below 3 NEAR, and the transfers are listed in `last-run.json` as `topups` (D-J-6). Such a vault only shows up as a low-balance warning if a top-up fails. Then top up the operator.
 
-**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. Spares with NEAR left (read 2026-11-12): `sp-vault-60270` (6.8, keep at least 2 for its listed vault), `sp-lai-92991` (2.0), `sp-lmanual-92991` (4.0), `sp-lmeanrev-92991` (2.0), `sp-fund-61557` (1.5). Then run:
+**How to top up.** Use a spare account that has a key in `~/.near-credentials/testnet/`. As of 2026-11-16 every silent-partner spare is down to about 0.5 NEAR free, so the next top-up needs a faucet account (below). Then run:
 
 ```sh
 near tokens <spare>.testnet send-near <account>.testnet '2 NEAR' network-config testnet sign-with-keychain send
