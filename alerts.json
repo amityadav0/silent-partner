@@ -10,16 +10,16 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9585689703675853,
+      "price": 0.9550411195249755,
       "peak": 1.0085308546861929,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.8869812802774628,
+      "price": 0.8858194419275816,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.8055012338324489,
+      "price": 0.8041820094071217,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 0.9555659951956683,
+      "price": 0.9526603270228245,
       "peak": 1.048802249757816,
       "ddLevel": 1,
       "silent": false,
@@ -46,16 +46,16 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.903581047029913,
+      "price": 0.9010630368444484,
       "peak": 1.0034015725891603,
-      "ddLevel": 1,
+      "ddLevel": 2,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.8912964002495714,
+      "price": 0.8892059307078489,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9654354803559257,
+      "price": 0.9638600037953997,
       "peak": 1.009732148096798,
       "ddLevel": 0,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.90692268,
+      "price": 0.90596063,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -82,16 +82,16 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 0.9719362909027094,
+      "price": 0.9651032089498519,
       "peak": 1.016485619081533,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "half.sp-sop-92991.testnet": {
-      "price": 0.9859888267245257,
+      "price": 0.9822406009585235,
       "peak": 1.0085528653868125,
       "ddLevel": 0,
       "silent": false,
@@ -100,9 +100,9 @@
       "claimsPaid": 0
     },
     "majors.sp-sop-92991.testnet": {
-      "price": 0.9585243449895064,
+      "price": 0.9523092435507665,
       "peak": 1.003033396047122,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -110,6 +110,30 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-meanrev-92991.testnet",
+      "kind": "drawdown",
+      "text": "Mean-reversion bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T19:10:25.086Z"
+    },
+    {
+      "vault": "sp-voltgt-8952.testnet",
+      "kind": "drawdown",
+      "text": "Vol Target: drawdown crossed −10% from its high.",
+      "at": "2026-11-18T19:10:25.086Z"
+    },
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Hold NEAR: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T19:10:25.086Z"
+    },
+    {
+      "vault": "majors.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Majors: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T19:10:25.086Z"
+    },
     {
       "vault": "hold.sp-sop-92991.testnet",
       "kind": "drawdown",
@@ -1285,30 +1309,6 @@
       "kind": "high",
       "text": "Mean-reversion bot: new high, share price 1.0008.",
       "at": "2026-11-10T16:19:46.679Z"
-    },
-    {
-      "vault": "sp-momo-92991.testnet",
-      "kind": "move",
-      "text": "Momentum bot: share price −2.40% since the last post (0.9551).",
-      "at": "2026-11-10T15:46:09.881Z"
-    },
-    {
-      "vault": "sp-ai-92991.testnet",
-      "kind": "move",
-      "text": "Allocator: share price −2.63% since the last post (0.9550).",
-      "at": "2026-11-10T15:46:09.881Z"
-    },
-    {
-      "vault": "sp-trend-8952.testnet",
-      "kind": "move",
-      "text": "Trend Rider: share price −3.68% since the last post (0.9206).",
-      "at": "2026-11-10T15:46:09.881Z"
-    },
-    {
-      "vault": "sp-trend-8952.testnet",
-      "kind": "drawdown",
-      "text": "Trend Rider: drawdown crossed −5% from its high.",
-      "at": "2026-11-10T15:46:09.881Z"
     }
   ]
 }
