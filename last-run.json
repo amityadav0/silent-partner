@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-18T10:41:51.850Z",
+  "ranAt": "2026-11-18T10:58:33.784Z",
   "marketData": true,
   "oracle": {
-    "tx": "GXac3qSKnGieKiNiVJsSZVYeudFtxdnqYDj8ePbmVEoz"
+    "tx": "EPMK9bvL4cfV7Q86KAZt72TytX6nFYVVscFJmgCr7efb"
   },
   "warnings": [],
   "topups": [],
@@ -10,57 +10,129 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 913,
+      "epoch": 914,
       "nav": "738547793",
-      "tx": "7Uii44cDAUWtS5ap9NvQTf2kuiMzH37oRSNM72PQR1sR"
+      "tx": "ELatP6EJefWRNZs9ML6JAzCFmgbCcMns42XzKcDZvcrg"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 913,
-      "nav": "791274965",
-      "tx": "2wBmBhaT96gtUxa1W1BH3Frpq99wVXXFkGZdm6xme5CH"
+      "epoch": 914,
+      "nav": "794270089",
+      "tx": "H8F5UoEm67j9vebGwk5fiGnoMEEvsBzuRAkz528xw6To"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 910,
-      "nav": "627243507",
-      "tx": "5Jf2GHsgXrxEaFGpnAZLTcmnmPdaTFgycpUy211DzWts"
+      "epoch": 911,
+      "nav": "628121282",
+      "tx": "C1E8ETqqbnicJgzyU5ENqVt3hxznjxqikHo8oP4ijYQz"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 835,
+      "nav": "487212564",
+      "tx": "21ufHwZpahLzTPLCDvPjbgMKZfN4yUGfHCSpXxh2pRJi"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 889,
+      "nav": "584365186",
+      "tx": "J99vr2faaCpAank9Ri2bLA4o5e38Wp2zL8wpaRsFAr5f",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 420,
+        "completion_tokens": 1295
+      },
+      "ai_target_band": "0–20%",
+      "ai_rationale_hash": "42cbf7c1a1a1815343fee8967ecc30cae8c8609e0a870a2873452243961426ba",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:1c3e2f3a438d44f5bfdffbcdb44849606a1f52989982844621b566977b09e567:19f2d5bb55ce3d862dfa432f62487b011a1a0ec26c2bbf35da9df43d9e3918f0",
+        "signature": "0x347cd7ba00eb60e8401666bad1307fcc2dbcf8772c98fbcf6ec0d720208c4fe47f64cb00b565f5114db5304e6ff3052d7f178301cea0197dc9d73729b15faec01b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "76f8864844702839a5fe13614c97deee19e973ed643b0474f11f60c24a0014ed",
+        "nonce": "ad432fd058294afaa8d2cccb7a7b4b2eea878253bc049f2d248119767984c360",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 885,
+      "nav": "611425833",
+      "tx": "CsNNW8qRGUSEya22u5M5a3isixgxQEZdvcksDxNXAv5s",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 431,
+        "completion_tokens": 399
+      },
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "bc4a9cd7d80d984ce24fd95108adf1095cff344e72fd6a31e06dbab73b58caca",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:426576c20d4d78941c847e03f5af8764005b307c2941ef885353f6d656897dc0:bb96329f4a42fde441e1c0889215ff958f49a77d15f5cf3681d94239bf6947af",
+        "signature": "0x96ff792b253866934e557365d679840f7628a69e9990aad21add8df9f9d51042358238c46fad504a9b038aebd45f4103a6cf64bfe760d04c2ee7fa3f1d5ca83d1b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "76f8864844702839a5fe13614c97deee19e973ed643b0474f11f60c24a0014ed",
+        "nonce": "ad432fd058294afaa8d2cccb7a7b4b2eea878253bc049f2d248119767984c360",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 866,
+      "nav": "320478036",
+      "tx": "EyDFdxeVjcLm3iWN88Njd3y8EcCRFXjnYupUazJWwAbc"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 864,
+      "nav": "633433875",
+      "tx": "AmNm5M8Ks4ML9ACsJ2s3n2Byie57VXDSpDdhm2GrrKA3"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 359,
+      "nav": "649526840",
+      "tx": "8pRKWAkKakHsutgyHiWfA3sSuVkEedKEswsTL7F986dZ"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 374,
+      "nav": "649912237",
+      "tx": "HSYzKzs3EyRcvaxxKtoLD2AEmsvR2Wt8qFWJnPFKHd7k"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 389,
+      "nav": "630121875",
+      "tx": "7ie94vorn4ZiCZkekot182kGWj4snXug1RsQMuWZGRV4"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 637,
+      "nav": "91101111",
+      "tx": "ZDfGrZcje9WPQvVrSPrMEahxGZEYbHBQN4HpkjsanWs",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 464,
+        "completion_tokens": 545
+      },
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "ca89c95dcbf984dea525cfbbce6f2cb7c32d831397528d6ea2f8b0586808eb52",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:36c1f52ebdb260c8e49209110d75b757761632fe84b23c93340d222461f43a32:59bd60a6e95c31085fe242c733e05d8f3103da28a63ca35b5f307c3b5ffdd233",
+        "signature": "0x227150e1c5514816fc9193b81b87693eba6ab6dd165a71b4937fc44df486938508881e6a357cc8849bf0a1d21270435a3158dd02afed6fb333bbb735c5fc0b621b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "76f8864844702839a5fe13614c97deee19e973ed643b0474f11f60c24a0014ed",
+        "nonce": "ad432fd058294afaa8d2cccb7a7b4b2eea878253bc049f2d248119767984c360",
+        "bound": true,
+        "gpu_evidence": true
+      }
     }
   ]
 }
