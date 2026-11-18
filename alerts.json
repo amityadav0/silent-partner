@@ -10,16 +10,16 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9611886099461732,
+      "price": 0.9524848454473933,
       "peak": 1.0085308546861929,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.8902464559769588,
+      "price": 0.8829031560161634,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.8062344521455058,
+      "price": 0.8029160239990724,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 0.9580211689615731,
+      "price": 0.9497816956293389,
       "peak": 1.048802249757816,
       "ddLevel": 1,
       "silent": false,
@@ -46,16 +46,16 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9047776395025822,
+      "price": 0.8987526273914485,
       "peak": 1.0034015725891603,
-      "ddLevel": 1,
+      "ddLevel": 2,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.8996625646169168,
+      "price": 0.8855754622258273,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9675136097220184,
+      "price": 0.9604327086557777,
       "peak": 1.009732148096798,
       "ddLevel": 0,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.90859093,
+      "price": 0.90350252,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -82,16 +82,16 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 0.9789746546404556,
+      "price": 0.9543480969775006,
       "peak": 1.016485619081533,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
       "claimsPaid": 0
     },
     "half.sp-sop-92991.testnet": {
-      "price": 0.9904852379822786,
+      "price": 0.9768884823657038,
       "peak": 1.0085528653868125,
       "ddLevel": 0,
       "silent": false,
@@ -100,9 +100,9 @@
       "claimsPaid": 0
     },
     "majors.sp-sop-92991.testnet": {
-      "price": 0.9607828349346728,
+      "price": 0.9512886202535437,
       "peak": 1.003033396047122,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -110,6 +110,36 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-meanrev-92991.testnet",
+      "kind": "drawdown",
+      "text": "Mean-reversion bot: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T15:48:16.147Z"
+    },
+    {
+      "vault": "sp-voltgt-8952.testnet",
+      "kind": "drawdown",
+      "text": "Vol Target: drawdown crossed −10% from its high.",
+      "at": "2026-11-18T15:48:16.147Z"
+    },
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "move",
+      "text": "Hold NEAR: share price −2.52% since the last post (0.9543).",
+      "at": "2026-11-18T15:48:16.147Z"
+    },
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Hold NEAR: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T15:48:16.147Z"
+    },
+    {
+      "vault": "majors.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Majors: drawdown crossed −5% from its high.",
+      "at": "2026-11-18T15:48:16.147Z"
+    },
     {
       "vault": "sp-ai-92991.testnet",
       "kind": "drawdown",
@@ -1279,36 +1309,6 @@
       "kind": "high",
       "text": "Contrarian: new high, share price 1.0337.",
       "at": "2026-11-10T15:01:08.479Z"
-    },
-    {
-      "vault": "sp-convict-8952.testnet",
-      "kind": "high",
-      "text": "Conviction: new high, share price 1.0178.",
-      "at": "2026-11-10T15:01:08.479Z"
-    },
-    {
-      "vault": "sp-manual-92991.testnet",
-      "kind": "high",
-      "text": "Manual leader: new high, share price 1.0064.",
-      "at": "2026-11-10T15:01:08.479Z"
-    },
-    {
-      "vault": "sp-trend-8952.testnet",
-      "kind": "move",
-      "text": "Trend Rider: share price +2.05% since the last post (0.9682).",
-      "at": "2026-11-10T14:45:39.209Z"
-    },
-    {
-      "vault": "sp-contra-8952.testnet",
-      "kind": "high",
-      "text": "Contrarian: new high, share price 1.0337.",
-      "at": "2026-11-10T14:45:39.209Z"
-    },
-    {
-      "vault": "sp-voltgt-8952.testnet",
-      "kind": "high",
-      "text": "Vol Target: new high, share price 1.0034.",
-      "at": "2026-11-10T14:45:39.209Z"
     }
   ]
 }
