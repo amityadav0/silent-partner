@@ -1,106 +1,122 @@
 {
-  "ranAt": "2026-11-19T12:48:39.860Z",
+  "ranAt": "2026-11-19T13:03:29.275Z",
   "marketData": true,
   "oracle": {
-    "tx": "7A1RVuY2y1CK7ZVK9NCzeDcYJd9hLQYV13d8d38joxZb"
+    "tx": "FPMDvsUorrcLosWSmCJPXTVA4cL6Mn5DU4giYdccFfrD"
   },
-  "warnings": [],
-  "topups": [],
+  "warnings": [
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "sp-contra-8952.testnet",
+      "free_near": 2.9,
+      "days_left": 10
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "c0.sp-sop-92991.testnet",
+      "free_near": 0.87,
+      "days_left": 3
+    }
+  ],
+  "topups": [
+    {
+      "topup": "c0.sp-sop-92991.testnet",
+      "near": 1,
+      "from": "sp-sop-92991.testnet",
+      "tx": "Dddfdh23Dx8wFTKhSnxecXRtvXU9HjeCEoF7d1xBknnz"
+    }
+  ],
   "community": [],
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 1019,
+      "epoch": 1020,
       "nav": "744918442",
-      "tx": "2SCkGB4c97trDYagsgYSyNS98ZTkdVeDFZTDr5aMmzRV",
-      "signal_hash": "0e480f675e6d9b3d87dd14c486e4af3bef91f5d7d81028c8e595704cf429825f",
-      "signal_status": "executed"
+      "tx": "23RNKS229B6Su7TfndQEweuZwg5NATzKnhxovKNT5gz9"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 1018,
-      "nav": "802467178",
-      "tx": "5VwnnGjnMsC8bxchTeoBe7ygH4vaW4E3QZBfhp2USwKR"
+      "epoch": 1019,
+      "nav": "805100693",
+      "tx": "86doTpavqzpLuVpCk5a1YQPn46bjDMPDSUu9nk8jfdXb"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 1016,
-      "nav": "625908051",
-      "tx": "PZZBLGJs8nviATkPuhUtCFANntF2dRLKjeCrCaDNTBZ"
-    },
-    {
-      "vault": "sp-trend-8952.testnet",
-      "epoch": 940,
-      "nav": "493153114",
-      "tx": "54RYhGEcBkkSaYsuUW1ANcR33phf6jtFzD1ZW5KRMyzJ",
-      "signal_hash": "4bcdc46c1a80514790996264931e173fbcc698f20db5e00b0639e9e1172f491f",
-      "signal_status": "executed",
+      "epoch": 1017,
+      "nav": "628328409",
+      "tx": "9TQeRMYw81ybSfAVwNt9izeWQaXFXF9cKYsAeXFTHYHg",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 436,
-        "completion_tokens": 1074
+        "prompt_tokens": 412,
+        "completion_tokens": 336
       },
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "4fad9b02c840f3124485f6fdfa202682481beea10ae2a28fa48d952175859125",
+      "ai_target_band": "60–80%",
+      "ai_rationale_hash": "b2b1b18de51862373ad23b9dc29f86e529231ca7843597d85e6918c54810831e",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:529ed5957b779805139373d4eea3362f1047693ed07888ea7d37067af6ba67ba:0cde39184610a921dc3f2699748a3ec835a1072dd0d53122299732617cb446f0",
-        "signature": "0x7249b2e18723179260320c24deb6928a2b530a160a2b3f228cd8108c1e2671da214eb1d908da6ccdadfaf1ad4147f066e0d0841c6b2e2ec7cc7daf1fdfba662c1c",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:9f657d394891cff41fb4789ae513adf95c9c04337e54327e4a0efc24be345a9e:7f03a48f80e5d5f49a365cb7d06683282306b042e0264fc6a1ebfbee3d1e0f08",
+        "signature": "0xf6c77497fdd6a001c7dc6a3c708d329697d9b0e1d7c4ca0d6f7e11e2c7cc00046847cee2bb2a2893771cfa2c08bd55414e8ace3b2a2d7295601105ea0b8bdb001b",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "17a4d0a3d3f1454e57ca46019e989f981b35fe3e07e5213e73336ceb60b54c71",
-        "nonce": "7ebff62a13ce83a33068df3cd3efb1de06996308b53fef0ad0eaf266fa5edf48",
+        "quote_sha256": "94413b0816a75e50b05e8c41e7cd545da3fdf282cb6762771724fb735d0586e8",
+        "nonce": "6056c39979884fa0cd73fcff28c42edb594e2b4a327bc38f32b81b1b1adaae59",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
+      "vault": "sp-trend-8952.testnet",
+      "epoch": 941,
+      "nav": "493972308",
+      "tx": "3ekkiyYh1vEff4YfHus2GcZiLwJacDoKqv548Wi45Zx9"
+    },
+    {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 994,
-      "nav": "588945298",
-      "tx": "AiKbjJTy4V5K7rqhpXtZwub2AoLYbQjApDkQsSMuYkgD"
+      "epoch": 995,
+      "nav": "590574407",
+      "tx": "DLC6h9Kk9KiePHxQRkLCCyBMe6MtAUo5YzpWsTUJV7bi"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 990,
-      "nav": "615746521",
-      "tx": "HS5njqkRkiMUK3oAGGk9Q24o62ciXxbJqVPdGg2RUcrG"
+      "epoch": 991,
+      "nav": "617142514",
+      "tx": "9LCJgGXsB5nXDWHgwiNHGDzefmAGr37BQwgWsg7HEt3Q"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 970,
-      "nav": "319584252",
-      "tx": "G4UoUjEYo1SnAmzfbUvd6fpzuUcgEpLPwyBXf9mQuuRp"
+      "epoch": 971,
+      "nav": "320884512",
+      "tx": "EDweAKPvi4JdMS9NjJ2jHfY6mx3x4m1o1dZjkpj6iJFX"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 968,
-      "nav": "635752819",
-      "tx": "3VUKCQorB2i8PJRtqM4poYGxU6BdzU7PdgnTNb9jU4Pg"
+      "epoch": 969,
+      "nav": "636866668",
+      "tx": "8AKtQYkFq9YLHNpZHAcaVgpiFip1qSweS4CRqST8a5rT"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "epoch": 463,
-      "nav": "658011155",
-      "tx": "G7RiRgmfjCae18Dorg3E4aLHyKxnXDVrAjdhzATCQZ8Q"
+      "epoch": 464,
+      "nav": "661721339",
+      "tx": "4nhv2gp7XJBFqgmaCzEzvL7Z1FsAJw139J7m5piCpmqN"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "epoch": 470,
-      "nav": "654109254",
-      "tx": "DGLUHzu4nNwYVFDJRwdVQaHD29TW7fRx2Tc2HeAXYr1V"
+      "epoch": 471,
+      "nav": "655933153",
+      "tx": "6RHBQJfA9UMa4LZuRAEjSSyrR8K47AvmZst6t9tZF8Mo"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "epoch": 492,
+      "epoch": 493,
       "nav": "617397950",
-      "tx": "GksdxevouKQEFadbJnGHjNrzmRo17wepR2hzrRJyXoXs"
+      "tx": "JCgnKGYkvUvJqEv7EV5PTCKf7Acz1AyzBzoi8dc5KUCt"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 737,
-      "nav": "92016532",
-      "tx": "BZgAAqQkQydbZ8ptnmWAZr3T7XLhsqpbhzbLUYwg5Fiq"
+      "epoch": 738,
+      "nav": "92042207",
+      "tx": "DGVD52TCTaE2jwPWRWc1mX3aCmfsgWfCuV59Gmh1TkcF"
     }
   ]
 }
