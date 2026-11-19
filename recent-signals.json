@@ -725,25 +725,6 @@
   ],
   "sp-voltgt-8952.testnet": [
     {
-      "ranAt": "2026-11-13T09:40:06.824Z",
-      "epoch": 394,
-      "signal_hash": "10cd646c4de20f46b3cec4e621169ab5a1f1cbbdf17cc4cc308fbc7aa59a2327",
-      "signal_status": "executed",
-      "ai_target_band": "40–60%",
-      "ai_rationale_hash": "0293528b78672628ec33a3170fa5470ee0dd966ff51f0f795be979fd77b7ec85",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:d010f52fea5ff671bfdfa87612068205dd9082c21e333b0994df5edd596208c5:4226bc580efb91f115a477cf4cd61b6f12723311621c0c721e8e8ecff5f7b992",
-        "signature": "0xb75c6b28ddb2a381e22052460e70aacdd83e76bfe7a7c5a84e10796d1d32586b015330f8d6e384cbb55a5201f2498358498928b773d70b992cdaf478fa1132901b",
-        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "signature_kind": "provider_tee",
-        "quote_sha256": "01a20cb84ff911a44d9451219e60aa6d273c96674569546bc621cf69982893a9",
-        "nonce": "6facf74deb00d90da00ed19517587ef7b3855bbd0df9a68afef0e0382c8ce356",
-        "bound": true,
-        "gpu_evidence": true
-      }
-    },
-    {
       "ranAt": "2026-11-13T11:00:08.177Z",
       "epoch": 400,
       "signal_hash": "918421d0c47150a2cd91b7cf67c05fc240900b67dbaa2201ab9dee5ab9e30a49",
@@ -1100,6 +1081,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "15eb9733316e3dc810d2240421f60fe187c5d2955125d15c647388c6fc4103c5",
         "nonce": "c899d43078ed8ce7d2295d7b3d23d969073a18dca376deba2748d60903fb3d0f",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-19T10:11:53.506Z",
+      "epoch": 979,
+      "signal_hash": "aa577f3832bcfd2fc267f1ab1c0d70d66db19ee8ea5c2bb187d26b3b54a510b9",
+      "signal_status": "executed",
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "c574e3b00b6fbd6758fd9e6110979ed60d7e363119d8d649269113ad18810aeb",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:063c598b186e246d1acba34522210cc2edcebee95dd63690217767cbff456180:8c2f9caba6d1ac696097422a5fa1e86722a30c503bf791fc222831a62a9af058",
+        "signature": "0xbb56969dcae9af0d42384ce40f71edf1c33f17c0f1838f291ced824808c07b943d7eb878102a81a9fbe97e6af9bd1e0d6848046a90f7ed12835519098352f5761c",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "199b1896d728dca0ff6161d12c388a9942d4193c1e4fa64c71e9b73a1f96a6ca",
+        "nonce": "6b35d600d7cf12bc51e38288f0d71d17e559a597a080fd824e6fc94202631a5f",
         "bound": true,
         "gpu_evidence": true
       }
