@@ -1,7 +1,7 @@
 {
   "state": {
     "sp-momo-92991.testnet": {
-      "price": 0.8715933730694693,
+      "price": 0.8665199805330267,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -19,7 +19,7 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.8994281676518894,
+      "price": 0.8949705796603336,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.8263202184538865,
+      "price": 0.8208771495305115,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 0.9734391328493229,
+      "price": 0.971503608420211,
       "peak": 1.048802249757816,
       "ddLevel": 1,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.9200609614530084,
+      "price": 0.9152189745004623,
       "peak": 1.0034015725891603,
       "ddLevel": 1,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.9115294945458708,
+      "price": 0.9064119016016621,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9785331208479604,
+      "price": 0.9757404422371966,
       "peak": 1.009732148096798,
       "ddLevel": 0,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.92430101,
+      "price": 0.91974694,
       "peak": 1,
       "ddLevel": 1,
       "silent": false,
@@ -82,7 +82,7 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 1.0190294552342234,
+      "price": 1.0088004188433015,
       "peak": 1.0190294552342234,
       "ddLevel": 0,
       "silent": false,
@@ -100,9 +100,9 @@
       "claimsPaid": 0
     },
     "majors.sp-sop-92991.testnet": {
-      "price": 0.9557623636209381,
+      "price": 0.9510096958713614,
       "peak": 1.003033396047122,
-      "ddLevel": 0,
+      "ddLevel": 1,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -110,6 +110,12 @@
     }
   },
   "events": [
+    {
+      "vault": "majors.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Majors: drawdown crossed −5% from its high.",
+      "at": "2026-11-19T05:21:39.556Z"
+    },
     {
       "vault": "hold.sp-sop-92991.testnet",
       "kind": "high",
@@ -1303,12 +1309,6 @@
       "kind": "drawdown",
       "text": "Allocator: drawdown crossed −5% from its high.",
       "at": "2026-11-11T02:09:48.166Z"
-    },
-    {
-      "vault": "sp-trend-8952.testnet",
-      "kind": "move",
-      "text": "Trend Rider: share price +2.46% since the last post (0.9311).",
-      "at": "2026-11-11T01:38:18.793Z"
     }
   ]
 }
