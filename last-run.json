@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-19T18:18:43.697Z",
+  "ranAt": "2026-11-19T18:33:47.677Z",
   "marketData": true,
   "oracle": {
-    "tx": "AqeK9irAj6mbnnqaXnvwH8mQZ7zTSxBs8u4XaSb8EreS"
+    "tx": "FBsBcsTBHofsoh4SSHhVr6KhrzR2E8ZGqLdeHMNnJbrz"
   },
   "warnings": [
     {
@@ -14,13 +14,13 @@
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-meanrev-92991.testnet",
-      "free_near": 2.84,
+      "free_near": 2.83,
       "days_left": 9.8
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-ai-92991.testnet",
-      "free_near": 2.87,
+      "free_near": 2.86,
       "days_left": 9.9
     },
     {
@@ -51,7 +51,7 @@
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-manual-92991.testnet",
       "free_near": 2.89,
-      "days_left": 10
+      "days_left": 9.9
     }
   ],
   "topups": [],
@@ -59,93 +59,129 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 1040,
+      "epoch": 1041,
       "nav": "744918442",
-      "tx": "ETZKPuf1rjFNQDtyRx61KchSUWSNPBqGh713Q1fC8vkL"
+      "tx": "AGhriGK967XiaPkzDkCwnhKCpgyRmhFh6Cmo6wk7e1pL"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 1039,
-      "nav": "782454597",
-      "tx": "DJonQSACEP42Lrjspc7hfskqTiMZanmVAr7phD887Hov"
+      "epoch": 1040,
+      "nav": "787790952",
+      "tx": "88DP1XA7N8NBC1u2u5Dye93UWsTyqaMeD14VMwoe582M"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 1037,
-      "nav": "616949317",
-      "tx": "6zuM1mL71Np2Kg8omaso3nLc33o42EfBRTv4itgL3Hjs",
+      "epoch": 1038,
+      "nav": "619185655",
+      "tx": "G8VJUiX71X4FHtyLaqWQFVJa4cbSTHa3k9KQRoZPQVie"
+    },
+    {
+      "vault": "sp-trend-8952.testnet",
+      "epoch": 962,
+      "nav": "490863503",
+      "tx": "ByWsjCNjNH1xQ2xhs6gcn7z7eXczAW5zDSLcqttrwKPi"
+    },
+    {
+      "vault": "sp-contra-8952.testnet",
+      "epoch": 1016,
+      "nav": "583708969",
+      "tx": "4bx2R73N7Bej3LMahKori44a4jwhkuFEJygHPNrcXKTM",
       "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
       "ai_status": "ok",
       "ai_tokens": {
-        "prompt_tokens": 412,
-        "completion_tokens": 540
+        "prompt_tokens": 422,
+        "completion_tokens": 379
       },
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "7c0e836cb18e289d503ef577f2595479ca68b069e586e2580e90f646bbc2dd28",
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "336eec5a148251184db0b32e281d065fc8c8290e119a9a96ed0e1a35c262c646",
       "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:060c3a76c45b428a5d7cc786364c98011b81f2688ab532c44abd0a18636d54cd:d7195b609460899f6156ed47b8ffed4b67450b9b850c41ab352a3db418de9a45",
-        "signature": "0xbf4c508db9e6224172c7a9f1f5bf1da0cc66ec26aaa029271de24e0e97c6bda01697dfba992e412250e83e2fc56d3c0bb370c9626eddbf7983b22ab5338b49921b",
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:f8d2879e45f7f2a09fbc426954a5f849c840a7dd56ad018bdfa7f51dddc2f3d3:d0d64c00f0e3460f1a21d0af0bff796a48489085d6d340279d24b14bea8d3ead",
+        "signature": "0x5f2454d433e1e97321b5a495cabbc6c5d71cbe7eee9b0c4532ad8591b35bde8557fe60dbbd54a0bc3ffa86c579ad4316ebdd81f240fb4cbae5cbe9893691d8b61b",
         "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
         "signature_kind": "provider_tee",
-        "quote_sha256": "b6a2ea7d0f6486361e2ba1b23fd9571ceffb0a00463a7fdf813fe3ba29e6fb02",
-        "nonce": "2054b10a0447fbdf3d0519afb724d1948132b0607801829462bf4b0efd0ea88c",
+        "quote_sha256": "e157fcb0dffc8f5a984a0aed74794400691c1e2b9944506d8f174d84d20ac261",
+        "nonce": "31a96024ec397ffcf6f0258ce3812b4a415ea8eef8d748c6c7ae49cf9d8ec9ee",
         "bound": true,
         "gpu_evidence": true
       }
     },
     {
-      "vault": "sp-trend-8952.testnet",
-      "epoch": 961,
-      "nav": "489957261",
-      "tx": "BLN2qApMtXTRp4ZWwSLn8NB8tMUkMrtgGdYdrLF8LUxH"
-    },
-    {
-      "vault": "sp-contra-8952.testnet",
-      "epoch": 1015,
-      "nav": "581285046",
-      "tx": "D1Wp8j6ovJkUc3avmLEjw5pc1FkyL3JUBrTrWVw6uem7"
-    },
-    {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 1011,
-      "nav": "609792243",
-      "tx": "GkLU7miX9YEqo64CFs5ySWHHSTF9EJdv9BimZJ5sVoCQ"
+      "epoch": 1012,
+      "nav": "611746269",
+      "tx": "4xeE4eL6goZgVRbuwCpmCKARhXu4N8K3jbaPAGnzEULU",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 433,
+        "completion_tokens": 706
+      },
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "9177de4f5ef93bdfa3c9e4c7ca8b214bfafc19975d8b1ef9d59ad608a150424e",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:1a417765a8cde6dca50ab0def035a8c7c925dea16c7877dca198e7b5fe94f383:6dbe34e8503898b74f1ae2fdb4fde12edc89d2cfdaf145c2f06631bfcb863380",
+        "signature": "0x58bbe1fb9cec36929a7f20c8232eb9b4a3fda125e1841ac1945014b266f085c340abde85b889c6c5807f4eab134fd0c2e31cd42c232b691bddf2c0b36471e9bc1b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "e157fcb0dffc8f5a984a0aed74794400691c1e2b9944506d8f174d84d20ac261",
+        "nonce": "31a96024ec397ffcf6f0258ce3812b4a415ea8eef8d748c6c7ae49cf9d8ec9ee",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 990,
-      "nav": "313263192",
-      "tx": "GzcPzyxcxZiuNa4C3R7NnePeFEaXBJ2dFUX8SMSkzNAi"
+      "epoch": 991,
+      "nav": "315345852",
+      "tx": "5htoepbiRJ3rFmJN6RocfFX8ygm3SGk8kToRzEECR4PN",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 420,
+        "completion_tokens": 475
+      },
+      "ai_target_band": "60–80%",
+      "ai_rationale_hash": "652c40f013d5fd5c7a05f68316daebf13da83560130afc3aa45ac3cc273ef013",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:b08899ea8bbca219fae88265e18765fd3eca76d259541414c9015585e492c9dd:ce245f35b835e0a874f6d1ebf143fcec2cf17ca01ecd880cb541587c81d6575d",
+        "signature": "0xcb63446f62049c051fb68d8897cd9044b5e305eb31ac22ab01efceb2e05a8d0e0ec42e1aab957770176a409507401275094396050f4793e3edc611009c7749de1b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "e157fcb0dffc8f5a984a0aed74794400691c1e2b9944506d8f174d84d20ac261",
+        "nonce": "31a96024ec397ffcf6f0258ce3812b4a415ea8eef8d748c6c7ae49cf9d8ec9ee",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 989,
-      "nav": "629504477",
-      "tx": "BSVHNCxhxqAmjukRyLptdGqu2o3JWMX8yDg4Fk2ZBke1"
+      "epoch": 990,
+      "nav": "631444097",
+      "tx": "5zRzza6ikH9VQnmykqCiQK6N5GbdTMSnCvShkh4MhfX6"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "epoch": 484,
-      "nav": "635174787",
-      "tx": "GfwtyKxG4Dx8LoE289ftpVgm5sDchPwsxXvQxiSZNUEi"
+      "epoch": 485,
+      "nav": "641023529",
+      "tx": "HjwaHkBcBY7yAqvbEVCn2DwQ76Yd3a4qJbZXdBzeSthC"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "epoch": 490,
-      "nav": "642548274",
-      "tx": "78N5XrXpQjqzQnPB67Nh6dX34iKZnjVKwbnftTDqu1zx"
+      "epoch": 491,
+      "nav": "645600057",
+      "tx": "4e6hVui7VokfXhEUjCA9wVUWusPx7BjAs44RX5JqGuDx"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "epoch": 513,
-      "nav": "612510082",
-      "tx": "2DaGMy4qvNNZ3cPzdtUbBxDYnBerAui6jV3tZMnwsQ8v"
+      "epoch": 514,
+      "nav": "616569394",
+      "tx": "FFMcsVC1yRuXeLGcXk1m22hj5uJzJHAUpij5kfoj1YZv"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 758,
-      "nav": "91304488",
-      "tx": "J5TjB1MnZ1tbdkEQD1Aj9hBr3BPUjGnmNJ2dAXBCSWfi"
+      "epoch": 759,
+      "nav": "91476569",
+      "tx": "Da1XuM73g7FKhxxucpMTCc3cvgrvLQYz6TwQovezVjWD"
     }
   ]
 }
