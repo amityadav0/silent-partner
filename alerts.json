@@ -10,7 +10,7 @@
       "claimsPaid": 0
     },
     "sp-meanrev-92991.testnet": {
-      "price": 0.9053113498391859,
+      "price": 0.8757126744792252,
       "peak": 1.0085308546861929,
       "ddLevel": 2,
       "silent": false,
@@ -19,7 +19,7 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.8643921998354196,
+      "price": 0.8582093279978541,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.7997784736828211,
+      "price": 0.7937860647102247,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -37,7 +37,7 @@
       "claimsPaid": 0
     },
     "sp-contra-8952.testnet": {
-      "price": 0.8995176612869635,
+      "price": 0.8708469964511428,
       "peak": 1.048802249757816,
       "ddLevel": 2,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.8798987930139531,
+      "price": 0.842659424204321,
       "peak": 1.0034015725891603,
       "ddLevel": 2,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.856728434528811,
+      "price": 0.8429794260422107,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9429851856953921,
+      "price": 0.9318747346450464,
       "peak": 1.009732148096798,
       "ddLevel": 1,
       "silent": false,
@@ -73,7 +73,7 @@
       "claimsPaid": 0
     },
     "c0.sp-sop-92991.testnet": {
-      "price": 0.89759457,
+      "price": 0.8917376,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -82,7 +82,7 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 0.8888546465444883,
+      "price": 0.8473768349034496,
       "peak": 1.0262267580373987,
       "ddLevel": 2,
       "silent": false,
@@ -91,7 +91,7 @@
       "claimsPaid": 0
     },
     "half.sp-sop-92991.testnet": {
-      "price": 0.9444163807024507,
+      "price": 0.9252662784974034,
       "peak": 1.0132996048915688,
       "ddLevel": 1,
       "silent": false,
@@ -110,6 +110,36 @@
     }
   },
   "events": [
+    {
+      "vault": "sp-meanrev-92991.testnet",
+      "kind": "move",
+      "text": "Mean-reversion bot: share price −3.27% since the last post (0.8757).",
+      "at": "2026-11-20T15:27:17.658Z"
+    },
+    {
+      "vault": "sp-contra-8952.testnet",
+      "kind": "move",
+      "text": "Contrarian: share price −3.19% since the last post (0.8708).",
+      "at": "2026-11-20T15:27:17.658Z"
+    },
+    {
+      "vault": "sp-voltgt-8952.testnet",
+      "kind": "move",
+      "text": "Vol Target: share price −4.23% since the last post (0.8427).",
+      "at": "2026-11-20T15:27:17.658Z"
+    },
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "move",
+      "text": "Hold NEAR: share price −4.67% since the last post (0.8474).",
+      "at": "2026-11-20T15:27:17.658Z"
+    },
+    {
+      "vault": "half.sp-sop-92991.testnet",
+      "kind": "move",
+      "text": "Half & Half: share price −2.03% since the last post (0.9253).",
+      "at": "2026-11-20T15:27:17.658Z"
+    },
     {
       "vault": "sp-meanrev-92991.testnet",
       "kind": "drawdown",
@@ -1279,36 +1309,6 @@
       "kind": "drawdown",
       "text": "Calm Owl: drawdown crossed −5% from its high.",
       "at": "2026-11-13T14:59:09.186Z"
-    },
-    {
-      "vault": "sp-contra-8952.testnet",
-      "kind": "move",
-      "text": "Contrarian: share price +2.14% since the last post (0.9954).",
-      "at": "2026-11-13T06:24:30.373Z"
-    },
-    {
-      "vault": "sp-convict-8952.testnet",
-      "kind": "drawdown",
-      "text": "Conviction: drawdown crossed −10% from its high.",
-      "at": "2026-11-13T03:57:26.571Z"
-    },
-    {
-      "vault": "sp-contra-8952.testnet",
-      "kind": "drawdown",
-      "text": "Contrarian: drawdown crossed −5% from its high.",
-      "at": "2026-11-12T11:37:33.515Z"
-    },
-    {
-      "vault": "c0.sp-sop-92991.testnet",
-      "kind": "drawdown",
-      "text": "Calm Owl: drawdown crossed −5% from its high.",
-      "at": "2026-11-12T10:37:27.051Z"
-    },
-    {
-      "vault": "c0.sp-sop-92991.testnet",
-      "kind": "drawdown",
-      "text": "Calm Owl: drawdown crossed −5% from its high.",
-      "at": "2026-11-12T08:16:03.504Z"
     }
   ]
 }
