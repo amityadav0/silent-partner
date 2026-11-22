@@ -1,25 +1,6 @@
 {
  "sp-ai-92991.testnet": [
   {
-   "ranAt": "2026-11-21T19:04:29.910Z",
-   "epoch": 1230,
-   "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-   "ai_status": "ok",
-   "ai_target_band": "20–40%",
-   "ai_rationale_hash": "13d500c90b55a25b33cda4b58d31c445f2855abad0fe6da881c4640b64a7ddc9",
-   "signal_hash": null,
-   "ai_receipt": {
-    "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:55613d674121c24f14b5a6127f1bff103a4fe00b2afde0631fd69ec68a13be9b:81ec456df02ea6839d43c13bc38cb40d1421d2558718f1ebcb1fa84758430896",
-    "signature": "0x5d8e66fb6894229419c0da3cfc1bb8ea9effec764074af545a4221a30163d8290da8c7828337342423e116123a53ff7157078890a0dd79f5452f596084d6ff621b",
-    "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-    "signature_kind": "provider_tee",
-    "quote_sha256": "6bb14f36664f751e9a4bfe6ea8843901390a9124b216aebd69a5dc424c75e566",
-    "nonce": "a6215073ebe096a87c8760e751c0846edafbc02ef3d00d1f21ff343d8abf9047",
-    "bound": true,
-    "gpu_evidence": true
-   }
-  },
-  {
    "ranAt": "2026-11-21T20:05:00.543Z",
    "epoch": 1234,
    "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
@@ -376,6 +357,25 @@
     "signature_kind": "provider_tee",
     "quote_sha256": "62b3541b9bbcf3eefc9d063ce58fb7fa5a0743037f7f99c392adb60f3ac9b064",
     "nonce": "5dfb2cf6df63a3015fd36345e37af2534b1b7d76f10e68b0ab0f08f34e4c794e",
+    "bound": true,
+    "gpu_evidence": true
+   }
+  },
+  {
+   "ranAt": "2026-11-22T15:25:54.377Z",
+   "epoch": 1313,
+   "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "ai_status": "ok",
+   "ai_target_band": "80–100%",
+   "ai_rationale_hash": "860ee3bb3cc858ec4d58cdeb07120d383dcd3bc739bb913398a0db7991579a89",
+   "signal_hash": null,
+   "ai_receipt": {
+    "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:df3a17591792ea888e7f23b32a6e0215e4cbe8f34a9c5fa22f72117b87a44477:11d73453e25b44186171bb9b4e066fc05394b32b28f4d0ed02d59572003008dd",
+    "signature": "0x2e7b5db3da1703db4af0eda7aa2e861cebd7a605672bf87fc936eedc02be20f91af881dd50fc297d7e083c6e0f3f66d079627866c74bd40b52aace5a7fa167681c",
+    "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+    "signature_kind": "provider_tee",
+    "quote_sha256": "ca638b0dee5bf50c5bd17c1beb8343cd3454d5d197e671761357cf7d4e082e91",
+    "nonce": "7969078086ec00cc3ed3bed52fff58c2d7c50a65b20b784d96a0f30dfea2c563",
     "bound": true,
     "gpu_evidence": true
    }
