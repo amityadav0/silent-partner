@@ -1,56 +1,56 @@
 {
-  "ranAt": "2026-11-22T01:26:17.244Z",
+  "ranAt": "2026-11-22T01:41:08.048Z",
   "marketData": true,
   "oracle": {
-    "tx": "EH1UPMMJojynHoS7xpVtdb7N8RmHdJKB5WHUCyjEPkBh"
+    "tx": "7AtAWUuTNaCNbdo3XwLoGSH6gPbZxfca1TuMC9nNX24u"
   },
   "warnings": [
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-momo-92991.testnet",
-      "free_near": 2.17,
+      "free_near": 2.16,
       "days_left": 7.5
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-meanrev-92991.testnet",
-      "free_near": 2.11,
+      "free_near": 2.1,
       "days_left": 7.3
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-ai-92991.testnet",
       "free_near": 2.16,
-      "days_left": 7.5
+      "days_left": 7.4
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-trend-8952.testnet",
-      "free_near": 2.15,
+      "free_near": 2.14,
       "days_left": 7.4
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-contra-8952.testnet",
-      "free_near": 2.12,
+      "free_near": 2.11,
       "days_left": 7.3
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-voltgt-8952.testnet",
-      "free_near": 2.15,
+      "free_near": 2.14,
       "days_left": 7.4
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-convict-8952.testnet",
       "free_near": 2.19,
-      "days_left": 7.6
+      "days_left": 7.5
     },
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-manual-92991.testnet",
-      "free_near": 2.21,
+      "free_near": 2.2,
       "days_left": 7.6
     }
   ],
@@ -59,75 +59,131 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 1259,
-      "nav": "749739446",
-      "tx": "BNbrNahUXtEPppKtYsEyXdhcyxmxfNoYwCjDTaPgEiCn"
+      "epoch": 1260,
+      "nav": "751228643",
+      "tx": "F9s45nYjKJNd8WZjBEzwx88oKSb5NVW8vyiLERNSexCH"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 1258,
+      "epoch": 1259,
       "nav": "711237607",
-      "tx": "2C6S3kZBLcTy2en84e2qiUpNDA28Ln6X2nDTzsdBohY5"
+      "tx": "6f4UU2g9yboworQ4HXffHT6TmYwQ7zpvuSheWkkFdCuy"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 1256,
-      "nav": "606434019",
-      "tx": "CjjzJmHTPRmCw67Mz5RpkVVTeReJ9ngyLTng66G7cuuy"
+      "epoch": 1257,
+      "nav": "607102469",
+      "tx": "FCfihDoNiBVrHMmwzNujvdvrmGig73m8Ar5uhAwPvuj7"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 1179,
-      "nav": "496206938",
-      "tx": "4h72dXCF3KtwrQkn1PXFNoE4djxekXLT9XfJyC2YY17L"
+      "epoch": 1180,
+      "nav": "497369532",
+      "tx": "2tqd2d5Cc5XJhEJSATxMYpQmF1qKFajtG8g3VjYtqH8v"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 1234,
-      "nav": "520629058",
-      "tx": "cYYwu8e5AQuMBmvV4EvbCgrAb8FUA4TPacM646oh1aQ"
+      "epoch": 1235,
+      "nav": "520951552",
+      "tx": "14qWyidPnMfeT4FtjZfimetrR7bBCc3thEX236Dxanyz",
+      "signal_hash": "d5926f68f14c337664997f25c1d5562604d59d9f57058cddeee6e54c9af8a5fd",
+      "signal_status": "executed",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 420,
+        "completion_tokens": 942
+      },
+      "ai_target_band": "0–20%",
+      "ai_rationale_hash": "53c03c23675fba81a1bc97cd0490a2ba313c5e96a12ec6ce57ff7c4c180ed77f",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:027f7592bf9142a9291d8a50d817a66899916d173123f8e35b87a1af23a56163:e219939b96c5df6b683254b9383d63d4ef089ab233341463c45834b8c7119303",
+        "signature": "0xc308d8359ec14b5b41029e1def1124fedfc77ef3f0fff8b78937c44b5e2ed97944b47543e3759e00e2aa9d270414436ddfa472e5df13681e0452394830bb2f981c",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "114163e636ff995b4b5acfd01bd3452f04bb184e9bb7fd63f33c7c1f0f193909",
+        "nonce": "24b7005d988deacc8c158f888ae37c6318518a6d9efac6f609320203bed47903",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 1230,
-      "nav": "562712649",
-      "tx": "GYPE1AQQJS1fnugJnynHc6C9xXuRPPHMsY1o6exoSsAB"
+      "epoch": 1231,
+      "nav": "563068235",
+      "tx": "22xvuwGpbUJXwxrnLYUqF5wQYFrZHWyrqnn7wkKsNVQm",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 431,
+        "completion_tokens": 857
+      },
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "41a97cc7b9d2129b51a4be361ddd49289e0f988ec775e22515d4c22050b822dc",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:d2aedf2732b683370df67262a1c86b41540a0a58ef7511ae9aa432f19a7f8d14:33101a32c32cdcf2c2b33d639a347f92022c20771cc06a60e6edecd951d8aff8",
+        "signature": "0x99c92a6b4e6111792d1b92375b0d222d4e928c9eae9f3a051f56053d6f87aa352380ca79a19644ae4df43f3583a65fc7b2ccf9b5761a8cccda099ebd20f7f5301c",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "114163e636ff995b4b5acfd01bd3452f04bb184e9bb7fd63f33c7c1f0f193909",
+        "nonce": "24b7005d988deacc8c158f888ae37c6318518a6d9efac6f609320203bed47903",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 1201,
-      "nav": "300742722",
-      "tx": "WnNu1JJasaQ5KHRyLkTbuC7hYBdrKQMe7Z4gXkMLQni"
+      "epoch": 1202,
+      "nav": "301288541",
+      "tx": "Edo4CCq8VocFgiCpYw9yFsQmarELNi3CcAysj6jyfEJW",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_status": "ok",
+      "ai_tokens": {
+        "prompt_tokens": 418,
+        "completion_tokens": 487
+      },
+      "ai_target_band": "40–60%",
+      "ai_rationale_hash": "5cf7792b32db3b739e80414e0a8012fc4bb533c6526a5906fde0a03e0e5e90d3",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:8a1234b38d63a8175495a58ac92470bc70038ec8c12273193799024287f9e4b5:182c11827ae6637e55c28f176cba35b04915179236b25853ad5f45f4b6f357de",
+        "signature": "0xe589d04706249489fdf2a3219c23631d3805e1cab8f39377ccfe8dd230a4fd3311b674db136e79934f538ef167555c2135a22e006ef0fcd003b5aa1e460bf5821c",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "114163e636ff995b4b5acfd01bd3452f04bb184e9bb7fd63f33c7c1f0f193909",
+        "nonce": "24b7005d988deacc8c158f888ae37c6318518a6d9efac6f609320203bed47903",
+        "bound": true,
+        "gpu_evidence": true
+      }
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "epoch": 1204,
-      "nav": "609704762",
-      "tx": "HaaH6BNr4gxpxnFrLXXw6fiWs5KWMtT6mCPcGiwaffCN"
+      "epoch": 1205,
+      "nav": "610290734",
+      "tx": "7CiPdf4kBMPZ2dPE6rTN5XackCJsUUwNUrQp8EFRscV9"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "epoch": 693,
-      "nav": "563476331",
-      "tx": "DtzYvressiTGBbnT7bougXcSRrKFSowd6onetKSuBgLU"
+      "epoch": 694,
+      "nav": "565027538",
+      "tx": "CryTmss6We28y3tDes164yM6sDEGM7D8ptr8i36JzE4J"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "epoch": 695,
-      "nav": "609403524",
-      "tx": "9gZtscZJskQ8ND5D3nvdsZN3iWHbAb88L8MUzXVLAu9P"
+      "epoch": 696,
+      "nav": "610998565",
+      "tx": "33wrVLSPiH8JdS9Ubuz5LkwRhyjPEnaQ5ptcpFv7jZPc"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "epoch": 732,
-      "nav": "603499570",
-      "tx": "E2uhvsvBo8hfJvgGTi6dBMEGswvofcux5WrwVsdUctDQ"
+      "epoch": 733,
+      "nav": "603245918",
+      "tx": "eHwSkidn9eG3rN75Fp43TDWnWzKeSDJNjh42TozEiA6"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 962,
-      "nav": "89741002",
-      "tx": "A5QRfX1HnoHWXDhDSCxM3dFBtmubEHxNkx4jgBGd7Fjx"
+      "epoch": 963,
+      "nav": "89961728",
+      "tx": "DLngj9MiHf3wvGcfRBnLpwZ1bwqLdfj1Hqx4D7ZAt5HP"
     }
   ]
 }
