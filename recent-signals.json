@@ -1,14 +1,6 @@
 {
   "sp-momo-92991.testnet": [
     {
-      "ranAt": "2026-11-15T14:34:06.798Z",
-      "epoch": 635,
-      "signal_hash": "55699047a5a4f7ad70b9ef6e5960ddcd41917a65aa096803d7312a41f2011b2d",
-      "signal_status": "executed",
-      "ai_target_band": null,
-      "ai_rationale_hash": null
-    },
-    {
       "ranAt": "2026-11-15T19:52:25.561Z",
       "epoch": 657,
       "signal_hash": "2b68fb6516f2db55116d1c296153222be5fbfe75ae2c0578e6aa394e632499ed",
@@ -159,17 +151,17 @@
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
-    }
-  ],
-  "sp-meanrev-92991.testnet": [
+    },
     {
-      "ranAt": "2026-11-17T13:48:12.924Z",
-      "epoch": 828,
-      "signal_hash": "671db64b47e54619dc2baf54cf003fe293940f0adcb9df083734c20776829d03",
+      "ranAt": "2026-11-22T20:17:24.870Z",
+      "epoch": 1336,
+      "signal_hash": "946493376a70ee98d2e0c73547eb688b24fd276fa88faee26b82df4c15c0ecbe",
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
-    },
+    }
+  ],
+  "sp-meanrev-92991.testnet": [
     {
       "ranAt": "2026-11-17T20:37:04.122Z",
       "epoch": 855,
@@ -318,6 +310,14 @@
       "ranAt": "2026-11-22T15:41:28.282Z",
       "epoch": 1316,
       "signal_hash": "a7dd3af5e46f93f30bedc876f315cc6ca8c22cf1e1a41b9afef7f79dad3805f6",
+      "signal_status": "executed",
+      "ai_target_band": null,
+      "ai_rationale_hash": null
+    },
+    {
+      "ranAt": "2026-11-22T20:17:24.870Z",
+      "epoch": 1335,
+      "signal_hash": "953d26e485ce093d9f4b512693f7eb8f64094ad77826ab90df99370a4fa3eb69",
       "signal_status": "executed",
       "ai_target_band": null,
       "ai_rationale_hash": null
@@ -2242,25 +2242,6 @@
   ],
   "c0.sp-sop-92991.testnet": [
     {
-      "ranAt": "2026-11-13T19:48:58.437Z",
-      "epoch": 235,
-      "signal_hash": "b647518dbdeaef8008ffe03084ea3fb375a8c115bbed841aae838d10b6dea16c",
-      "signal_status": "executed",
-      "ai_target_band": "20–40%",
-      "ai_rationale_hash": "0299b51d9fe06d9c2ae6d0b4a49471754344f5addb1e5a6ed81158ce5e203e91",
-      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-      "ai_receipt": {
-        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:6b5484050e339fdc7575d549c835ffa3a4661a0dc4c1df1714ba91d17b894b52:d096ab3b5cf6889d4d64ec651806cd0b8855a2aac2a439a6d59c5aee260665d1",
-        "signature": "0xa94530627cbb586eb5ec11a294b4d2a9679e0e7883654833dfcc4486583c82a35055ed467cfc224c00b53a33005225fb9141f97883eace0d39c49f585c6668c61c",
-        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
-        "signature_kind": "provider_tee",
-        "quote_sha256": "770a75a51091e06f370b06a5b44c027ff58f85d35bcff9873b638adb8221a1e8",
-        "nonce": "4881c2476d733eb09222fbbecd228ce7e025560dad89e2be4c976a4d722cb469",
-        "bound": true,
-        "gpu_evidence": true
-      }
-    },
-    {
       "ranAt": "2026-11-13T20:03:50.867Z",
       "epoch": 236,
       "signal_hash": "2ce9bac4df3c0f0c0158410e02df075175bd4a992af3827e3b1e6fa2c48b17ec",
@@ -2617,6 +2598,25 @@
         "signature_kind": "provider_tee",
         "quote_sha256": "f01d4c47ebf3940dfe28a3f94634f47333f1dd34524d57cef256658267adc1f6",
         "nonce": "b33cec3eddabbfbf84028877b97e2a4e47d4ca7c94351d02e56bbabba5d61a6d",
+        "bound": true,
+        "gpu_evidence": true
+      }
+    },
+    {
+      "ranAt": "2026-11-22T20:17:24.870Z",
+      "epoch": 1037,
+      "signal_hash": "799eca36eee0541e75ff2bc45d671d99ac3e4b51993328c4fce486ec90dd0198",
+      "signal_status": "executed",
+      "ai_target_band": "20–40%",
+      "ai_rationale_hash": "1372a13cb7b8c923789725b9389c741e82639e4b7a411dfeb4555960cf4ce606",
+      "ai_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "ai_receipt": {
+        "text": "deepseek-ai/DeepSeek-V4.1-Flash-1017:3fc8e5eee3cffd63af8a9c8565f1dae3dc5bf447703f54e6883f9e17ba7051fc:afc22793af0fe81f43cb31ae91f1aada2f977a64bfb73e94802fe3bfac3e328b",
+        "signature": "0x4436d5c8d583401b2077aa4893e99dbc4585f0eb7f4aedad7e589ec2b9a129460a563a563e403df3b7a93b95a838aed08a8a228940998e402cd3ee67521847f01b",
+        "signing_address": "0xfe0071895500a9755c18044948ab4f4e1a7f337e",
+        "signature_kind": "provider_tee",
+        "quote_sha256": "bc6e402e3c47d8609967a6368e2a562235ed831749301e1712de297ca5c7c5ca",
+        "nonce": "a27d60b36182b25bac3916ff09fa0a1ded3978bd0419132c5cbdde62fa2228af",
         "bound": true,
         "gpu_evidence": true
       }
