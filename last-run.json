@@ -1,14 +1,14 @@
 {
-  "ranAt": "2026-11-23T17:13:28.217Z",
+  "ranAt": "2026-11-23T17:31:32.848Z",
   "marketData": true,
   "oracle": {
-    "tx": "2hnipqMtmHA9MJxT18EpoKo7mDiEFPvpahuKkNeggjsP"
+    "tx": "98Ac6Xh8pyvyiDG2RdywS7XNWQNXZSqzAcfMbqAGhtmJ"
   },
   "warnings": [
     {
       "warning": "low balance: top up from the spare testnet accounts",
       "account": "sp-momo-92991.testnet",
-      "free_near": 1.63,
+      "free_near": 1.62,
       "days_left": 5.6
     },
     {
@@ -59,51 +59,57 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 1422,
+      "nav": "729662310",
+      "tx": "36phdFYpFDY25jyr9XSRDDgwHxVjvAdU5Q82oibZY2pG"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 1421,
+      "nav": "719731929",
+      "tx": "EebUcQTFtrCyzQKYbvn8WhZfXmi5wGY65uTZgK9bbzMq"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "1click /v0/quote 520: {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/\",\"title\":\"Error 520: Web server is returning an unknown error\",\"status\":520,\"detai"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (B3p16yvMc9B9SEJKhNjCixr3qZpKmYvXMCxq52VD88BT): silent-partner.nav_rejected epoch=1338 nav=493931767 reason=no fresh oracle price"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (sq7AV3zkehozs5c4cSKEgjdbpWwrky7ovYxAWLDEam5): silent-partner.nav_rejected epoch=1397 nav=527499892 reason=no fresh oracle price"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (HhGX4XpNwL8cqH8rzuv68nGYDMfq59ZfhvS9HJHFfB29): silent-partner.nav_rejected epoch=1393 nav=581187906 reason=no fresh oracle price"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (Aw39fkY4eJKFZDn8VjuYdckhZuLJXwFjWPm7yJ2DU8AU): silent-partner.nav_rejected epoch=1363 nav=311823813 reason=no fresh oracle price"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (2p42U4kHkMCY8L9TcM2px9Rh673FsM9DraA9tFTYbs3v): silent-partner.nav_rejected epoch=1367 nav=619861100 reason=no fresh oracle price"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (CspK5DFxK2kAoM8HpC7CwyQbyhszhGgzSEtyjTQjL2wD): silent-partner.nav_rejected epoch=854 nav=600192266 reason=no fresh oracle price"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "error": "NAV rejected (GaB9wLFcpXwmiehpqZUYBm2cGJF6XSxPuSqYx3kMSirF): silent-partner.nav_rejected epoch=850 nav=630484761 reason=no fresh oracle price"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "error": "1click /v0/quote 500: Failed to receive response within timeout of 25000ms for exchange \"1Click-API:api-exchange\" and routing key \"quote\""
+      "epoch": 895,
+      "nav": "607591825",
+      "tx": "6ypDn4xz7NMgeYjYbRBMD39hSr1fyTjdJzEx9Yd1o7pk"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "error": "NAV rejected (4UM76kkaQpefxSzHzDetNo7obkpyRTi62yFzsDNgtdHG): silent-partner.nav_rejected epoch=1123 nav=89201839 reason=no fresh oracle price"
+      "error": "NAV rejected (ATa1p1sonMzhMV84Lzhx441eAkViDBjwAqmNHLM6Yr82): silent-partner.nav_rejected epoch=1123 nav=88921761 reason=no fresh oracle price"
     }
   ]
 }
