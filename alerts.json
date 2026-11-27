@@ -1,7 +1,7 @@
 {
   "state": {
     "sp-momo-92991.testnet": {
-      "price": 0.8044716531752292,
+      "price": 0.8024092073650622,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -19,7 +19,7 @@
       "claimsPaid": 0
     },
     "sp-ai-92991.testnet": {
-      "price": 0.8994529793622951,
+      "price": 0.8974271459569539,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -28,7 +28,7 @@
       "claimsPaid": 0
     },
     "sp-trend-8952.testnet": {
-      "price": 0.7790032801165772,
+      "price": 0.7763481736287293,
       "peak": 1,
       "ddLevel": 2,
       "silent": false,
@@ -46,7 +46,7 @@
       "claimsPaid": 0
     },
     "sp-voltgt-8952.testnet": {
-      "price": 0.8932563968837106,
+      "price": 0.8919484810286566,
       "peak": 1.0034015725891603,
       "ddLevel": 2,
       "silent": false,
@@ -55,7 +55,7 @@
       "claimsPaid": 0
     },
     "sp-convict-8952.testnet": {
-      "price": 0.8754754759130374,
+      "price": 0.8741585493272915,
       "peak": 1.0178035118132513,
       "ddLevel": 2,
       "silent": false,
@@ -64,7 +64,7 @@
       "claimsPaid": 0
     },
     "sp-manual-92991.testnet": {
-      "price": 0.9533193568898105,
+      "price": 0.9523267574526764,
       "peak": 1.009732148096798,
       "ddLevel": 1,
       "silent": false,
@@ -82,9 +82,9 @@
       "claimsPaid": 0
     },
     "hold.sp-sop-92991.testnet": {
-      "price": 0.92569274560661,
+      "price": 0.9214547759006063,
       "peak": 1.0262267580373987,
-      "ddLevel": 1,
+      "ddLevel": 2,
       "silent": false,
       "emergency": false,
       "pending": 0,
@@ -100,7 +100,7 @@
       "claimsPaid": 0
     },
     "majors.sp-sop-92991.testnet": {
-      "price": 0.9386812252655959,
+      "price": 0.9379467439674513,
       "peak": 1.003033396047122,
       "ddLevel": 1,
       "silent": false,
@@ -110,6 +110,12 @@
     }
   },
   "events": [
+    {
+      "vault": "hold.sp-sop-92991.testnet",
+      "kind": "drawdown",
+      "text": "Hold NEAR: drawdown crossed −10% from its high.",
+      "at": "2026-11-27T05:40:05.680Z"
+    },
     {
       "vault": "hold.sp-sop-92991.testnet",
       "kind": "drawdown",
@@ -1302,12 +1308,6 @@
       "vault": "sp-manual-92991.testnet",
       "kind": "drawdown",
       "text": "Steady Hand: drawdown crossed −5% from its high.",
-      "at": "2026-11-16T12:17:08.527Z"
-    },
-    {
-      "vault": "hold.sp-sop-92991.testnet",
-      "kind": "drawdown",
-      "text": "Hold NEAR: drawdown crossed −5% from its high.",
       "at": "2026-11-16T12:17:08.527Z"
     }
   ]
