@@ -1,8 +1,8 @@
 {
-  "ranAt": "2026-11-27T20:29:50.101Z",
+  "ranAt": "2026-11-27T20:46:45.438Z",
   "marketData": true,
   "oracle": {
-    "tx": "B48hm6tpfgQpcz5yyTGWTPCvmrcTQkLjpGEtB5tBCx3U"
+    "tx": "9e8aovJDTmdZxkBJHYLGGqKtK5sRLVJYuxHhxwbSbgzH"
   },
   "warnings": [
     {
@@ -34,6 +34,36 @@
       "account": "sp-trend-8952.testnet",
       "free_near": 0.29,
       "days_left": 1
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "sp-contra-8952.testnet",
+      "free_near": 0.27,
+      "days_left": 0.9
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "sp-voltgt-8952.testnet",
+      "free_near": 0.35,
+      "days_left": 1.2
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "sp-convict-8952.testnet",
+      "free_near": 0.4,
+      "days_left": 1.4
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "sp-manual-92991.testnet",
+      "free_near": 0.44,
+      "days_left": 1.5
+    },
+    {
+      "warning": "low balance: top up from the spare testnet accounts",
+      "account": "hold.sp-sop-92991.testnet",
+      "free_near": 0.46,
+      "days_left": 1.6
     }
   ],
   "topups": [],
@@ -41,71 +71,51 @@
   "results": [
     {
       "vault": "sp-momo-92991.testnet",
-      "epoch": 1825,
-      "nav": "687181980",
-      "tx": "79u3RAUuF4FJtgigy3xi4bSjiq6SdZiueQEYmYFZGS9L"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300589777419649699999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "sp-meanrev-92991.testnet",
-      "epoch": 1824,
-      "nav": "689120941",
-      "tx": "CZJGrkYWv4RkQyCRYuv7PYVZE31dtrybbo1Coy2pceeu"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300589777419649699999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "sp-ai-92991.testnet",
-      "epoch": 1821,
-      "nav": "616153671",
-      "tx": "DWakcTTzE1rv2rfhFqb8YUv8TdHPjV6LQNK6KXopQzyz"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300589777419649699999996 for operation costing 0.3009206795651245"
     },
     {
       "vault": "sp-trend-8952.testnet",
-      "epoch": 1737,
-      "nav": "463689138",
-      "tx": "E8JfsQejJdRfBsjfawjAcbkVyiryjvPGu3beKzSscZFB"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "sp-contra-8952.testnet",
-      "epoch": 1798,
-      "nav": "538115112",
-      "tx": "BdFtK3gXZtECpB5jYebRSR8eAhB4DAHnKuw7imv6EDi2"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.3009206795651245"
     },
     {
       "vault": "sp-voltgt-8952.testnet",
-      "epoch": 1791,
-      "nav": "594686706",
-      "tx": "4ND4B2fMzx2sqjGG5EWJ26By8C5NAot7byyiX16D3gyU"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "sp-convict-8952.testnet",
-      "epoch": 1756,
-      "nav": "306188680",
-      "tx": "A9pz3fjmM78fH4gLFJeEqe9Cvk4gPc98NZKvhTKWWA6E"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "sp-manual-92991.testnet",
-      "error": "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -429, \"message\": \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\"}, \"id\": \"1\"}"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "hold.sp-sop-92991.testnet",
-      "error": "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -429, \"message\": \"Rate limits exceeded. For higher rate limits get a subscription at https://fastnear.com\"}, \"id\": \"1\"}"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "half.sp-sop-92991.testnet",
-      "epoch": 1226,
-      "nav": "625761285",
-      "tx": "B9dYDdXCcXV3iwPMs6YTUiDzWZXV6UVg6QTWZNPyshcR"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.30092068656943"
     },
     {
       "vault": "majors.sp-sop-92991.testnet",
-      "epoch": 1297,
-      "nav": "596059651",
-      "tx": "5jhYfcxcXnw8svyGNAcjPGxVFzfVYBVwAm6Xmf9V9U4U"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300326352121043799999996 for operation costing 0.3009748508638615"
     },
     {
       "vault": "c0.sp-sop-92991.testnet",
-      "epoch": 1495,
-      "nav": "89097774",
-      "tx": "FMWjxrCAqzsLxGmBDq5o3VeswdPcn5K6dM5eYuEPKUpE"
+      "error": "Sender sp-sop-92991.testnet does not have enough balance 0.300064925939148499999996 for operation costing 0.300920672560819"
     }
   ]
 }
