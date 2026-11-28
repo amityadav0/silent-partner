@@ -321,7 +321,9 @@ A keeper only posts prices. It never trades or pays out; I do those by hand.
 
 Plan: [guarded-launch.md](guarded-launch.md). One new mainnet vault, NEAR/USDC, full-access key deleted at launch (code can't change), published build hash, $200 per depositor and $5,000 per vault enforced by the contract, emergency exits paid pro rata in rounds. Nothing is deployed until you say go. You decide: (1) go / no-go, (2) who leads (you or an invited trader, with their NEAR account), (3) when (after the hackathon review). Cost ≈ 6 NEAR plus the leader's seed. The exact commands are in the plan's checklist.
 
-## 14. Testnet NEAR for the season, and the Genesis wind-down (2026-11-28)
+## 14. Testnet NEAR for the season, and the Genesis wind-down (2026-11-28): DONE
+
+**Status:** A done the same day (faucet command allowed; every season vault at 15 days, operator at 7 NEAR; keep-online.md). B: Amit said **keep**, so Genesis stays live and the keeper keeps posting.
 
 **A. Testnet NEAR (about 53 NEAR, all testnet, free).** Every season vault and the operator were down to ~1 day. The spares gave 1.9 NEAR as a stopgap (keep-online.md, 2026-11-28), which buys the operator, Momentum, Mean Reversion and Allocator about 1–2 more days. To reach 15 days per vault, the season needs ~53 testnet NEAR. That means 6 new faucet accounts, and Claude Code's auto-mode classifier blocks me from creating them. Pick one:
 

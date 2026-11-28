@@ -117,3 +117,28 @@ The health check (issue #5) flagged every season account at 0.7–1.6 days, and 
 | `sp-gas-1116` | `sp-meanrev-92991` | 0.3 | [`DvUKLSWT…`](https://testnet.nearblocks.io/txns/DvUKLSWTsGYoyUAq1j1pywt5ZtURzFXtVZq7bhzuehEY) |
 
 After this: operator 0.9, Momentum 0.63 (2.2 days), Mean Reversion 0.85 (2.9), Allocator 0.63 (2.2); the other eight vaults are unchanged at 0.9–1.6 days. The full top-up to 15 days needs ~53 testnet NEAR from new faucet accounts: NEEDS-AMIT §14A, then `bash operator/scripts/topup-season.sh <funders...>`, which reads live balances and fills every season account (`DRY=1` prints the need).
+
+### Full top-up on 2026-11-28 (~06:30 UTC)
+
+Six new faucet accounts, `sp-gas-1128a` to `sp-gas-1128f.testnet` (10 testnet NEAR each), funded the refill through `operator/scripts/topup-season.sh` (53.46 NEAR). Balances read afterwards: every season vault, including Hold, Half, Majors and Calm Owl, has 4.34–4.35 NEAR free (15.0 days at 0.29/day, to about Dec 13). The operator has 7.0 NEAR free (20 days at the 0.35/day budget). `sp-gas-1128f` keeps ~5.5 NEAR for the next top-up.
+
+| From | To | NEAR | Tx |
+|---|---|---|---|
+| `sp-gas-1128a` | `sp-momo-92991` | 3.74 | [`41bZy2sq…`](https://testnet.nearblocks.io/txns/41bZy2sqCurxUybJPjXU1w2DkNetapmqXrmCLxTSJ2qH) |
+| `sp-gas-1128a` | `sp-meanrev-92991` | 3.52 | [`2t8eqWKW…`](https://testnet.nearblocks.io/txns/2t8eqWKWSd67kT2yDvaaiZvRGzLvXpN8NbeyVKqhujQr) |
+| `sp-gas-1128a` | `sp-ai-92991` | 2.54 | [`DGgKLyoR…`](https://testnet.nearblocks.io/txns/DGgKLyoRuLynmGLGPKWRfWef8FuANjjVDB8faz3LGZ4C) |
+| `sp-gas-1128b` | `sp-ai-92991` | 1.2 | [`HEWkLbWF…`](https://testnet.nearblocks.io/txns/HEWkLbWFq5ox2T19BojjGsrruysRVQCiNnjxCxAXa9ef) |
+| `sp-gas-1128b` | `sp-trend-8952` | 4.08 | [`Dq7dGMb9…`](https://testnet.nearblocks.io/txns/Dq7dGMb9wKh7RXXpNJqHWD6uvkYVLcbY1te33Tq1TLRr) |
+| `sp-gas-1128b` | `sp-contra-8952` | 4.09 | [`D7rLxxb5…`](https://testnet.nearblocks.io/txns/D7rLxxb5XZo485xK41QmGPKGrrSFuotWoP8G783JNTdc) |
+| `sp-gas-1128b` | `sp-voltgt-8952` | 0.43 | [`FpNiFAX7…`](https://testnet.nearblocks.io/txns/FpNiFAX7essRSNFMuaMHcuCdbwQE1VqB9AYv5G9TfZaq) |
+| `sp-gas-1128c` | `sp-voltgt-8952` | 3.59 | [`DEzhhGtk…`](https://testnet.nearblocks.io/txns/DEzhhGtkAZ1ARgFx43zbCNmCDddgPvUC3ttycfbdBqGN) |
+| `sp-gas-1128c` | `sp-convict-8952` | 3.96 | [`5HKQsSa7…`](https://testnet.nearblocks.io/txns/5HKQsSa72pujS7Fv6hqRqpZbYpYuQps9BD9LePczCbGG) |
+| `sp-gas-1128c` | `sp-manual-92991` | 2.25 | [`23T6PjUL…`](https://testnet.nearblocks.io/txns/23T6PjULWjyhiMDjHDGzeCd6L3qaaN18SM6vRaNSLhjL) |
+| `sp-gas-1128d` | `sp-manual-92991` | 1.68 | [`6hpuPzdf…`](https://testnet.nearblocks.io/txns/6hpuPzdf3YHBFsbP85esMkxGAW6HeXm8cHJbkj2MHRRg) |
+| `sp-gas-1128d` | `hold.sp-sop-92991` | 3.91 | [`BnG1ydTE…`](https://testnet.nearblocks.io/txns/BnG1ydTEXRyw4AKRNjtVyfq5riL6vpk3AGkyUVSKxWe7) |
+| `sp-gas-1128d` | `half.sp-sop-92991` | 3.91 | [`9fRCKY1F…`](https://testnet.nearblocks.io/txns/9fRCKY1FhPvdosVU7ZcH5TEDnDpSx1nDjNkdPrR3oPr1) |
+| `sp-gas-1128d` | `majors.sp-sop-92991` | 0.3 | [`DXPTMmbp…`](https://testnet.nearblocks.io/txns/DXPTMmbp6FYEfmHVwWX81Tq9QzA9U5Pi55mmZFEz9VH5) |
+| `sp-gas-1128e` | `majors.sp-sop-92991` | 3.84 | [`9cTpG6ru…`](https://testnet.nearblocks.io/txns/9cTpG6ruu4rE6e8yenCWtcff6WGaGL8tfqtsD9f97sK8) |
+| `sp-gas-1128e` | `c0.sp-sop-92991` | 3.97 | [`HXH6qY56…`](https://testnet.nearblocks.io/txns/HXH6qY56wunEybfsvcHHdDnUX1JS9qXtdiuQiHQCQpyK) |
+| `sp-gas-1128e` | `sp-sop-92991` | 1.99 | [`CzTguVC8…`](https://testnet.nearblocks.io/txns/CzTguVC88xscbwnRMzjxjvuFBVGmBbf1GUp4xfyJxj6j) |
+| `sp-gas-1128f` | `sp-sop-92991` | 4.46 | [`2xkbAKoH…`](https://testnet.nearblocks.io/txns/2xkbAKoHkRBPEiFuXearaA1qMvUHj1T35xxQjYwFBcXA) |

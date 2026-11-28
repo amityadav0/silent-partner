@@ -153,3 +153,4 @@ The site counts four aggregate events: page view → simulated copy started → 
 
 - K1: every season account was at ~1 day of testnet NEAR. Spares sent 1.9 NEAR to the operator, Momentum, Mean Reversion and Allocator (+1–2 days). The full 15-day top-up (~53 NEAR) waits for faucet accounts (NEEDS-AMIT §14A); after that it's `operator/scripts/topup-season.sh`.
 - K2: Genesis (mainnet) is still live. The keeper posts every ~3 h (epoch 141 at 03:52 UTC). Wind-down waits for Amit (NEEDS-AMIT §14B). /trust no longer says it has been wound down.
+- K3: the full refill landed. Six faucet accounts sent 53.46 NEAR through `topup-season.sh`; all 12 season vaults are at 15.0 days (to about Dec 13) and the operator has 7.0 NEAR. Genesis: Amit said keep. The /trust wording is live (pages run 46110831364).
