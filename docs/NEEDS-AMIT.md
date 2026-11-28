@@ -320,3 +320,19 @@ A keeper only posts prices. It never trades or pays out; I do those by hand.
 ## 13. Guarded real-money launch: your go / no-go (2026-11-14)
 
 Plan: [guarded-launch.md](guarded-launch.md). One new mainnet vault, NEAR/USDC, full-access key deleted at launch (code can't change), published build hash, $200 per depositor and $5,000 per vault enforced by the contract, emergency exits paid pro rata in rounds. Nothing is deployed until you say go. You decide: (1) go / no-go, (2) who leads (you or an invited trader, with their NEAR account), (3) when (after the hackathon review). Cost ≈ 6 NEAR plus the leader's seed. The exact commands are in the plan's checklist.
+
+## 14. Testnet NEAR for the season, and the Genesis wind-down (2026-11-28)
+
+**A. Testnet NEAR (about 53 NEAR, all testnet, free).** Every season vault and the operator were down to ~1 day. The spares gave 1.9 NEAR as a stopgap (keep-online.md, 2026-11-28), which buys the operator, Momentum, Mean Reversion and Allocator about 1–2 more days. To reach 15 days per vault, the season needs ~53 testnet NEAR. That means 6 new faucet accounts, and Claude Code's auto-mode classifier blocks me from creating them. Pick one:
+
+1. Let me do it: allow `Bash(near account create-account sponsor-by-faucet-service:*)` in `.claude/settings.local.json` (or approve the prompt), and tell me. I'll do the rest.
+2. Or run it yourself (about 2 min):
+   ```sh
+   cd ~/silent-partner
+   for s in a b c d e f; do near account create-account sponsor-by-faucet-service sp-gas-1128$s.testnet autogenerate-new-keypair save-to-keychain network-config testnet create; done
+   DRY=1 bash operator/scripts/topup-season.sh x        # current need
+   bash operator/scripts/topup-season.sh sp-gas-1128a sp-gas-1128b sp-gas-1128c sp-gas-1128d sp-gas-1128e sp-gas-1128f
+   ```
+   The script reads live balances and fills each season vault to 15 days (4.35 NEAR) and the operator to 7 NEAR. If the faucet rate-limits, rerun later with the accounts you have. The script is safe to rerun.
+
+**B. Genesis (mainnet) wind-down: your OK.** The plan was to wind it down after Nov 25. That hasn't happened: the vault is live, with shares held by the leader (2.02M) and the follower (3.0M), ~4.83 USDC of book value and part of it in wNEAR. Say "wind down" and I'll run the operator steps (sell wNEAR to USDC, two epochs, payouts). You sign the follower's and the leader's `request_withdraw` with the commands I'll give you, then the vault account deletion with `amityadav.near` as the beneficiary. Or say "keep" and the keeper keeps posting (its allowance lasts well past December).

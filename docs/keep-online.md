@@ -103,3 +103,17 @@ If the spares run dry, create a fresh testnet account from the faucet (`near acc
 ### Top-ups on 2026-11-14 (15:40–16:10 UTC)
 
 The health check flagged the operator (2.55 NEAR, 7.3 days at 0.35/day) and Majors (0.46). The operator also pays the daily auto top-up of Hold NEAR, Half & Half and Majors, so its real spend is about 1.25 NEAR/day. Moved spare testnet NEAR to `sp-sop-92991.testnet` (now 15.05, ~12 days): 0.58 from `quotes2.sp-lmomo`, 0.66 from `quotes.sp-lmeanrev`, 2.26 from the retired `sp-vault-60270` (each kept 0.5 above storage), 3 from the testnet verifier `sp-intents-61557` (keeps 3 above storage), and 1 from each of the 8 house vaults (each keeps ~3.5 free, ~12 days at 0.29/day). Then 2 NEAR from the operator to `majors.sp-sop-92991.testnet`. Txs: `DSMSvLQj…`, `2FmZvNbX…`, `8GwPQBa8…`, `HAEG8pma…`, `8JVjFsAY…`, `DydADgTL…`, `Dpt4VCab…`, `ABZjGbE6…`, `HV6e867U…`, `GRmgVsU4…`, `G3XeomEe…`, `9THZSikW…`, `BgMNcPeM…`.
+
+### Top-ups on 2026-11-28 (05:00 UTC), stopgap
+
+The health check (issue #5) flagged every season account at 0.7–1.6 days, and Momentum's last NAV was 460 min old. The operator had 0.3 NEAR free, below the 3 NEAR floor, so the auto top-ups of Hold, Half, Majors and Calm Owl had stopped too. The spares had only ~1.9 NEAR to give (each keeps ~0.5), and faucet account creation was blocked in this session, so the spares went to the accounts that run out first:
+
+| From | To | NEAR | Tx |
+|---|---|---|---|
+| `sp-leader-60270` | `sp-sop-92991` (operator) | 0.6 | [`7UQt35zx…`](https://testnet.nearblocks.io/txns/7UQt35zx9BA4hiwGV1ejcYwtv1PDh8LAQs1dzQFJTUmb) |
+| `sp-leader-60270` | `sp-meanrev-92991` | 0.35 | [`Bs3cNKVA…`](https://testnet.nearblocks.io/txns/Bs3cNKVAYL4mz54nGd7Gwc4tNiC4qMxXsTfGgGzFUvbp) |
+| `sp-vault2-61557` | `sp-momo-92991` | 0.35 | [`ZNfhJpSU…`](https://testnet.nearblocks.io/txns/ZNfhJpSULzwhiR9gcin9KfeQY8D6LyU8z4cxH5qp854) |
+| `sp-drill-92991` | `sp-ai-92991` | 0.3 | [`8hdCD5Jc…`](https://testnet.nearblocks.io/txns/8hdCD5JcYhs5qPzWsEGmEqQJTocSmBfQjCKpbJfwfsWh) |
+| `sp-gas-1116` | `sp-meanrev-92991` | 0.3 | [`DvUKLSWT…`](https://testnet.nearblocks.io/txns/DvUKLSWTsGYoyUAq1j1pywt5ZtURzFXtVZq7bhzuehEY) |
+
+After this: operator 0.9, Momentum 0.63 (2.2 days), Mean Reversion 0.85 (2.9), Allocator 0.63 (2.2); the other eight vaults are unchanged at 0.9–1.6 days. The full top-up to 15 days needs ~53 testnet NEAR from new faucet accounts: NEEDS-AMIT §14A, then `bash operator/scripts/topup-season.sh <funders...>`, which reads live balances and fills every season account (`DRY=1` prints the need).

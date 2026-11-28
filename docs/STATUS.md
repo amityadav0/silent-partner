@@ -148,3 +148,8 @@ The site counts four aggregate events: page view → simulated copy started → 
 - C3: the hero shows its leader and proof line once, with no named fallback first and no swap after the chain check.
 - C4: the funnel counters no longer drop to 0 when the counter service fails.
 
+
+## Nov 28: keep-online batch K
+
+- K1: every season account was at ~1 day of testnet NEAR. Spares sent 1.9 NEAR to the operator, Momentum, Mean Reversion and Allocator (+1–2 days). The full 15-day top-up (~53 NEAR) waits for faucet accounts (NEEDS-AMIT §14A); after that it's `operator/scripts/topup-season.sh`.
+- K2: Genesis (mainnet) is still live. The keeper posts every ~3 h (epoch 141 at 03:52 UTC). Wind-down waits for Amit (NEEDS-AMIT §14B). /trust no longer says it has been wound down.

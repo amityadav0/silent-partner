@@ -53,7 +53,7 @@ export default function Trust() {
         <div className="stop-box" data-testid="trust-upgrade-key">
           <span className="text-[15px] font-medium">One thing we can still change: the code</span>
           <p className="text-sm leading-relaxed">
-            The mainnet vault&apos;s account still has a full-access key, held by the builder, until <b>November 25, 2026</b>. With it the contract code can be redeployed, and new code could change what the vault&apos;s key will sign. We kept it so a bug found during the hackathon review can be fixed. After November 25 the demo vault is wound down: holders are paid out and the account is deleted. A real-money vault would launch with that key deleted and its build hash published, so anyone can check the code can&apos;t change. The testnet vaults keep their keys too; they hold paper money.
+            The mainnet vault&apos;s account still has a full-access key, held by the builder, until <b>November 25, 2026</b>. With it the contract code can be redeployed, and new code could change what the vault&apos;s key will sign. We kept it so a bug found during the hackathon review can be fixed. The demo window ended on November 25. Until the builder winds it down (holders paid out, the account deleted), the vault keeps running and posting prices every 3 hours. A real-money vault would launch with that key deleted and its build hash published, so anyone can check the code can&apos;t change. The testnet vaults keep their keys too; they hold paper money.
           </p>
         </div>
       </div>
